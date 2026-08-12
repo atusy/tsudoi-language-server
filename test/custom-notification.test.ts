@@ -5,10 +5,10 @@ import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
 import {
   bothForms,
-  gatedNotification,
+  noted,
+  pinged,
   seenReader,
   undeclared,
-  ungatedNotification,
 } from "./fixtures/custom-method-kinds.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 
@@ -41,10 +41,10 @@ for (const runtime of runtimes) {
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
 
-        session.notify(gatedNotification, { at: "b" });
+        session.notify(noted, { at: "b" });
         const seen = await session.request<Recorded[]>(seenReader, {});
 
-        expect(seen).toEqual([{ method: gatedNotification, params: { at: "b" } }]);
+        expect(seen).toEqual([{ method: noted, params: { at: "b" } }]);
       } finally {
         session.dispose();
       }
@@ -68,10 +68,10 @@ for (const runtime of runtimes) {
       try {
         await session.request<InitializeResult>("initialize", initializeParams);
 
-        session.notify(ungatedNotification, noParams);
+        session.notify(pinged, noParams);
         const seen = await session.request<Recorded[]>(seenReader, {});
 
-        expect(seen.map((entry) => entry.method)).toEqual([ungatedNotification]);
+        expect(seen.map((entry) => entry.method)).toEqual([pinged]);
         expect(session.stderr).not.toContain("tsudoi: ");
       } finally {
         session.dispose();
@@ -96,7 +96,7 @@ for (const runtime of runtimes) {
         void handshake;
         const before = session.arrivals.length;
 
-        session.notify(gatedNotification, { at: "b" });
+        session.notify(noted, { at: "b" });
         const { id, response } = session.issue(seenReader, {});
         await response;
 
@@ -173,25 +173,31 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * THE GATE DOES WHAT THE AUTHOR DECLARED, and both directions in ONE session
-     * because that is what says the gate is read PER ENTRY: a router that dropped
-     * everything, or gated nothing, satisfies one arm and not this pair.
+     * THE AUTHOR DECLARES NO GATE AND TSUDOI APPLIES THE LIFECYCLE ITSELF, so a
+     * custom notification outside the initialized window is dropped exactly as a
+     * built-in one is -- SILENTLY, there being no response through which a client
+     * could be told, which is why its absence from the reader is the whole of the
+     * evidence.
      *
-     * BOTH ARE SENT BEFORE `initialize`, which is the only moment the two gates
-     * differ. A `lifecycle` message there is dropped SILENTLY -- there is no
-     * response through which a client could be told -- so its absence from the
-     * reader is the whole of the evidence.
+     * TWO NAMES AND NOT ONE, because the ruling is about custom notifications as a
+     * CLASS: a gate reached for one name and skipped for the next is what a single
+     * arm here could not see.
+     *
+     * WHAT THE STATE THIS PREVENTS LOOKS LIKE, measured by putting `always` at the
+     * gate in src/methods.ts and reverting: both handlers run BEFORE the handshake,
+     * against a session whose documents are empty and whose roots are null, and
+     * this arm is the only red.
      */
-    test("a lifecycle-gated custom notification is dropped before the handshake, and an always-gated one is not", async () => {
+    test("a custom notification arriving before the handshake is dropped, whatever its name", async () => {
       const session = LspSession.start(runtime, fixture("custom-method-kinds.ts"));
       try {
-        session.notify(gatedNotification, { at: "too early" });
-        session.notify(ungatedNotification, { at: "any time" });
+        session.notify(noted, { at: "too early" });
+        session.notify(pinged, { at: "too early" });
 
         await session.request<InitializeResult>("initialize", initializeParams);
         const seen = await session.request<Recorded[]>(seenReader, {});
 
-        expect(seen).toEqual([{ method: ungatedNotification, params: { at: "any time" } }]);
+        expect(seen).toEqual([]);
       } finally {
         session.dispose();
       }

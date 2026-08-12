@@ -273,33 +273,26 @@ for (const runtime of runtimes) {
      * nothing at all -- no `initialize` has a capability to claim for
      * `textDocument/didFocus`, so no client sends one unless it already knew to.
      *
-     * FOUR ARMS AND FOUR DIFFERENT FIXES, which is why they are rows rather than
-     * one `invalid customMethod`:
+     * TWO ARMS AND TWO DIFFERENT FIXES, which is why they are rows rather than
+     * one `invalid customMethod` -- and there are two rather than four because a
+     * handler declaring a KIND and a GATE was what sprint 96 was cancelled for:
+     * a bare function has neither to get wrong, so those refusals have no subject
+     * left to refuse.
      *
      * THE COLLISION IS THE ONE WITH A GOOD HANDLER IN IT. Nothing about that
-     * entry is malformed; the NAME is not the author's to take, because upstream
+     * handler is malformed; the NAME is not the author's to take, because upstream
      * registers by MAP SET rather than by chaining, so whichever registration ran
      * second would silently evict the other. `methods` IS NAMED IN THE MESSAGE
      * and asserted here: an author told only that they are wrong is not told
      * where the handler goes.
      *
-     * THE KIND AND THE GATE ARE BOTH REFUSED ON THE VALUE AND NOT ON ITS TYPE,
-     * and `"Request"` is why: a mistyped literal is a string exactly as the right
-     * one is, so a message naming what arrived by type alone would say `string`
-     * to an author looking straight at their own typo.
-     *
-     * THE MISSING GATE IS THE ARM THE COMPILER ALREADY COVERS, kept because
+     * THE UNCALLABLE HANDLER IS THE ARM THE COMPILER ALREADY COVERS, kept because
      * src/config.ts reaches an author's config through a CAST FROM `unknown`:
      * nothing type-checks a config that was never annotated, so this is the only
      * refusal an unannotated author ever receives.
      */
     for (const [name, expected] of [
       ["custom-method-collides.ts", ["textDocument/hover", "customMethod", "methods"]],
-      [
-        "custom-method-bad-kind.ts",
-        ["textDocument/didFocus", '"Request"', "request", "notification"],
-      ],
-      ["custom-method-missing-gate.ts", ["textDocument/didBlur", "gate", "lifecycle", "always"]],
       ["custom-method-not-a-function.ts", ["textDocument/didFocus", "number", "function"]],
     ] as const) {
       test(`${name} exits 1 naming the method and the rule, with no stdout`, async () => {

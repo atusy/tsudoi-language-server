@@ -4,14 +4,14 @@
  * is what the result wrapper exists for.
  *
  * NO TYPE ANNOTATION, deliberately and for the reason
- * test/fixtures/custom-method-collides.ts gives: `CustomMethodHandler<"request">`
- * refuses this at compile time, and an author who never annotated their config
- * is told by nothing but the run time.
+ * test/fixtures/custom-method-collides.ts gives: `CustomRequestHandler` refuses
+ * this at compile time -- it is a notification handler as written -- and an
+ * author who never annotated their config is told by nothing but the run time.
  */
 export const answersNothing = "textDocument/didFocus";
 
 export default () => ({
   customMethod: {
-    "textDocument/didFocus": { kind: "request", handler: () => Promise.resolve() },
+    "textDocument/didFocus": (_context: unknown, _params: unknown) => Promise.resolve(),
   },
 });

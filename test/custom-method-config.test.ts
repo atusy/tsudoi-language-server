@@ -21,9 +21,7 @@ applySuiteDeadline();
 test("a declared custom method survives config load, and reading it does not drop methods", async () => {
   const config = await loadConfig(["--config", fixture("custom-method-echo.ts")]);
 
-  const entry = config.customMethod?.["textDocument/didFocus"];
-  expect(entry?.kind).toBe("request");
-  expect(typeof entry?.handler).toBe("function");
+  expect(typeof config.customMethod?.["textDocument/didFocus"]).toBe("function");
   expect(typeof config.methods?.["textDocument/hover"]).toBe("function");
 });
 

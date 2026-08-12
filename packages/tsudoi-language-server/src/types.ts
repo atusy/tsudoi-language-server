@@ -572,14 +572,22 @@ export type ConfigMethod = keyof ConfigMethodMap;
  * WHAT EVERY HANDLER IS HANDED WHATEVER THE MESSAGE WAS: the SESSION, and
  * nothing that belongs to one message.
  *
- * NOT EXPORTED, AND THE NAME IS NOT AN AUTHOR'S TO WRITE. What a handler
- * receives is RESOLVED from the method it declares -- the discipline stated at
- * `RequestContext` -- so publishing this would widen tsudoi's surface for a
- * supertype nobody spells. The day an author factors a handler out into its own
- * FILE they have no name to annotate the parameter with, contextual typing
- * covering the inline case and not that one; that report is what reopens this.
+ * EXPORTED FOR THE ONE HANDLER THAT MUST NAME IT, and this is the only place
+ * this surface GREW rather than shrank. A method of the table resolves its own
+ * context from its name -- the discipline stated at `RequestContext`, that
+ * nothing an author writes selects the shape they are handed -- and
+ * `textDocument/didFocus` resolves nothing at all, so under `customMethod` the
+ * ANNOTATION is what says which kind the author meant. A type nobody can spell
+ * cannot be annotated with.
+ *
+ * NO `signal` HERE, WHICH IS THE POINT AND NOT AN OMISSION: nothing is waiting
+ * for a notification's handler, so there is no request to cancel, and reading
+ * one is refused in the author's own file rather than answered `undefined`. A
+ * `signal?: never` that would restore the discrimination while keeping the field
+ * writable was MEASURED and refused: the read then types as `undefined` and no
+ * diagnostic is produced at all, which trades a compile error for silence.
  */
-interface BaseMethodContext {
+export interface NotificationContext {
   readonly tsudoi: Tsudoi;
 }
 
@@ -597,7 +605,7 @@ interface BaseMethodContext {
  * context below, so a handler reading it in the wrong place is refused in the
  * author's file rather than handed `undefined` at run time.
  */
-export interface BaseRequestContext extends BaseMethodContext {
+export interface BaseRequestContext extends NotificationContext {
   readonly signal: AbortSignal;
 }
 
@@ -698,76 +706,52 @@ export type MethodHandler<M extends ConfigMethod> = (
 ) => ConfigMethodMap[M]["result"];
 
 /**
- * WHEN a notification may reach its handler.
+ * A HANDLER FOR A METHOD TSUDOI NEVER ENUMERATED, WHOSE AUTHOR MEANT IT AS A
+ * REQUEST -- a bare function under the name it travels under on the wire.
  *
- * `lifecycle` is what LSP asks for: outside the initialized window the message
- * is dropped, SILENTLY, because a notification has no response through which a
- * client could be told anything. `always` is for the messages a client is
- * entitled to send at any moment.
+ * THE ANNOTATION IS THE DECLARATION, AND ITS COST IS TAKEN KNOWINGLY: a BARE
+ * arrow written into the map is TS7006, because TypeScript will not infer a
+ * parameter from a union of signatures whose parameters disagree. What the cost
+ * buys is two axes that close in BOTH directions -- a notification handler cannot
+ * reach `signal` at all, and the wrapper below refuses `Promise<void>` -- so
+ * neither name satisfies the other and neither mistake is silent. Unifying the
+ * contexts restores inference and loses the first axis, which is the trade this
+ * spelling was chosen over.
+ *
+ * WHY THE RESULT IS WRAPPED, since a bare `unknown` is the obvious spelling: a
+ * typed row says `Hover | null`, so ANSWERING null is distinguishable from
+ * answering nothing BY THE ROW'S OWN TYPE. A custom method's result is `unknown`
+ * and cannot say it. Returning `{ result: null }` IS an answer; falling off the
+ * end is not, and what tsudoi does with that is at the registration in
+ * src/methods.ts.
+ *
+ * `unknown` INSIDE THE WRAPPER AND NEVER `LSPAny`, MEASURED RATHER THAN ASSUMED:
+ * upstream maps `LSPAny` to `any` today, so `Promise<LSPAny>` -- like the bare
+ * `Promise<unknown>` this replaced -- makes a NOTIFICATION handler satisfy this
+ * type, `void` fitting inside a top type.
  */
-export type NotificationGate = "lifecycle" | "always";
-
-/**
- * A HANDLER FOR A METHOD TSUDOI NEVER ENUMERATED. What it is handed and what it
- * owes back are both RESOLVED FROM THE KIND, so nothing an author writes selects
- * the shape they receive -- the same discipline `RequestContext` states for the
- * table's own rows, carried onto a name only the config knows.
- *
- * KEYED ON THE KIND AND NOT ON THE CONTEXT, WHICH IS THE SPELLING THAT READS
- * CORRECTLY AND IS THE BROKEN ONE. A conditional written on the context type
- * takes the NOTIFICATION arm for both kinds: a notification context has FEWER
- * members, so the request context satisfies it and the second arm is never
- * reached. MEASURED at `--strict`, exit 0, with the request kind asserted to
- * resolve to `Promise<void>` and nothing objecting. Parameterising by the context
- * would also make the surface unwritable for one kind, the notification context
- * having no published name to pass.
- *
- * AND THE ARMS HAVE BEEN DRAWN BACKWARDS TWICE, by opposite mistakes, which is
- * why the shape is recorded rather than the correction: with the condition itself
- * correct, binding REQUEST to `Promise<void>` and NOTIFICATION to the result
- * wrapper type-checks and nothing objects.
- *
- * WHY THE RESULT IS WRAPPED AT ALL, since a bare `unknown` is the obvious
- * spelling: a typed row says `Hover | null`, so ANSWERING null is distinguishable
- * from answering nothing BY THE ROW'S OWN TYPE. A custom method's result is
- * `unknown` and cannot say it. Returning `{ result: null }` IS an answer;
- * falling off the end is not, and what tsudoi does with that is at the
- * registration in src/methods.ts.
- */
-export type CustomMethodHandler<K extends "request" | "notification"> = (
-  context: K extends "request" ? BaseRequestContext : BaseMethodContext,
+export type CustomRequestHandler = (
+  context: RequestContext,
   params: unknown,
-) => K extends "request" ? Promise<{ result: unknown }> : Promise<void>;
+) => Promise<{ result: unknown }>;
 
 /**
- * ONE CUSTOM METHOD AS A CONFIG DECLARES IT: what kind of message it is, when it
- * may run, and what to do with it.
+ * THE OTHER HALF, AND WHAT THE AUTHOR ANNOTATES IS WHAT THEY MEANT RATHER THAN
+ * WHAT ARRIVES. tsudoi registers every custom name on BOTH of upstream's handler
+ * maps and never asks which kind a message is, so a client decides: a request
+ * reaching this handler is answered nothing and takes the handler-failure route,
+ * and a notification reaching a request handler is named on stderr once per
+ * method per session, its value discarded.
  *
- * THE KIND IS DECLARED AND NOT INFERRED FROM THE NAME, and it cannot be
- * otherwise: `textDocument/didFocus` says nothing about whether a client sends it
- * as a request or as a notification, and by the time tsudoi sees a message
- * upstream has already dispatched it -- MEASURED, a request handler is handed
- * `(params, cancellation)` and no id at all. What upstream offers for a name it
- * does not know is a REGISTRATION-TIME choice between two functions, so tsudoi
- * must be told which one before any message arrives.
+ * NO GATE FOR THE AUTHOR TO DECLARE. tsudoi applies the lifecycle itself, so a
+ * custom notification outside the initialized window is dropped exactly as a
+ * built-in one is; the site that decides it is `customNotifications` in
+ * src/methods.ts.
  */
-export type CustomMethodEntry =
-  | {
-      readonly kind: "request";
-      readonly handler: CustomMethodHandler<"request">;
-    }
-  | {
-      readonly kind: "notification";
-      /**
-       * REQUIRED WITH NO DEFAULT, which is `NotificationEntry.gate`'s own
-       * discipline applied to the AUTHOR instead of the maintainer: an entry that
-       * decides nothing is a compile error rather than a handler silently running
-       * in every lifecycle state. A gate defaulted on the config side re-creates
-       * exactly the convention that refusal exists to remove, one door along.
-       */
-      readonly gate: NotificationGate;
-      readonly handler: CustomMethodHandler<"notification">;
-    };
+export type CustomNotificationHandler = (
+  context: NotificationContext,
+  params: unknown,
+) => Promise<void>;
 
 /**
  * THE METHODS A CONFIG SERVES THAT TSUDOI DID NOT ENUMERATE, keyed by the name
@@ -803,7 +787,7 @@ export type CustomMethodEntry =
  */
 export type CustomMethodMap = {
   [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethod`;
-} & Record<string, CustomMethodEntry>;
+} & Record<string, CustomRequestHandler | CustomNotificationHandler>;
 
 export type TsudoiConfig = {
   methods?: Partial<{

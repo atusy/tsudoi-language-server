@@ -12,6 +12,7 @@
  */
 export default () => ({
   customMethod: {
-    "textDocument/hover": { kind: "request", handler: () => Promise.resolve({ result: null }) },
+    "textDocument/hover": (_context: unknown, _params: unknown) =>
+      Promise.resolve({ result: null }),
   },
 });

@@ -520,32 +520,43 @@ anything with a name.
 one unless it already knew to -- these are for a client you control or an extension you and it
 have agreed on, not a way to make an editor ask you something new.
 
-**Each entry declares its kind, because its name cannot.** `textDocument/didFocus` says nothing
-about whether a client sends it as a request or as a notification, and by the time tsudoi sees a
-message the JSON-RPC layer beneath it has already decided. So the choice is made at registration,
-by you, and what your handler receives follows from it -- you never name a context type:
+**One handler per name, and you annotate its context.** A method's name says nothing about whether
+a client sends it as a request or as a notification -- `textDocument/didFocus` is a notification an
+editor extension defines, and a name of your own could be either -- so the type you write on the
+context is what says which one you meant:
 
 <!-- snippet -->
 
 ```ts
-import type { TsudoiConfig } from "@atusy/tsudoi-language-server/types";
+import type {
+  NotificationContext,
+  RequestContext,
+  TsudoiConfig,
+} from "@atusy/tsudoi-language-server/types";
 
 const config: TsudoiConfig = {
   customMethod: {
-    // A REQUEST is answered. `{ result: null }` IS an answer; returning nothing is not.
-    "textDocument/didFocus": {
-      kind: "request",
-      handler: (context) => Promise.resolve({ result: context.tsudoi.rootUri }),
-    },
-    // A NOTIFICATION has no response, so it says WHEN it may run and returns nothing.
-    "textDocument/didBlur": {
-      kind: "notification",
-      gate: "lifecycle",
-      handler: (context) => Promise.resolve(void context.tsudoi.documents),
-    },
+    // A REQUEST is answered under `result`. `{ result: null }` IS an answer; returning nothing is not.
+    "tsudoi/status": (context: RequestContext, params: unknown) =>
+      Promise.resolve({ result: { rootUri: context.tsudoi.rootUri, params } }),
+    // A NOTIFICATION has no response, so it returns nothing -- and has no `signal` to read.
+    "textDocument/didFocus": (context: NotificationContext) =>
+      Promise.resolve(void context.tsudoi.documents),
   },
 };
 ```
+
+**The annotation is not optional, and that is a cost taken deliberately.** A bare `(context,
+params) =>` is `TS7006`: the two handler types disagree about what a context is, and TypeScript
+will not infer a parameter from a union of signatures that disagree. What you buy is that neither
+mistake is silent -- a notification handler cannot reach `signal` at all, and a handler that
+answers cannot be passed off as one that does not.
+
+**tsudoi never asks which kind a message is.** Every name you declare is registered on both sides,
+and the JSON-RPC layer beneath decides by the presence of a request id -- so what you annotated
+says what you MEANT, and a client can still send the other form. It is not undefined behaviour:
+a request reaching a handler that answers nothing is a handler failure (below), and a notification
+reaching one that answers is named on stderr with its value discarded.
 
 **A request answers under `result`.** A typed row like hover says `Hover | null` and tells
 answering `null` apart from answering nothing by its own type; a custom method's result is
@@ -554,11 +565,11 @@ as a null result with no error. Falling off the end is a handler failure instead
 named on stderr with the `tsudoi: ` prefix, and your editor is answered an error. Your handler is
 handed `context.signal` exactly as every other request handler is.
 
-**A notification must decide its gate**, and there is no default -- an entry that decides nothing
-does not type-check. `lifecycle` is what LSP asks for: outside the initialized window the message
-is dropped, silently, there being no response through which you could be told. `always` is for a
-message your client may send at any moment. There is no `context.signal` here, because there is no
-request to cancel.
+**A notification declares no gate, and tsudoi applies the lifecycle itself.** Outside the
+initialized window the message is dropped, silently, there being no response through which you
+could be told -- exactly as a built-in notification is dropped. A request arriving there is
+refused with `ServerNotInitialized` instead, because a request has a response to carry the
+refusal.
 
 **A notification handler that answers, or rejects, is named on stderr once per method per session.**
 Once, and not per message: a handler on something your editor sends per keystroke would otherwise

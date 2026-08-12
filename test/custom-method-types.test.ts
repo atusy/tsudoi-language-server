@@ -9,6 +9,13 @@ applySuiteDeadline();
  * at its own probe: the claim is about what tsc accepts, and a probe that had to
  * build a real session would be measuring the construction too.
  *
+ * WHAT THIS FILE IS AND WHAT test/published-artifacts.test.ts IS, since both
+ * grade this surface and neither is the other's second opinion: this one resolves
+ * `./src/types.ts` through a symlink and asks what the two handler types RESOLVE
+ * TO, by identity, which is the reading a perturbation record can re-run cheaply.
+ * That one installs a tarball and asks what a STRANGER may write against what
+ * ships, which is where the refusals an author meets are graded.
+ *
  * EVERY NAME IS IMPORTED INTO EVERY PROBE, unused ones included, so that a probe
  * asserting a FAILURE cannot pass because a name it never imported was missing --
  * that failure reads TS2304, and the refusals below assert a diagnostic code.
@@ -18,10 +25,10 @@ function typesProbe(body: string): Record<string, string> {
     "probe.ts": [
       "import type {",
       "  BaseRequestContext,",
-      "  CustomMethodEntry,",
-      "  CustomMethodHandler,",
       "  CustomMethodMap,",
-      "  NotificationGate,",
+      "  CustomNotificationHandler,",
+      "  CustomRequestHandler,",
+      "  NotificationContext,",
       "  Tsudoi,",
       "  TsudoiConfig,",
       '} from "./src/types.ts";',
@@ -38,35 +45,28 @@ function typesProbe(body: string): Record<string, string> {
 /**
  * TSC'S OWN INTERNAL IDENTITY CHECK, spliced from test/initialize-handler-types
  * .test.ts's copy of it and for the same reason: MUTUAL ASSIGNABILITY IS EXACTLY
- * WHAT MAKES THIS ITEM'S TWO KNOWN MISTAKES SILENT. The notification context is
- * the SUPERTYPE of the request one, so every arm below written as an assignment
- * passes with the arms swapped and with the conditional written on the context
- * type.
+ * WHAT MAKES THIS SURFACE'S KNOWN MISTAKES SILENT. The notification context is
+ * the SUPERTYPE of the request one, so an arm written as an assignment passes
+ * with the two contexts unified -- which is one of the three collapses this
+ * surface was chosen over.
  */
 const identical = [
   "type Identical<A, B> = (<T>() => T extends A ? 1 : 2) extends",
   "  (<T>() => T extends B ? 1 : 2) ? true : false;",
 ].join("\n");
 
-/** What a handler of one kind is handed, and what it owes back. */
-const resolved = [
-  'type Context<K extends "request" | "notification"> = Parameters<CustomMethodHandler<K>>[0];',
-  'type Answer<K extends "request" | "notification"> = ReturnType<CustomMethodHandler<K>>;',
-].join("\n");
-
 /**
- * THE REQUEST ARM, BOTH HALVES IN ONE PROBE BECAUSE THEY FAIL TOGETHER: every
- * inversion recorded against this type moved the context and the return in step,
- * so splitting them would buy two reds where the fault is one.
+ * THE REQUEST ARM, BOTH HALVES IN ONE PROBE BECAUSE THEY ARE ONE FAULT: the
+ * context and the return are what tell the two handler names apart, and a
+ * collapse of either makes a handler of one kind satisfy the other.
  */
 test("a request handler is handed the request context and owes a result wrapper", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
         identical,
-        resolved,
-        'const context: Identical<Context<"request">, BaseRequestContext> = true;',
-        'const answer: Identical<Answer<"request">, Promise<{ result: unknown }>> = true;',
+        "const context: Identical<Parameters<CustomRequestHandler>[0], BaseRequestContext> = true;",
+        "const answer: Identical<ReturnType<CustomRequestHandler>, Promise<{ result: unknown }>> = true;",
         "void context;",
         "void answer;",
       ].join("\n"),
@@ -78,19 +78,18 @@ test("a request handler is handed the request context and owes a result wrapper"
 
 /**
  * THE NOTIFICATION ARM. `{ readonly tsudoi: Tsudoi }` IS WRITTEN OUT RATHER THAN
- * NAMED, and that is the criterion's other half showing through: the type a
- * notification handler is handed is not exported, so a probe cannot name it and
- * has to spell its members. A member added to it reddens here, which is the
- * price of the surface staying closed.
+ * NAMED, though `NotificationContext` is now a name a probe could use: spelling
+ * the members is what makes a member ADDED to the published context redden here,
+ * where naming the type would say only that the handler still takes whatever that
+ * type became.
  */
 test("a notification handler is handed the session alone and owes nothing back", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
         identical,
-        resolved,
-        'const context: Identical<Context<"notification">, { readonly tsudoi: Tsudoi }> = true;',
-        'const answer: Identical<Answer<"notification">, Promise<void>> = true;',
+        "const context: Identical<Parameters<CustomNotificationHandler>[0], { readonly tsudoi: Tsudoi }> = true;",
+        "const answer: Identical<ReturnType<CustomNotificationHandler>, Promise<void>> = true;",
         "void context;",
         "void answer;",
       ].join("\n"),
@@ -101,9 +100,9 @@ test("a notification handler is handed the session alone and owes nothing back",
 });
 
 /**
- * THE ARM THE TWO ABOVE CANNOT BE, and the one the whole criterion rests on: the
+ * THE ARM THE TWO ABOVE CANNOT BE, and the one the whole surface rests on: the
  * two contexts are MUTUALLY ASSIGNABLE -- the request one merely adds `signal` --
- * so a conditional that resolved BOTH kinds to the same type would satisfy every
+ * so a surface that handed BOTH kinds the same context would satisfy every
  * assignment anyone could write. This says the two are told apart.
  */
 test("the two kinds are handed different contexts, where assignability cannot tell", async () => {
@@ -111,8 +110,7 @@ test("the two kinds are handed different contexts, where assignability cannot te
     typesProbe(
       [
         identical,
-        resolved,
-        'const distinct: Identical<Context<"notification">, Context<"request">> = false;',
+        "const distinct: Identical<Parameters<CustomNotificationHandler>[0], Parameters<CustomRequestHandler>[0]> = false;",
         "void distinct;",
       ].join("\n"),
     ),
@@ -122,16 +120,16 @@ test("the two kinds are handed different contexts, where assignability cannot te
 });
 
 /**
- * WHAT THE CONTEXT COSTS AN AUTHOR AT RUN TIME, said by the compiler instead: a
- * notification is not a request, so there is no cancellation to observe and
- * reading one is refused in the author's own file rather than answered
- * `undefined`.
+ * WHAT THE SPLIT CONTEXT COSTS AN AUTHOR AT RUN TIME, said by the compiler
+ * instead: a notification is not a request, so there is no cancellation to
+ * observe and reading one is refused in the author's own file rather than
+ * answered `undefined`.
  */
 test("cancellation is not reachable from a notification handler's context", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
-        'const handler: CustomMethodHandler<"notification"> = (context) => {',
+        "const handler: CustomNotificationHandler = (context: NotificationContext) => {",
         "  void context.signal;",
         "  return Promise.resolve();",
         "};",
@@ -146,37 +144,29 @@ test("cancellation is not reachable from a notification handler's context", asyn
 });
 
 /**
- * THE DISCIPLINE `RequestContext`'s DOCBLOCK ALREADY STATES -- nothing an author
- * writes selects the shape they are handed -- CARRIED ONTO A METHOD TSUDOI NEVER
- * ENUMERATED. Both handlers are written INLINE, naming no context type, which is
- * what the unpublished notification context makes mandatory rather than merely
- * idiomatic: there is no name to annotate with.
+ * THE FORM AN AUTHOR WRITES, AND THE ANNOTATION IS THE DECLARATION: a custom
+ * method's name says nothing about whether a client sends it as a request or as a
+ * notification, so what the author annotates is what says which one they meant.
  *
  * IT READS BOTH CONTEXTS AND BOTH PARAMS, so a resolution that handed over
  * `unknown` or `never` would be refused here rather than passing for want of a
  * use.
  */
-test("a handler of either kind compiles inline, with the author naming no context type", async () => {
+test("a handler of either kind compiles in the map, with the author annotating the context", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
         "const config: TsudoiConfig = {",
         "  customMethod: {",
-        '    "textDocument/didFocus": {',
-        '      kind: "request",',
-        "      handler: async (context, params) => {",
-        "        void context.signal;",
-        "        void params;",
-        "        return { result: context.tsudoi.rootUri };",
-        "      },",
+        '    "textDocument/didFocus": (context: BaseRequestContext, params: unknown) => {',
+        "      void context.signal;",
+        "      void params;",
+        "      return Promise.resolve({ result: context.tsudoi.rootUri });",
         "    },",
-        '    "textDocument/didBlur": {',
-        '      kind: "notification",',
-        '      gate: "lifecycle",',
-        "      handler: async (context, params) => {",
-        "        void params;",
-        "        void context.tsudoi.documents;",
-        "      },",
+        '    "textDocument/didBlur": (context: NotificationContext, params: unknown) => {',
+        "      void params;",
+        "      void context.tsudoi.documents;",
+        "      return Promise.resolve();",
         "    },",
         "  },",
         "};",
@@ -189,29 +179,22 @@ test("a handler of either kind compiles inline, with the author naming no contex
 });
 
 /**
- * WHAT MAKES THIS FORECLOSURE RATHER THAN DETECTION, in the words
- * test/notifications.test.ts uses for the same claim one door along: the DoD's
- * own `tsc --noEmit` can only say that what IS written compiles. That a
- * notification declared WITHOUT deciding its gate does not compile is a claim
- * about a config this repository will never contain, so it is asserted against a
- * throwaway project.
+ * THE COST THE ANNOTATION IS PAID FOR, PINNED RATHER THAN LEFT TO BE DISCOVERED
+ * BY WHOEVER WRITES THE FIRST BARE ARROW: TypeScript will not infer a parameter
+ * from a union of signatures whose parameters disagree, so an unannotated handler
+ * is TS7006 and not a handler tsudoi typed for you.
  *
- * THE HAZARD IT BUYS AGAINST IS NOT A MISSING FIELD, IT IS A SILENT DEFAULT: a
- * gate supplied on the config side for an author who wrote none is a handler
- * running in every lifecycle state -- a `didFocus` hook firing before the
- * handshake, against a session whose documents are empty.
+ * WHAT IT WOULD TAKE TO MAKE THIS GREEN, which is what the arm is really about:
+ * one context for both kinds, which restores inference and loses the axis that
+ * keeps `signal` out of a notification handler. This arm going red is that trade
+ * having been made.
  */
-test("a custom notification that decides no gate does not type-check, and the diagnostic names gate", async () => {
+test("a bare arrow in the map is refused, the parameter having no type to infer from", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
         "const config: TsudoiConfig = {",
-        "  customMethod: {",
-        '    "textDocument/didBlur": {',
-        '      kind: "notification",',
-        "      handler: () => Promise.resolve(),",
-        "    },",
-        "  },",
+        '  customMethod: { "textDocument/didFocus": (context, params) => Promise.resolve({ result: [context, params] }) },',
         "};",
         "void config;",
       ].join("\n"),
@@ -219,46 +202,19 @@ test("a custom notification that decides no gate does not type-check, and the di
   );
 
   expect(result.code).toBe(1);
-  expect(result.output).toContain("gate");
-});
-
-/**
- * AND A REQUEST IS NOT ASKED FOR ONE, which is the direction the arm above cannot
- * supply: a probe harness that refused every entry would satisfy it. A request
- * has a RESPONSE to carry a refusal, so the lifecycle answers it rather than
- * dropping it, and there is nothing for an author to decide.
- */
-test("a custom request is not asked to decide a gate", async () => {
-  const result = await typeCheckProbe(
-    typesProbe(
-      [
-        "const config: TsudoiConfig = {",
-        "  customMethod: {",
-        '    "textDocument/didFocus": {',
-        '      kind: "request",',
-        "      handler: () => Promise.resolve({ result: null }),",
-        "    },",
-        "  },",
-        "};",
-        "void config;",
-      ].join("\n"),
-    ),
-  );
-
-  expect(`exit ${String(result.code)}\n${result.output}`).toBe("exit 0\n");
+  expect(result.output).toContain("TS7006");
 });
 
 /**
  * THE COLLISION, GRADED ON THE COMPILER'S TEXT AND NOT ON ITS EXIT CODE, which is
- * the whole distance this arm travels. MEASURED under this entry shape, the
- * spelling a reader reaches for first -- an optional `never` sentinel -- IS
- * refused and reads `not assignable to type 'undefined'`: it names neither the
- * method it is about nor where the handler belongs, so an author reads it as a
- * mistake inside their own entry. A sentinel that is a SENTENCE prints in full.
+ * the whole distance this arm travels. The spelling a reader reaches for first --
+ * an optional `never` sentinel -- IS refused and reads `not assignable to type
+ * 'undefined'`: it names neither the method it is about nor where the handler
+ * belongs, so an author reads it as a mistake inside their own handler. A
+ * sentinel that is a SENTENCE prints in full.
  *
- * BOTH FRAGMENTS ARE ASSERTED. Being told they are wrong without being told
- * where the handler goes leaves an author exactly where the `never` spelling left
- * them.
+ * BOTH FRAGMENTS ARE ASSERTED. Being told they are wrong without being told where
+ * the handler goes leaves an author exactly where the `never` spelling left them.
  */
 test("a name tsudoi already serves is refused by a message naming the method and where it belongs", async () => {
   const result = await typeCheckProbe(
@@ -266,10 +222,8 @@ test("a name tsudoi already serves is refused by a message naming the method and
       [
         "const config: TsudoiConfig = {",
         "  customMethod: {",
-        '    "textDocument/hover": {',
-        '      kind: "request",',
-        "      handler: () => Promise.resolve({ result: null }),",
-        "    },",
+        '    "textDocument/hover": (_context: BaseRequestContext, _params: unknown) =>',
+        "      Promise.resolve({ result: null }),",
         "  },",
         "};",
         "void config;",
@@ -288,17 +242,18 @@ test("a name tsudoi already serves is refused by a message naming the method and
  * request table plus `initialize`, and a built-in NOTIFICATION is in neither, so
  * `textDocument/didOpen` is accepted exactly as a name tsudoi never heard of is.
  *
- * WHAT IT DOES NOT CLAIM: that declaring one WORKS. Whether a handler can run
- * beside a built-in is not decided here, and this arm says only that the type
- * does not foreclose it.
+ * WHAT IT DOES NOT CLAIM: that declaring one WORKS. Taking a built-in
+ * notification's name displaces the handler that fills the document store, which
+ * is measured and disclosed at `CustomMethodMap` rather than armed here.
  */
 test("a name tsudoi never enumerated compiles, and so does a built-in notification's", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
-        'const entry: CustomMethodEntry = { kind: "request", handler: () => Promise.resolve({ result: null }) };',
+        "const handler: CustomNotificationHandler = (_context: NotificationContext, _params: unknown) =>",
+        "  Promise.resolve();",
         "const config: TsudoiConfig = {",
-        '  customMethod: { "textDocument/didFocus": entry, "textDocument/didOpen": entry },',
+        '  customMethod: { "textDocument/didFocus": handler, "textDocument/didOpen": handler },',
         "};",
         "void config;",
       ].join("\n"),
@@ -309,22 +264,20 @@ test("a name tsudoi never enumerated compiles, and so does a built-in notificati
 });
 
 /**
- * THE ENTRY AND THE MAP ARE NAMES AN AUTHOR MAY WRITE, which is the half the
- * inline probe above cannot say: contextual typing covers a literal written in
- * place, and an author who factors their entries into a const of their own needs
- * something to annotate it with.
+ * THE MAP AND BOTH HANDLER NAMES ARE NAMES AN AUTHOR MAY WRITE, which is the half
+ * the in-place probes above cannot say: an author who factors a handler out into
+ * its own FILE has no contextual type to lean on, and that case is exactly why
+ * the notification context is published at all.
  */
-test("the entry and the map are writable names, and a map of entries is a config's customMethod", async () => {
+test("the map and both handler names are writable, and a map of handlers is a config's customMethod", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
-        'const gate: NotificationGate = "always";',
-        "const entry: CustomMethodEntry = {",
-        '  kind: "notification",',
-        "  gate,",
-        "  handler: () => Promise.resolve(),",
-        "};",
-        'const map: CustomMethodMap = { "textDocument/didFocus": entry };',
+        "const answers: CustomRequestHandler = (_context: BaseRequestContext, _params: unknown) =>",
+        "  Promise.resolve({ result: null });",
+        "const notes: CustomNotificationHandler = (_context: NotificationContext, _params: unknown) =>",
+        "  Promise.resolve();",
+        'const map: CustomMethodMap = { "textDocument/didFocus": answers, "textDocument/didBlur": notes };',
         "const config: TsudoiConfig = { customMethod: map };",
         "void config;",
       ].join("\n"),

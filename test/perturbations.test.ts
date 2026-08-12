@@ -1119,49 +1119,42 @@ const records: readonly PerturbationRecord[] = [
     ],
   },
   {
-    // THE CONDITIONAL DRAWN THE OTHER WAY ROUND, WHICH IS THE MISTAKE THIS TYPE
-    // HAS ALREADY BEEN MADE WITH TWICE, by opposite errors: once by writing the
-    // condition on the CONTEXT type -- the notification context being the
-    // supertype, so the request kind took the notification arm -- and once by
-    // pairing correct arms backwards. With the condition itself right, the
-    // swapped arms TYPE-CHECK and nothing objects, which is why the shape is
-    // recorded rather than the correction.
+    // THE RESULT WRAPPER TRADED FOR THE TOP TYPE IT REPLACED, which is one of the
+    // three collapses this surface was chosen OVER and the cheapest of them to
+    // write: `void` fits inside `unknown`, so a NOTIFICATION handler satisfies the
+    // request type and the two published names stop being mutually
+    // non-assignable. The same reading holds for `Promise<LSPAny>`, upstream
+    // mapping `LSPAny` to `any` today.
     //
-    // AND ASSIGNABILITY CANNOT SEE IT AT ALL: the two contexts are mutually
-    // assignable, the request one merely adding `signal`, so every arm here
-    // written as an assignment is green under this weakening. What reddens is the
-    // IDENTITY idiom.
+    // AND WHAT IT IS RECORDED AGAINST IS AN IDENTITY ARM, because assignability
+    // cannot see it: `Promise<{ result: unknown }>` IS assignable to
+    // `Promise<unknown>`, so every arm here written as an assignment stays green
+    // under this weakening.
     arm: {
       file: "test/custom-method-types.test.ts",
       name: "a request handler is handed the request context and owes a result wrapper",
     },
     weakening: {
       file: "packages/tsudoi-language-server/src/types.ts",
-      from: `export type CustomMethodHandler<K extends "request" | "notification"> = (
-  context: K extends "request" ? BaseRequestContext : BaseMethodContext,
+      from: `export type CustomRequestHandler = (
+  context: RequestContext,
   params: unknown,
-) => K extends "request" ? Promise<{ result: unknown }> : Promise<void>;`,
-      to: `export type CustomMethodHandler<K extends "request" | "notification"> = (
-  context: K extends "request" ? BaseMethodContext : BaseRequestContext,
+) => Promise<{ result: unknown }>;`,
+      to: `export type CustomRequestHandler = (
+  context: RequestContext,
   params: unknown,
-) => K extends "request" ? Promise<void> : Promise<{ result: unknown }>;`,
+) => Promise<unknown>;`,
     },
-    // MOST OF THE FILE, AND THE TWO SURVIVORS ARE THE READING WORTH KEEPING.
-    // `the two kinds are handed different contexts` stays GREEN because a SWAP
-    // preserves the distinction it asserts -- so the arm this item's whole
-    // criterion leans on is exactly the one that cannot catch this, which is why
-    // the identity arms are written per kind and not as one. The collision arm
-    // stays green too: its refusal is about the NAME and reaches the entry's
-    // handler at all.
-    alsoReddens: [
-      "a custom notification that decides no gate does not type-check, and the diagnostic names gate",
-      "a custom request is not asked to decide a gate",
-      "a handler of either kind compiles inline, with the author naming no context type",
-      "a name tsudoi never enumerated compiles, and so does a built-in notification's",
-      "a notification handler is handed the session alone and owes nothing back",
-      "cancellation is not reachable from a notification handler's context",
-      "the entry and the map are writable names, and a map of entries is a config's customMethod",
-    ],
+    // NO `redAt`, AND IT IS A READING RATHER THAN AN OMISSION: the arm's context
+    // half and its return half sit in ONE probe behind ONE assertion, because a
+    // collapse of either makes a handler of one kind satisfy the other -- so
+    // there is no second site in it for a red to fall at instead.
+    //
+    // ONE ARM AND NOT THE FILE, WHICH IS THE READING WORTH KEEPING: every arm
+    // about the CONTEXT survives this, the collapse being on the return alone, and
+    // so does the collision arm, whose refusal is about the NAME and never reaches
+    // a handler's own type at all.
+    alsoReddens: [],
   },
   {
     // ONE SESSION-WIDE FLAG WHERE THE BUDGET IS PER METHOD -- the same weakening

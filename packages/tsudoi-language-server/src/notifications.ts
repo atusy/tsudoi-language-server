@@ -9,7 +9,21 @@ import {
   type ProtocolConnection,
 } from "vscode-languageserver-protocol/node";
 import type { Lifecycle } from "./lifecycle.ts";
-import type { NotificationGate } from "./types.ts";
+
+/**
+ * WHEN a notification may reach its handler.
+ *
+ * `lifecycle` is what LSP asks for: outside the initialized window the message
+ * is dropped, SILENTLY, because a notification has no response through which a
+ * client could be told anything. `always` is for the messages a client is
+ * entitled to send at any moment -- `exit` is the only one today, and the reason
+ * it is one lives at its entry rather than here.
+ *
+ * HERE AND NOT IN src/types.ts, WHICH IS WHERE IT LIVED WHILE A CONFIG AUTHOR
+ * DECLARED ONE: a custom method's author declares no gate now, so publishing this
+ * would be a name on tsudoi's surface that nobody outside src/ can write.
+ */
+export type NotificationGate = "lifecycle" | "always";
 
 /**
  * One notification tsudoi answers: what it is, what to do with it, and WHEN it

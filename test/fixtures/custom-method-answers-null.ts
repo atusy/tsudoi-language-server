@@ -1,5 +1,8 @@
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
+import type {
+  RequestContext,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * A CUSTOM REQUEST WHOSE ANSWER IS `null`, AND THE ONLY THING THIS CONFIG
@@ -17,10 +20,8 @@ export const nullAnswering = "textDocument/didFocus";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     customMethod: {
-      "textDocument/didFocus": {
-        kind: "request",
-        handler: () => Promise.resolve({ result: null }),
-      },
+      "textDocument/didFocus": (_context: RequestContext, _params: unknown) =>
+        Promise.resolve({ result: null }),
     },
   });
 };

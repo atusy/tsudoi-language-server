@@ -122,7 +122,7 @@ function named(value: unknown): string {
  * is refused because tsudoi ADVERTISES a capability for it, and a custom method
  * advertises nothing at all.
  *
- * AND THIS IS THE ONLY REFUSAL SOME AUTHORS EVER SEE. The type refuses all four
+ * AND THIS IS THE ONLY REFUSAL SOME AUTHORS EVER SEE. The type refuses both
  * faults below at compile time, and this function is reached through a CAST FROM
  * `unknown`: an author who never annotated their config is told by nothing else.
  */
@@ -139,7 +139,7 @@ function validatedCustomMethod(
   if (typeof declared !== "object" || declared === null) {
     throw new ConfigError(
       `config ${absolutePath} declares customMethod as ${named(declared)} instead of an object of ` +
-        `entries keyed by the name each method travels under on the wire; a config that serves no ` +
+        `handlers keyed by the name each method travels under on the wire; a config that serves no ` +
         `method of its own omits customMethod entirely`,
     );
   }
@@ -152,28 +152,8 @@ function validatedCustomMethod(
           `tsudoi serves itself; declare its handler under methods, not customMethod`,
       );
     }
-    const entry = readOrRefuse(absolutePath, `${method} from customMethod`, () => {
-      return (declared as Record<string, unknown>)[method];
-    });
-    if (typeof entry !== "object" || entry === null) {
-      throw new ConfigError(
-        `config ${absolutePath} declares ${method} under customMethod as ${named(entry)} instead of ` +
-          `an entry; an entry declares its kind, its handler, and -- where the kind is notification ` +
-          `-- its gate`,
-      );
-    }
-    const kind = readOrRefuse(absolutePath, `the kind of ${method}`, () => {
-      return (entry as { kind?: unknown }).kind;
-    });
-    if (kind !== "request" && kind !== "notification") {
-      throw new ConfigError(
-        `config ${absolutePath} declares ${method} under customMethod with kind ${named(kind)} ` +
-          `instead of "request" or "notification"; a method name carries no kind of its own, and ` +
-          `tsudoi must know which of the two to register before any message arrives`,
-      );
-    }
     const handler = readOrRefuse(absolutePath, `the handler for ${method}`, () => {
-      return (entry as { handler?: unknown }).handler;
+      return (declared as Record<string, unknown>)[method];
     });
     if (typeof handler !== "function") {
       throw new ConfigError(
@@ -182,22 +162,7 @@ function validatedCustomMethod(
           `connection, so this would claim a name it cannot serve`,
       );
     }
-    if (kind === "request") {
-      validated[method] = { kind, handler };
-      continue;
-    }
-    const gate = readOrRefuse(absolutePath, `the gate of ${method}`, () => {
-      return (entry as { gate?: unknown }).gate;
-    });
-    if (gate !== "lifecycle" && gate !== "always") {
-      throw new ConfigError(
-        `config ${absolutePath} declares the notification ${method} under customMethod with gate ` +
-          `${named(gate)} instead of "lifecycle" or "always"; a notification has no response through ` +
-          `which a client could be told anything, so an entry that decides nothing would run in ` +
-          `every lifecycle state`,
-      );
-    }
-    validated[method] = { kind, gate, handler };
+    validated[method] = handler;
   }
   return validated as TsudoiConfig["customMethod"];
 }

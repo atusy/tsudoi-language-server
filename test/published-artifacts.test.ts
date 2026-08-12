@@ -249,71 +249,95 @@ test("every published protocol name type-checks from the installed copy", async 
 });
 
 /**
- * WHAT A CUSTOM METHOD'S AUTHOR MAY NAME, AND THE ONE THING THEY MAY NOT, in a
- * SINGLE type check -- which is the whole of why the two halves share a file
- * rather than an assertion each. An absence read on its own is satisfied by a
- * probe that resolved nothing at all; here the names that MUST arrive are in the
- * same import statement as the one that must not, so a subpath answering from
- * nowhere reddens on them.
- *
- * `BaseMethodContext` IS THE TYPE A CUSTOM NOTIFICATION HANDLER RECEIVES and it
- * is deliberately unpublished: `CustomMethodHandler` RESOLVES what a handler is
- * handed, so nothing an author writes selects it, and a name for a supertype
- * nobody spells would be surface tsudoi then owes an answer about. WHAT REVERSES
- * THIS is at the type itself -- an author factoring a handler into its own FILE
- * has nothing to annotate the parameter with.
+ * THE SURFACE A CUSTOM METHOD'S AUTHOR WRITES AGAINST, COMPILED FROM WHAT SHIPS.
  *
  * THROUGH THE INSTALLED CONSUMER AND NOT `typeCheckProbe`, and the two are not
- * interchangeable here at all: every other arm about these types resolves
- * `./src/types.ts` through a symlink, which is a file no stranger receives. What
- * decides whether a name is PUBLISHED is what `dist/types.d.ts` declares.
+ * interchangeable here at all: every arm in test/custom-method-types.test.ts
+ * resolves `./src/types.ts` through a symlink, which is a file no stranger
+ * receives. What decides whether a name is PUBLISHED is what `dist/types.d.ts`
+ * declares, and `NotificationContext` is published for one reason -- THE AUTHOR
+ * ANNOTATES WITH IT. A name cannot say whether a client sends it as a request or
+ * as a notification, so the annotation is what declares which was meant, and a
+ * type nobody can spell cannot be annotated with.
  *
- * THE DIAGNOSTIC CODE IS ASSERTED AND IT IS NOT THE ONE A READER EXPECTS.
- * MEASURED: TS2459, `declares 'BaseMethodContext' locally, but it is not
- * exported` -- and NOT TS2305 `has no exported member`. The supertype IS in
- * `dist/types.d.ts`, emitted there because `BaseRequestContext` extends it, so
- * what the artifact does is DECLARE AND WITHHOLD rather than omit. That is the
- * stronger reading of the property and the one to keep: TS2305 would also be
- * produced by a subpath that shipped no such declaration at all, which is a
- * different tree.
+ * A GREEN HERE IS NOT VACUOUS AND NEEDS NO ABSENCE BESIDE IT: a subpath answering
+ * from nowhere reddens on every name in the import, and the handlers below are
+ * written in the form an author types rather than merely declared, so a surface
+ * that shipped the names and refused the shape is a red.
  */
-test("a custom method's own names ship, and the context its notification handler receives does not", async () => {
+test("a custom method's own names ship, and the annotated form an author writes compiles", async () => {
   const result = await consumer.typeCheck({
-    // WRITTEN OUT RATHER THAN BUILT BY `importsAndUses`, because one name here is
-    // GENERIC: it is imported bare and used with an argument, which that helper's
-    // one-name-one-use form cannot say. Every name is still USED, for the reason
-    // that helper gives -- an unused import is erased and proves nothing.
     "custom-method-surface.ts": [
       "import type {",
-      "  BaseMethodContext,",
-      "  BaseRequestContext,",
-      "  CustomMethodEntry,",
-      "  CustomMethodHandler,",
       "  CustomMethodMap,",
-      "  NotificationGate,",
+      "  CustomNotificationHandler,",
+      "  CustomRequestHandler,",
+      "  NotificationContext,",
+      "  RequestContext,",
+      "  TsudoiConfig,",
       '} from "@atusy/tsudoi-language-server/types";',
-      "declare const useUnpublished: BaseMethodContext;",
-      "declare const useRequestContext: BaseRequestContext;",
-      "declare const useEntry: CustomMethodEntry;",
-      'declare const useHandler: CustomMethodHandler<"notification">;',
       "declare const useMap: CustomMethodMap;",
-      "declare const useGate: NotificationGate;",
+      "declare const useRequestHandler: CustomRequestHandler;",
+      "declare const useNotificationHandler: CustomNotificationHandler;",
+      "export const config: TsudoiConfig = {",
+      "  customMethod: {",
+      '    "textDocument/didFocus": (context: RequestContext, params: unknown) =>',
+      "      Promise.resolve({ result: { rootUri: context.tsudoi.rootUri, params } }),",
+      '    "tsudoi/ping": (context: NotificationContext, params: unknown) =>',
+      "      Promise.resolve(void [context.tsudoi.documents, params]),",
+      "  },",
+      "};",
+      "export const named = [useMap, useRequestHandler, useNotificationHandler];",
       "",
     ].join("\n"),
   });
 
-  expect(result.code).not.toBe(0);
-  expect(result.output).toContain("TS2459");
-  expect(result.output).toContain("BaseMethodContext");
-  for (const published of [
-    "BaseRequestContext",
-    "CustomMethodEntry",
-    "CustomMethodHandler",
-    "CustomMethodMap",
-    "NotificationGate",
-  ]) {
-    expect(result.output).not.toContain(published);
-  }
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
+});
+
+/**
+ * THE TWO AXES THAT CLOSE, EACH AS A REFUSAL THAT MUST STAY SATISFIED -- and an
+ * unsatisfied `@ts-expect-error` is TS2578, so this arm reddens when a refusal
+ * STOPS refusing, which is the direction no positive probe can watch.
+ *
+ * WHY THIS SPELLING WAS CHOSEN OVER THE THREE THAT PRECEDED IT, each of which
+ * this arm is the negative control for: unifying the two contexts loses the
+ * signal axis, and returning `Promise<unknown>` or `Promise<LSPAny>` in place of
+ * the wrapper each makes a notification handler SATISFY the request type, `void`
+ * fitting inside a top type -- upstream maps `LSPAny` to `any` today, which is
+ * why that one is named rather than assumed.
+ *
+ * WHAT EACH COLLAPSE REDDENS, MEASURED RATHER THAN DIVIDED EVENLY: the two
+ * return-type collapses redden the notification-as-request directive, and
+ * unifying the contexts reddens the `signal` directive ALONE -- the
+ * request-as-notification directive stays satisfied under it, the wrapper still
+ * refusing `Promise<void>`, so no single directive here grades all three.
+ */
+test("the two custom handler names are mutually non-assignable, and neither context is the other", async () => {
+  const result = await consumer.typeCheck({
+    "custom-method-refusals.ts": [
+      "import type {",
+      "  CustomNotificationHandler,",
+      "  CustomRequestHandler,",
+      "  NotificationContext,",
+      "  RequestContext,",
+      '} from "@atusy/tsudoi-language-server/types";',
+      "// @ts-expect-error a notification handler answers nothing, and a request is answered",
+      "export const asRequest: CustomRequestHandler = (_context: NotificationContext, _params: unknown) =>",
+      "  Promise.resolve();",
+      "// @ts-expect-error a request handler answers, and a notification has no response to carry it",
+      "export const asNotification: CustomNotificationHandler = (_context: RequestContext, _params: unknown) =>",
+      "  Promise.resolve({ result: null });",
+      "export const readsSignal = (context: NotificationContext): unknown =>",
+      "  // @ts-expect-error a notification has no request to cancel, so its context carries no signal",
+      "  context.signal;",
+      "",
+    ].join("\n"),
+  });
+
+  expect(result.output).toBe("");
+  expect(result.code).toBe(0);
 });
 
 /**

@@ -32,7 +32,6 @@ import type {
   ConfigMethod,
   Method,
   MethodMap,
-  NotificationGate,
   RequestContext,
   Tsudoi,
   TsudoiConfig,
@@ -449,22 +448,24 @@ export function registerMethods(
 }
 
 /**
- * Every custom method the config declared, with its per-kind types gone -- the
- * same erasure the table takes, for the same reason: each entry's own types are
- * checked where the entry is WRITTEN, which for these is the author's file.
+ * Every custom method the config declared, with the two handler types collapsed
+ * into one -- the same erasure the table takes, for the same reason: a handler's
+ * own types are checked where it is WRITTEN, which for these is the author's
+ * file.
+ *
+ * AND THE ERASURE IS WHAT THE RUNTIME ACTUALLY KNOWS. Which of the two an author
+ * annotated cannot be read off the value, and nothing here needs it: the name is
+ * registered on both sides, so what a handler answered is judged against the form
+ * the message ARRIVED in rather than against the form it was written for.
  */
-interface ErasedCustomEntry {
-  readonly kind: "request" | "notification";
-  readonly gate?: NotificationGate;
-  readonly handler: (context: unknown, params: unknown) => Promise<unknown>;
-}
+type ErasedCustomHandler = (context: unknown, params: unknown) => Promise<unknown>;
 
 function erasedCustomEntries(
   config: TsudoiConfig,
-): readonly (readonly [string, ErasedCustomEntry])[] {
+): readonly (readonly [string, ErasedCustomHandler])[] {
   return Object.entries(config.customMethod ?? {}) as unknown as readonly (readonly [
     string,
-    ErasedCustomEntry,
+    ErasedCustomHandler,
   ])[];
 }
 
@@ -495,14 +496,21 @@ export function customNotifications(
   // The same reading the table's own token report records one screen up.
   const reported = new Set<string>();
   const entries: CustomNotificationEntry[] = [];
-  for (const [method, entry] of erasedCustomEntries(config)) {
+  for (const [method, handler] of erasedCustomEntries(config)) {
     entries.push({
       method,
-      gate: entry.gate ?? "lifecycle",
+      // TSUDOI'S RULING AND NOT THE AUTHOR'S, which is what the gate stopped
+      // being when a custom method became a bare function: a notification
+      // outside the initialized window is dropped exactly as a built-in one is.
+      // `always` here instead would run a config author's handler before the
+      // handshake, against a session whose documents are empty and whose roots
+      // are null -- the state the gate exists to prevent, and the perturbation
+      // this line is the site of.
+      gate: "lifecycle",
       run: async (params: unknown): Promise<void> => {
         let answered: unknown;
         try {
-          answered = await entry.handler({ tsudoi }, params);
+          answered = await handler({ tsudoi }, params);
         } catch (error) {
           // CAUGHT HERE RATHER THAN LET THROUGH, and it is the report's cadence
           // that forces it: MEASURED, upstream's own notification handling wraps
@@ -606,7 +614,7 @@ function registerCustomRequests(
   tsudoi: Tsudoi,
   requestRejection: RequestRejection,
 ): void {
-  for (const [method, entry] of erasedCustomEntries(config)) {
+  for (const [method, handler] of erasedCustomEntries(config)) {
     connection.onRequest(method, async (...args: readonly unknown[]): Promise<unknown> => {
       const rejection = requestRejection();
       if (rejection !== undefined) {
@@ -614,7 +622,7 @@ function registerCustomRequests(
       }
       const context = requestContext(tsudoi, args[args.length - 1] as CancellationToken);
       return answerUnlessCancelled(method, context.signal, async () => {
-        const answered: unknown = await entry.handler(context, customParams(args));
+        const answered: unknown = await handler(context, customParams(args));
         // A HANDLER FAILURE AND NOT A NULL ANSWER, which is the whole of what the
         // wrapper buys: a typed row says `Hover | null` and tells the two apart by
         // its own type, and `unknown` cannot. A missing case silently becoming
