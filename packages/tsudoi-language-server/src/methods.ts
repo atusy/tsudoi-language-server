@@ -458,6 +458,17 @@ export function registerMethods(
           );
         }
         if (entry.queue !== undefined && documentQueue !== undefined) {
+          const textDocument = (params as { textDocument?: unknown }).textDocument;
+          if (
+            typeof textDocument !== "object" ||
+            textDocument === null ||
+            typeof (textDocument as { uri?: unknown }).uri !== "string"
+          ) {
+            throw new ResponseError(
+              ErrorCodes.InvalidParams,
+              `${method} params must contain textDocument.uri as a string`,
+            );
+          }
           const pending = documentQueue.wait(entry.queue(params));
           if (pending !== undefined) {
             await waitUnlessCancelled(pending, cancellation);

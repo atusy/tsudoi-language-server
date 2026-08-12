@@ -50,6 +50,20 @@ function named(runtime: { name: string }, what: string): string {
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
+    test("malformed document params are refused before selecting a queue", async () => {
+      const session = LspSession.start(runtime, fixture("document-lifecycle-request-barrier.ts"));
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+
+        const refusal = await session.requestError("textDocument/hover", {});
+
+        expect(refusal.code).toBe(ErrorCodes.InvalidParams);
+        expect(refusal.message).toContain("textDocument.uri");
+      } finally {
+        session.dispose();
+      }
+    });
+
     test("a cancelled document request does not remain parked behind a lifecycle hook", async () => {
       const session = LspSession.start(runtime, fixture("document-lifecycle-request-barrier.ts"));
       try {
