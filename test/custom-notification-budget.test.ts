@@ -23,6 +23,24 @@ await Promise.all(runtimes.map(requireRuntime));
  */
 const rounds = 3;
 
+/**
+ * EVERY ARM HERE CARRIES ITS RUNTIME IN ITS OWN NAME, WHICH MOST SIBLING FILES DO
+ * NOT AND WHICH IS NOT A STYLE. MEASURED at bun 1.3.13 on this very file: a
+ * `<testcase>` in bun's JUnit report carries the `describe` in `classname` and
+ * ONLY the `test()` string in `name`, and the re-running registry builds a run
+ * into a Map KEYED BY `name`. So two arms differing only by their describe
+ * collapse to ONE result, last write winning, and a record naming such an arm
+ * reports whichever runtime bun wrote last while saying nothing about the other.
+ *
+ * IT IS DONE HERE BECAUSE THIS FILE IS POINTED AT BY A RECORD, which is the
+ * condition test/code-action.test.ts states for its own copy of this line: every
+ * other file in this shape is graded by no record, so the collapse costs them
+ * nothing today.
+ */
+function named(runtime: { name: string }, what: string): string {
+  return `${what} (${runtime.name})`;
+}
+
 /** Every `tsudoi: ` line the session has written, in arrival order. */
 function reportedLines(session: LspSession): readonly string[] {
   return session.stderr.split("\n").filter((line) => line.startsWith("tsudoi: "));
@@ -70,21 +88,27 @@ for (const runtime of runtimes) {
      * caught by the awaiting frame rather than reaching either runtime's
      * unhandled-rejection path.
      */
-    test("a handler that answered and one that rejected are each named on stderr exactly once", async () => {
-      const session = LspSession.start(runtime, fixture("custom-notification-budget.ts"));
-      try {
-        await session.request<InitializeResult>("initialize", initializeParams);
+    test(
+      named(
+        runtime,
+        "a handler that answered and one that rejected are each named on stderr exactly once",
+      ),
+      async () => {
+        const session = LspSession.start(runtime, fixture("custom-notification-budget.ts"));
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
 
-        await driveBoth(session);
+          await driveBoth(session);
 
-        const lines = reportedLines(session);
-        expect(lines.filter((line) => line.includes(answering))).toHaveLength(1);
-        expect(lines.filter((line) => line.includes(rejecting))).toHaveLength(1);
-        expect(lines).toHaveLength(2);
-      } finally {
-        session.dispose();
-      }
-    });
+          const lines = reportedLines(session);
+          expect(lines.filter((line) => line.includes(answering))).toHaveLength(1);
+          expect(lines.filter((line) => line.includes(rejecting))).toHaveLength(1);
+          expect(lines).toHaveLength(2);
+        } finally {
+          session.dispose();
+        }
+      },
+    );
 
     /**
      * THE AUTHOR'S OWN WORDS REACH THEM, which the count above cannot say: a
@@ -95,18 +119,21 @@ for (const runtime of runtimes) {
      * Japanese arm: an ASCII message survives a reader that decodes each pipe
      * chunk on its own, and this does not.
      */
-    test("the reason a notification handler rejected reaches the author's stderr", async () => {
-      const session = LspSession.start(runtime, fixture("custom-notification-budget.ts"));
-      try {
-        await session.request<InitializeResult>("initialize", initializeParams);
+    test(
+      named(runtime, "the reason a notification handler rejected reaches the author's stderr"),
+      async () => {
+        const session = LspSession.start(runtime, fixture("custom-notification-budget.ts"));
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
 
-        await driveBoth(session);
+          await driveBoth(session);
 
-        expect(session.stderr).toContain(rejectionMessage);
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(session.stderr).toContain(rejectionMessage);
+        } finally {
+          session.dispose();
+        }
+      },
+    );
 
     /**
      * THE SESSION IS STILL SERVING AFTERWARDS, and the count is what says every
@@ -118,19 +145,25 @@ for (const runtime of runtimes) {
      * failure wearing a diagnostic -- and a client would see a protocol error,
      * not a message.
      */
-    test("the session answers a request after both faults, with nothing but LSP on stdout", async () => {
-      const session = LspSession.start(runtime, fixture("custom-notification-budget.ts"));
-      try {
-        await session.request<InitializeResult>("initialize", initializeParams);
+    test(
+      named(
+        runtime,
+        "the session answers a request after both faults, with nothing but LSP on stdout",
+      ),
+      async () => {
+        const session = LspSession.start(runtime, fixture("custom-notification-budget.ts"));
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
 
-        await driveBoth(session);
-        const ran = await session.request<Record<string, number>>(counter, {});
+          await driveBoth(session);
+          const ran = await session.request<Record<string, number>>(counter, {});
 
-        expect(ran).toEqual({ [answering]: rounds, [rejecting]: rounds });
-        expect(session.unframedStdoutBytes).toBe(0);
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(ran).toEqual({ [answering]: rounds, [rejecting]: rounds });
+          expect(session.unframedStdoutBytes).toBe(0);
+        } finally {
+          session.dispose();
+        }
+      },
+    );
   });
 }

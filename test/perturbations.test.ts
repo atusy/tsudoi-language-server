@@ -1118,6 +1118,87 @@ const records: readonly PerturbationRecord[] = [
       "a refused token is reported once for each stream-driven row, naming that row (deno)",
     ],
   },
+  {
+    // THE CONDITIONAL DRAWN THE OTHER WAY ROUND, WHICH IS THE MISTAKE THIS TYPE
+    // HAS ALREADY BEEN MADE WITH TWICE, by opposite errors: once by writing the
+    // condition on the CONTEXT type -- the notification context being the
+    // supertype, so the request kind took the notification arm -- and once by
+    // pairing correct arms backwards. With the condition itself right, the
+    // swapped arms TYPE-CHECK and nothing objects, which is why the shape is
+    // recorded rather than the correction.
+    //
+    // AND ASSIGNABILITY CANNOT SEE IT AT ALL: the two contexts are mutually
+    // assignable, the request one merely adding `signal`, so every arm here
+    // written as an assignment is green under this weakening. What reddens is the
+    // IDENTITY idiom.
+    arm: {
+      file: "test/custom-method-types.test.ts",
+      name: "a request handler is handed the request context and owes a result wrapper",
+    },
+    weakening: {
+      file: "packages/tsudoi-language-server/src/types.ts",
+      from: `export type CustomMethodHandler<K extends "request" | "notification"> = (
+  context: K extends "request" ? BaseRequestContext : BaseMethodContext,
+  params: unknown,
+) => K extends "request" ? Promise<{ result: unknown }> : Promise<void>;`,
+      to: `export type CustomMethodHandler<K extends "request" | "notification"> = (
+  context: K extends "request" ? BaseMethodContext : BaseRequestContext,
+  params: unknown,
+) => K extends "request" ? Promise<void> : Promise<{ result: unknown }>;`,
+    },
+    // MOST OF THE FILE, AND THE TWO SURVIVORS ARE THE READING WORTH KEEPING.
+    // `the two kinds are handed different contexts` stays GREEN because a SWAP
+    // preserves the distinction it asserts -- so the arm this item's whole
+    // criterion leans on is exactly the one that cannot catch this, which is why
+    // the identity arms are written per kind and not as one. The collision arm
+    // stays green too: its refusal is about the NAME and reaches the entry's
+    // handler at all.
+    alsoReddens: [
+      "a custom notification that decides no gate does not type-check, and the diagnostic names gate",
+      "a custom request is not asked to decide a gate",
+      "a handler of either kind compiles inline, with the author naming no context type",
+      "a name tsudoi never enumerated compiles, and so does a built-in notification's",
+      "a notification handler is handed the session alone and owes nothing back",
+      "cancellation is not reachable from a notification handler's context",
+      "the entry and the map are writable names, and a map of entries is a config's customMethod",
+    ],
+  },
+  {
+    // ONE SESSION-WIDE FLAG WHERE THE BUDGET IS PER METHOD -- the same weakening
+    // the record above the last one carries over the token report, applied to the
+    // report that is the ONLY enforcement a custom notification's contract has.
+    // It is recorded separately rather than treated as that one's second reading:
+    // that container is a `Set<Method>` over a table this repository enumerates,
+    // and this one is over names only a config knows, so the first report on any
+    // of them silences every other for good.
+    //
+    // NO `redAt`, AND THAT IS A READING RATHER THAN AN OMISSION: the arms in that
+    // file fence on BOTH markers arriving before they count, so losing the second
+    // method's line is a wait that never returns rather than an assertion that
+    // says no. The red is a timeout, its text is the harness's, and a record
+    // naming a site would be naming the harness.
+    arm: {
+      file: "test/custom-notification-budget.test.ts",
+      name: "a handler that answered and one that rejected are each named on stderr exactly once (bun)",
+    },
+    weakening: {
+      file: "packages/tsudoi-language-server/src/methods.ts",
+      from: "  if (reported.has(method)) {",
+      to: "  if (reported.size > 0) {",
+    },
+    // EVERY ARM IN THE FILE, ON BOTH RUNTIMES, because they share the drive that
+    // waits for both markers: the second method's line never arrives, so the wait
+    // is what fails rather than the count. A NARROWER ARM WAS AVAILABLE AND WAS
+    // NOT TAKEN -- dropping the wait makes `exactly one` a reading of a race
+    // instead.
+    alsoReddens: [
+      "a handler that answered and one that rejected are each named on stderr exactly once (deno)",
+      "the reason a notification handler rejected reaches the author's stderr (bun)",
+      "the reason a notification handler rejected reaches the author's stderr (deno)",
+      "the session answers a request after both faults, with nothing but LSP on stdout (bun)",
+      "the session answers a request after both faults, with nothing but LSP on stdout (deno)",
+    ],
+  },
 ];
 
 /**
