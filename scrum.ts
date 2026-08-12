@@ -158,6 +158,35 @@ const scrum: ScrumDashboard = {
       ],
     },
     {
+      id: "PBI-101",
+      story: {
+        role: "config author",
+        capability:
+          "register a handler for a method tsudoi does not define -- a real custom one like `textDocument/didFocus`, or a HOOK beside a built-in notification like `textDocument/didOpen` where tsudoi runs both",
+        benefit:
+          "the methods a config can answer stop being the ones tsudoi enumerated, and a hook no longer costs the author the document store by replacing the handler that fills it",
+      },
+      acceptance_criteria: [
+        {
+          criterion:
+            "PLACEHOLDER -- NOT REFINED. The surface is nearly settled (see the notes, which carry four measurements) and the SEMANTICS are not: the ORDER of the built-in against the hook, where a rejecting notification hook reports, and who supplies the notification GATE are three open rulings, and none of the three is obviously right.",
+          verification: "None. This criterion exists to keep the item out of Sprint Planning.",
+        },
+      ],
+      status: "draft",
+      notes: [
+        "MEASURED, AND IT REFUTES THE HANDLER TYPE AS FIRST DRAWN: `customMethodHandler<C> = C extends BaseNotificationContext ? Promise<void> : Promise<unknown>` TAKES THE NOTIFICATION ARM FOR BOTH KINDS. A notification context is the WIDER type -- it has fewer members -- so `BaseRequestContext` SATISFIES it and the conditional never reaches its second arm. Probe at `--strict`, exit 0 with `Eq<AsWritten<BaseRequestContext>, Promise<void>>` asserted TRUE, nothing objecting. THE DISCRIMINATION MUST NAME THE MEMBER THAT EXISTS ON ONLY ONE SIDE: `C extends BaseRequestContext ? Promise<unknown> : Promise<void>`, arms swapped, which the same probe confirms on both arms. THE SPELLING THAT READS CORRECTLY IS THE BROKEN ONE, which is why this is a note and not left to be discovered.",
+        "MEASURED: A NOTIFICATION CONTEXT THAT ADDS NOTHING IS THE SUPERTYPE, not a sibling of it. The strictest identity instrument in the tree -- the invariance trick in test/initialize-handler-types.test.ts -- reports an empty extension IDENTICAL to `BaseMethodContext`, while reporting `BaseRequestContext` DISTINCT from it. That second reading is the negative control: the instrument does discriminate, so the first is not vacuous. CONSEQUENCE FOR THIS ITEM: no test can defend a `BaseNotificationContext` that adds nothing, so either it carries a member the request context lacks, or the notification side takes the supertype directly and the name is not published.",
+        "MEASURED: THE TYPE-LEVEL COLLISION GUARD WORKS, AND IT DOES NOT COST THE HOOK CASE -- which is the reading that looks contradictory and is not. `Partial<Record<ConfigMethod, never>> & Record<string, Handler>` refuses `textDocument/hover` (exit 1) and accepts both `textDocument/didFocus` AND `textDocument/didOpen` (exit 0). The reason the hook survives is that `ConfigMethod` IS THE REQUEST TABLE PLUS `initialize`, and the built-in NOTIFICATIONS are not in it at all. SO THE STAKEHOLDER'S TWO OPTIONS ARE NOT A CHOICE: the type can forbid the colliding names outright, and the config-time warning is only needed for whatever the type is decided not to cover. RESIDUE, AND IT IS AUTHOR-FACING: the refusal arrives as TS2322 `not assignable to type 'undefined'`, which names neither the collision nor the rule -- a legible refusal is a criterion this item owes.",
+        "THE PREREQUISITE TIDY IS SMALL AND MEASURED NON-BREAKING, and it is what makes the two kinds expressible: extract the session half of `BaseRequestContext` into a NON-EXPORTED `BaseMethodContext { readonly tsudoi }`, leaving `BaseRequestContext extends` it with `signal` alone. MEASURED WITH IT IN THE TREE: full Definition of Done green -- 1208 pass / 0 fail, `tsc --noEmit` 0, oxfmt clean, workspaces silent. The hand-built context literals in both handler packages satisfy it UNCHANGED (inherited members count), and the `Identical<RequestContext, BaseRequestContext>` pin holds. Declaration emit was the one hazard worth probing, since each `prepack` emits `.d.ts`: exit 0, the non-exported supertype emitted into the file, NO TS4020. NOT EXPORTED, the stakeholder's ruling -- no author writes the name, so publishing it would widen tsudoi's surface for a supertype nobody spells.",
+        "WHAT THE TIDY PAYS FOR TODAY, so it is not carried as speculation: `BaseRequestContext`'s docblock ASSERTS the line between session and message in prose, and the extraction makes that line STRUCTURAL -- above it the session, below it the message. So the paragraph goes rather than being superseded, which is the direction this project's comment convention asks for.",
+        "THREE OPEN RULINGS, AND EACH IS A DECISION RATHER THAN A THING TO IMPLEMENT. (1) ORDER: a `didOpen` hook that runs BEFORE the store update reads `tsudoi.documents` without the document in it, and AFTER reads it with -- both defensible, silently different, and the author cannot tell which they got. (2) REJECTION: a notification has NO RESPONSE, which src/notifications.ts already states as the reason its gate drops messages silently -- so a rejecting hook has nowhere to report, and stderr, session death and a silent drop are three different products. (3) GATE: `NotificationEntry.gate` is REQUIRED WITH NO DEFAULT BY DESIGN, its docblock arguing that an entry deciding nothing must not type-check; a config author registering a custom notification supplies no gate, so defaulting one silently re-creates the convention that docblock refused.",
+        "AN ARCHITECTURAL CONSTRAINT THIS ITEM MUST ROUTE THROUGH RATHER THAN AROUND, named because the edit that breaks it is the obvious one: only src/notifications.ts may create a connection or register a notification -- `RequestOnlyConnection` removes `onNotification` from the type every other module sees, and .oxlintrc.json bans the connection factory by import name everywhere else. A `customMethod` surface that registers its own notifications from a new module UNDOES that foreclosure, and the lint entry's own comment records what was measured before it existed: an ungated `onNotification` beside the table ran green on every check with nothing objecting.",
+        "A SEAM TO SPLIT ON IF THIS PROVES TOO BIG, recorded so the split is not invented under pressure: the REAL custom method (`textDocument/didFocus` -- nothing built-in to order against, no capability advertised, tsudoi is the only handler) carries none of the three open rulings, while the HOOK beside a built-in carries all of them. The surface is shared; the semantics are not.",
+        "AND REGISTERING A CUSTOM METHOD ADVERTISES NOTHING, which is the expectation to set before an author reports it as a bug: `initialize` has no capability to claim for `textDocument/didFocus`, so no client sends one unless it already knew to.",
+      ],
+    },
+    {
       id: "PBI-99",
       story: {
         role: "config author",
