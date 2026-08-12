@@ -28,6 +28,8 @@ serializes the lifecycle for each document.
   same notification.
 - `didOpen`, `didChange`, and `didClose` for one document must run in arrival order because
   incremental changes depend on preceding document state.
+- A document-scoped request received after a lifecycle notification must not observe the document
+  store before that notification's queued built-in update.
 - Waiting work for one document should impose no promise dependency on another document.
 - A rejected operation must not permanently block later operations for the same document.
 - Completed document queues must not accumulate for the lifetime of the server.
@@ -58,6 +60,12 @@ notification for that URI does not start until the preceding task settles. A dif
 different queue and may run while the first hook is asynchronously waiting. CPU-bound work and
 work before a hook first yields still block the shared JavaScript event loop.
 
+Document-scoped requests such as hover and completion wait for the queue tail already admitted for
+their URI before reading the document store. This prevents a request dispatched after `didChange`
+from overtaking that queued change while an earlier hook is still pending. The queue is installed
+only when the config declares at least one document-lifecycle hook; without such a hook, built-in
+document updates retain their direct synchronous path.
+
 The custom view of the document store is consequently defined as:
 
 - `didOpen`: the opened document is present;
@@ -83,6 +91,9 @@ only if no newer tail for the same URI has replaced it.
 - A slow custom handler delays later lifecycle notifications for the same document.
 - The server owns a small amount of mutable scheduler state keyed by active document URI.
 - A custom handler that never settles prevents later lifecycle work for that document.
+- While a handler remains pending, later lifecycle notifications and their parameters are retained
+  without a fixed bound. Tsudoi defines no overflow or drop policy in this decision because either
+  would weaken the required FIFO document history.
 - CPU-bound custom work, or custom work before its first yield, can delay every document on the
   shared JavaScript event loop.
 
@@ -102,6 +113,8 @@ Automated tests must demonstrate all of the following:
 - lifecycle operations for different URIs can proceed independently;
 - a rejected lifecycle task does not poison its URI queue;
 - a close followed by a reopen cannot have its newer queue removed by the older task's cleanup.
+- a document-scoped request cannot overtake an earlier queued change for the same URI;
+- document built-ins remain synchronous when no document-lifecycle hook is configured.
 
 The implementation was confirmed on 2026-08-13 by the notification-router tests covering each
 item above and by the Bun and Deno protocol suites covering the real connection path.

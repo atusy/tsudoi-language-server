@@ -593,11 +593,20 @@ document URI. A slow hook delays later lifecycle notifications for that document
 incremental changes -- while another document has its own queue and carries no promise dependency
 on it. A hook that yields while waiting therefore lets another document continue, but CPU-bound
 work or work before the first yield still blocks the shared JavaScript event loop. A hook that
-never settles stops further lifecycle work for its document, a cost accepted to keep the document
-state ordered.
+never settles stops further lifecycle work for its document. While it is pending, later lifecycle
+notifications and their parameters can accumulate without a fixed bound; tsudoi neither drops nor
+coalesces them because doing so would change the document history.
+
+A document-scoped request received after queued lifecycle work for its URI waits for the current
+queue tail before its handler reads the store. Thus hover, completion, formatting, diagnostics, and
+code actions cannot overtake an earlier `didChange`. Tsudoi creates this scheduler only when the
+config declares a `didOpen`, `didChange`, or `didClose` hook, so document updates keep their direct
+synchronous path for configs without document-lifecycle hooks.
 
 `exit` is the exception and is refused under `customMethod`: its built-in handler terminates the
 process and cannot fulfill before any custom handler starts.
+`shutdown` is also reserved: it is the lifecycle request owned by tsudoi and cannot be replaced by
+a custom request handler.
 
 ## Cleanup in a handler
 
