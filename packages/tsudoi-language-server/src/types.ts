@@ -569,10 +569,22 @@ export interface ConfigMethodMap extends MethodMap {
 export type ConfigMethod = keyof ConfigMethodMap;
 
 /**
+ * WHAT EVERY HANDLER IS HANDED WHATEVER THE MESSAGE WAS: the SESSION, and
+ * nothing that belongs to one message.
+ *
+ * NOT EXPORTED, AND THE NAME IS NOT AN AUTHOR'S TO WRITE. What a handler
+ * receives is RESOLVED from the method it declares -- the discipline stated at
+ * `RequestContext` -- so publishing this would widen tsudoi's surface for a
+ * supertype nobody spells. The day an author factors a handler out into its own
+ * FILE they have no name to annotate the parameter with, contextual typing
+ * covering the inline case and not that one; that report is what reopens this.
+ */
+interface BaseMethodContext {
+  readonly tsudoi: Tsudoi;
+}
+
+/**
  * WHAT THIS ONE REQUEST IS, and nothing that outlives it -- WHATEVER THE METHOD.
- * The line between the members is the whole of what this type says: the SIGNAL is
- * about this message and dies with it, while `tsudoi` is the SERVER, the same
- * object every request is handed.
  *
  * A FIELD THAT DOES NOT CHANGE PER REQUEST DOES NOT BELONG HERE, and that is the
  * rule rather than a description of today's two members. The folder list, the
@@ -585,9 +597,8 @@ export type ConfigMethod = keyof ConfigMethodMap;
  * context below, so a handler reading it in the wrong place is refused in the
  * author's file rather than handed `undefined` at run time.
  */
-export interface BaseRequestContext {
+export interface BaseRequestContext extends BaseMethodContext {
   readonly signal: AbortSignal;
-  readonly tsudoi: Tsudoi;
 }
 
 /**
