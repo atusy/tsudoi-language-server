@@ -64,7 +64,8 @@ Document-scoped requests such as hover and completion wait for the queue tail al
 their URI before reading the document store. This prevents a request dispatched after `didChange`
 from overtaking that queued change while an earlier hook is still pending. The queue is installed
 only when the config declares at least one document-lifecycle hook; without such a hook, built-in
-document updates retain their direct synchronous path.
+document updates retain their direct synchronous path. Request cancellation races this wait and
+answers `RequestCancelled` without waiting for the hook or entering the config handler.
 
 The custom view of the document store is consequently defined as:
 
@@ -114,6 +115,7 @@ Automated tests must demonstrate all of the following:
 - a rejected lifecycle task does not poison its URI queue;
 - a close followed by a reopen cannot have its newer queue removed by the older task's cleanup.
 - a document-scoped request cannot overtake an earlier queued change for the same URI;
+- a cancelled document-scoped request does not remain parked behind a pending hook;
 - document built-ins remain synchronous when no document-lifecycle hook is configured.
 
 The implementation was confirmed on 2026-08-13 by the notification-router tests covering each

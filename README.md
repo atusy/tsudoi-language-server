@@ -599,9 +599,10 @@ coalesces them because doing so would change the document history.
 
 A document-scoped request received after queued lifecycle work for its URI waits for the current
 queue tail before its handler reads the store. Thus hover, completion, formatting, diagnostics, and
-code actions cannot overtake an earlier `didChange`. Tsudoi creates this scheduler only when the
-config declares a `didOpen`, `didChange`, or `didClose` hook, so document updates keep their direct
-synchronous path for configs without document-lifecycle hooks.
+code actions cannot overtake an earlier `didChange`. Cancelling the request ends this wait with
+`RequestCancelled`; it does not wait for the hook or enter the config handler. Tsudoi creates this
+scheduler only when the config declares a `didOpen`, `didChange`, or `didClose` hook, so document
+updates keep their direct synchronous path for configs without document-lifecycle hooks.
 
 `exit` is the exception and is refused under `customMethod`: its built-in handler terminates the
 process and cannot fulfill before any custom handler starts.
