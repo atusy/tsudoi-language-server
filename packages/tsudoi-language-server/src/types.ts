@@ -788,6 +788,8 @@ export type CustomNotificationHandler = (
  */
 export type CustomMethodMap = {
   [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethod`;
+} & {
+  exit?: "exit is a terminal notification whose built-in handler never returns to a custom hook";
 } & Record<string, CustomRequestHandler | CustomNotificationHandler>;
 
 export type TsudoiConfig = {

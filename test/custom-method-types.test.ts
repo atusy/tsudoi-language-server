@@ -263,6 +263,21 @@ test("a name tsudoi never enumerated compiles, and so does a built-in notificati
   expect(`exit ${String(result.code)}\n${result.output}`).toBe("exit 0\n");
 });
 
+test("exit is refused as a custom hook because its built-in never returns", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        "const handler: CustomNotificationHandler = () => Promise.resolve();",
+        "const config: TsudoiConfig = { customMethod: { exit: handler } };",
+        "void config;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("exit is a terminal notification");
+});
+
 /**
  * THE MAP AND BOTH HANDLER NAMES ARE NAMES AN AUTHOR MAY WRITE, which is the half
  * the in-place probes above cannot say: an author who factors a handler out into

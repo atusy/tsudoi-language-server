@@ -146,6 +146,12 @@ function validatedCustomMethod(
   const own = tsudoisOwnMethods();
   const validated: Record<string, unknown> = {};
   for (const method of Object.keys(declared)) {
+    if (method === "exit") {
+      throw new ConfigError(
+        `config ${absolutePath} declares exit under customMethod, but exit is a terminal ` +
+          `notification whose built-in handler terminates the process and never reaches a hook`,
+      );
+    }
     if (own.has(method)) {
       throw new ConfigError(
         `config ${absolutePath} declares ${method} under customMethod, and ${method} is a method ` +

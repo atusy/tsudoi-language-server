@@ -581,7 +581,8 @@ by nothing else at all.
 the loader either way, naming the method and telling you to declare it under `methods`. That is
 the request table plus `initialize`, and NOT the notifications tsudoi answers for itself.
 
-**A built-in notification's name is accepted as a hook.** `textDocument/didOpen` passes both
+**A non-terminal built-in notification's name is accepted as a hook.** `textDocument/didOpen`
+passes both
 refusals, but tsudoi registers one composed handler rather than letting the JSON-RPC layer's
 method-keyed assignment displace either side. The built-in operation fulfills first and your
 handler starts after it, so a `didOpen` hook sees the opened document, a `didChange` hook sees the
@@ -592,6 +593,9 @@ document URI. A slow hook delays later lifecycle notifications for that document
 incremental changes -- while another document has its own queue and continues independently. A
 hook that never settles therefore stops further lifecycle work for its document, a cost accepted
 to keep the document state ordered.
+
+`exit` is the exception and is refused under `customMethod`: its built-in handler terminates the
+process and cannot fulfill before any custom handler starts.
 
 ## Cleanup in a handler
 

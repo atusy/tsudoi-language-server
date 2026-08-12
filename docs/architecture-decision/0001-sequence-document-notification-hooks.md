@@ -22,7 +22,8 @@ serializes the lifecycle for each document.
 
 ## Decision Drivers
 
-- A custom notification with a built-in name must extend, not replace, tsudoi's behavior.
+- A custom notification with a non-terminal built-in name must extend, not replace, tsudoi's
+  behavior.
 - A custom handler must observe the document store after the built-in operation represented by the
   same notification.
 - `didOpen`, `didChange`, and `didClose` for one document must run in arrival order because
@@ -45,9 +46,11 @@ document lifecycle notifications by URI", because it preserves tsudoi's state, g
 stable post-notification view, and preserves incremental edit order without serializing unrelated
 documents.
 
-Tsudoi registers exactly one wire handler for a built-in notification name. That handler invokes
-the built-in operation first and invokes the custom handler only after the built-in operation has
-fulfilled. The handler's returned promise settles only after the custom handler settles.
+Tsudoi registers exactly one wire handler for a non-terminal built-in notification name. That
+handler invokes the built-in operation first and invokes the custom handler only after the built-in
+operation has fulfilled. The handler's returned promise settles only after the custom handler
+settles. The terminal `exit` notification is refused under `customMethod`, because its built-in
+operation terminates the process and cannot fulfill before a hook starts.
 
 For `textDocument/didOpen`, `textDocument/didChange`, and `textDocument/didClose`, this entire
 built-in-to-custom chain is one task in a FIFO queue keyed by `textDocument.uri`. The next lifecycle
