@@ -32,6 +32,7 @@ import type {
   ConfigMethod,
   Method,
   MethodMap,
+  NotificationGate,
   RequestContext,
   Tsudoi,
   TsudoiConfig,
@@ -296,11 +297,12 @@ export function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken):
 
 /**
  * Runs one config handler to the answer the client receives, under that
- * request's cancellation. Everything cancellation changes about a TABLE request
- * is here and nowhere else, which is why every drive answers through it --
- * including for a request it has no handler for.
+ * request's cancellation. Everything cancellation changes about a REQUEST is
+ * here and nowhere else, which is why every drive answers through it -- both
+ * table drives, the custom-request registration below, and the table's answer
+ * for a request it has no handler for.
  *
- * `TABLE` IS THE WORD THAT MAKES IT TRUE. The handshake handler is bounded by
+ * `REQUEST` IS THE WORD THAT MAKES IT TRUE. The handshake handler is bounded by
  * none of this: src/server.ts calls it directly and records there that it runs
  * through nothing, so a `signal` is handed over and no deadline, no
  * short-circuit and no -32800 follow it.
@@ -441,6 +443,109 @@ export function registerMethods(
         });
       },
     );
+  }
+
+  registerCustomRequests(connection, config, tsudoi, requestRejection);
+}
+
+/**
+ * Every custom method the config declared, with its per-kind types gone -- the
+ * same erasure the table takes, for the same reason: each entry's own types are
+ * checked where the entry is WRITTEN, which for these is the author's file.
+ */
+interface ErasedCustomEntry {
+  readonly kind: "request" | "notification";
+  readonly gate?: NotificationGate;
+  readonly handler: (context: unknown, params: unknown) => Promise<unknown>;
+}
+
+export function erasedCustomEntries(
+  config: TsudoiConfig,
+): readonly (readonly [string, ErasedCustomEntry])[] {
+  return Object.entries(config.customMethod ?? {}) as unknown as readonly (readonly [
+    string,
+    ErasedCustomEntry,
+  ])[];
+}
+
+/**
+ * WHAT THE CLIENT SENT, out of the arguments upstream hands a handler registered
+ * BY NAME. There is no `RequestType` beside a bare name to say how many params
+ * the method takes, so upstream spreads instead of checking: absent params call
+ * the handler with THE TOKEN ALONE, a by-name object arrives as one argument
+ * before it, and a by-position array arrives spread across several.
+ *
+ * THE RESIDUE IS UPSTREAM'S SPREAD AND NOT THIS READING: a client sending a
+ * ONE-ELEMENT positional array is indistinguishable here from one sending that
+ * element by name, the array having been taken apart before tsudoi saw it. A
+ * method whose params matter that much sends them by name, as every message of
+ * this protocol does.
+ */
+function customParams(args: readonly unknown[]): unknown {
+  if (args.length < 2) {
+    return undefined;
+  }
+  if (args.length === 2) {
+    return args[0];
+  }
+  return args.slice(0, -1);
+}
+
+/**
+ * Registers the custom methods the config declared as REQUESTS -- by NAME, which
+ * is all upstream needs and all tsudoi has.
+ *
+ * NOT REGISTERED FOR A NAME THE CONFIG DID NOT DECLARE, which is the opposite of
+ * what the table above does and is forced rather than chosen: the table
+ * registers every row whether or not a handler exists, so a client sending one it
+ * was never told about is answered emptily instead of MethodNotFound. There is no
+ * such list here. A name nobody declared is answered MethodNotFound by
+ * src/server.ts's fallback, which is the correct answer for a method this server
+ * genuinely does not have.
+ *
+ * NOTHING CHECKS THAT PARAMS ARE AN OBJECT, unlike the table's own prologue, and
+ * the reason is that there is no shape to check against: a custom method's params
+ * are whatever its author and their client agreed on, absence included.
+ */
+function registerCustomRequests(
+  connection: RequestOnlyConnection,
+  config: TsudoiConfig,
+  tsudoi: Tsudoi,
+  requestRejection: RequestRejection,
+): void {
+  for (const [method, entry] of erasedCustomEntries(config)) {
+    if (entry.kind !== "request") {
+      continue;
+    }
+    connection.onRequest(method, async (...args: readonly unknown[]): Promise<unknown> => {
+      const rejection = requestRejection();
+      if (rejection !== undefined) {
+        throw rejection;
+      }
+      const context = requestContext(tsudoi, args[args.length - 1] as CancellationToken);
+      return answerUnlessCancelled(method, context.signal, async () => {
+        const answered: unknown = await entry.handler(context, customParams(args));
+        // A HANDLER FAILURE AND NOT A NULL ANSWER, which is the whole of what the
+        // wrapper buys: a typed row says `Hover | null` and tells the two apart by
+        // its own type, and `unknown` cannot. A missing case silently becoming
+        // null would hand back the very conflation the wrapper was added to
+        // remove.
+        //
+        // THROWN RATHER THAN REPORTED HERE, so it takes the route a throwing
+        // handler already takes -- the frame above names the method on stderr and
+        // rethrows, and upstream turns the throw into an error response. WHAT THE
+        // STACK ON THAT LINE POINTS AT IS THIS FILE and not the author's, because
+        // an omission has no frame of its own; the sentence is what locates it.
+        if (typeof answered !== "object" || answered === null || !("result" in answered)) {
+          throw new Error(
+            `it answered ${answered === null ? "null" : typeof answered} where a custom request ` +
+              `answers { result }; returning { result: null } IS an answer, and falling off the ` +
+              `end is not`,
+          );
+        }
+        return (answered as { readonly result: unknown }).result;
+      });
+    });
   }
 }
 
