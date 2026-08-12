@@ -218,16 +218,26 @@ export function contributeCapabilities(
 export type RequestRejection = () => ResponseError<void> | undefined;
 
 /**
+ * THE NAME A FAILURE, A CANCELLATION OR A REFUSAL IS REPORTED UNDER, and it is
+ * ONE SPELLING for the whole module rather than one per site: a config may
+ * declare a method tsudoi never enumerated, so a name reaching these paths is
+ * not always a key of anything. What each of them still assumes is that the name
+ * came from a REGISTRATION -- tsudoi's own table or a config's own declaration --
+ * and never off the wire, which is what keeps a client's own bytes out of stderr.
+ */
+type ReportedMethod = ConfigMethod | (string & {});
+
+/**
  * What a config author is told their handler did, as a SENTENCE and not as a
  * report -- because the handshake's failure in src/server.ts has the same words
  * and a different disposition: it cannot rethrow, it ends the process. Spelling
  * the sentence twice is how the two come to disagree about a failure that is one
  * thing.
  *
- * `ConfigMethod` AND NOT `Method`: the handshake handler is one, and every
- * caller of this is reporting a config author's own code.
+ * EVERY CALLER OF THIS IS REPORTING A CONFIG AUTHOR'S OWN CODE, the handshake
+ * handler included.
  */
-export function handlerFailure(method: ConfigMethod, error: unknown): string {
+export function handlerFailure(method: ReportedMethod, error: unknown): string {
   return `${method} handler failed: ${failureDetail(error)}`;
 }
 
@@ -236,7 +246,7 @@ export function handlerFailure(method: ConfigMethod, error: unknown): string {
  * the connection's logger for NOTIFICATION handlers only, so without this line a
  * config author's handler fails where they cannot see it.
  */
-export function reportHandlerFailure(method: ConfigMethod, error: unknown): never {
+export function reportHandlerFailure(method: ReportedMethod, error: unknown): never {
   process.stderr.write(`tsudoi: ${handlerFailure(method, error)}\n`);
   throw error;
 }
@@ -246,7 +256,7 @@ export function reportHandlerFailure(method: ConfigMethod, error: unknown): neve
  * only once the client already holds its -32800, so there is no response left to
  * correct and a rethrow could only take down a session still able to serve.
  */
-function reportCleanupFailure(method: Method, error: unknown): void {
+function reportCleanupFailure(method: ReportedMethod, error: unknown): void {
   process.stderr.write(`tsudoi: ${method} cleanup failed: ${failureDetail(error)}\n`);
 }
 
@@ -296,7 +306,7 @@ export function requestContext(tsudoi: Tsudoi, cancellation: CancellationToken):
  * short-circuit and no -32800 follow it.
  */
 async function answerUnlessCancelled<T>(
-  method: Method,
+  method: ReportedMethod,
   signal: AbortSignal,
   produce: () => Promise<T>,
 ): Promise<T> {
@@ -380,10 +390,10 @@ export function registerMethods(
   // silences every other row, so an author who saw the line once for completion
   // never learns their code actions were aggregated too. Harmless while
   // completion was the only such row; wrong the moment there were two.
-  const invalidTokenReported = new Set<Method>();
+  const invalidTokenReported = new Set<ReportedMethod>();
 
   /** Names a refused token on stderr ONCE per method per session. */
-  function reportInvalidToken(method: Method, requested: unknown): void {
+  function reportInvalidToken(method: ReportedMethod, requested: unknown): void {
     if (invalidTokenReported.has(method)) {
       return;
     }
@@ -526,7 +536,7 @@ async function driveStream(run: {
   entry: ErasedEntry;
   connection: RequestOnlyConnection;
   tsudoi: Tsudoi;
-  reportInvalidToken: (method: Method, requested: unknown) => void;
+  reportInvalidToken: (method: ReportedMethod, requested: unknown) => void;
 }): Promise<unknown> {
   const handler = run.handler;
   const context = requestContext(run.tsudoi, run.cancellation);
