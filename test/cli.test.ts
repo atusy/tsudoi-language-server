@@ -267,6 +267,55 @@ for (const runtime of runtimes) {
     }
 
     /**
+     * `customMethod` IS READ AND REFUSED IN A BLOCK OF ITS OWN, and these are its
+     * arms. WHY IT CANNOT JOIN THE LOOP TWO UP: those keys are refused because
+     * tsudoi ADVERTISES a capability for each, and a custom method advertises
+     * nothing at all -- no `initialize` has a capability to claim for
+     * `textDocument/didFocus`, so no client sends one unless it already knew to.
+     *
+     * FOUR ARMS AND FOUR DIFFERENT FIXES, which is why they are rows rather than
+     * one `invalid customMethod`:
+     *
+     * THE COLLISION IS THE ONE WITH A GOOD HANDLER IN IT. Nothing about that
+     * entry is malformed; the NAME is not the author's to take, because upstream
+     * registers by MAP SET rather than by chaining, so whichever registration ran
+     * second would silently evict the other. `methods` IS NAMED IN THE MESSAGE
+     * and asserted here: an author told only that they are wrong is not told
+     * where the handler goes.
+     *
+     * THE KIND AND THE GATE ARE BOTH REFUSED ON THE VALUE AND NOT ON ITS TYPE,
+     * and `"Request"` is why: a mistyped literal is a string exactly as the right
+     * one is, so a message naming what arrived by type alone would say `string`
+     * to an author looking straight at their own typo.
+     *
+     * THE MISSING GATE IS THE ARM THE COMPILER ALREADY COVERS, kept because
+     * src/config.ts reaches an author's config through a CAST FROM `unknown`:
+     * nothing type-checks a config that was never annotated, so this is the only
+     * refusal an unannotated author ever receives.
+     */
+    for (const [name, expected] of [
+      ["custom-method-collides.ts", ["textDocument/hover", "customMethod", "methods"]],
+      [
+        "custom-method-bad-kind.ts",
+        ["textDocument/didFocus", '"Request"', "request", "notification"],
+      ],
+      ["custom-method-missing-gate.ts", ["textDocument/didBlur", "gate", "lifecycle", "always"]],
+      ["custom-method-not-a-function.ts", ["textDocument/didFocus", "number", "function"]],
+    ] as const) {
+      test(`${name} exits 1 naming the method and the rule, with no stdout`, async () => {
+        const path = fixture(name);
+
+        const result = await runCli(runtime, ["--config", path]);
+
+        expectFailureContract(result);
+        expect(result.stderr).toContain(path);
+        for (const fragment of expected) {
+          expect(result.stderr).toContain(fragment);
+        }
+      });
+    }
+
+    /**
      * THE ONE CASE THAT IS NOT ABOUT REACHING THE CONFIG AT ALL: this file
      * loads, exports a factory, and the factory returns -- and what it returned
      * is REFUSED. Every case above fails on the way to the config author's

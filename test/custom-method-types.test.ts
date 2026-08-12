@@ -249,6 +249,66 @@ test("a custom request is not asked to decide a gate", async () => {
 });
 
 /**
+ * THE COLLISION, GRADED ON THE COMPILER'S TEXT AND NOT ON ITS EXIT CODE, which is
+ * the whole distance this arm travels. MEASURED under this entry shape, the
+ * spelling a reader reaches for first -- an optional `never` sentinel -- IS
+ * refused and reads `not assignable to type 'undefined'`: it names neither the
+ * method it is about nor where the handler belongs, so an author reads it as a
+ * mistake inside their own entry. A sentinel that is a SENTENCE prints in full.
+ *
+ * BOTH FRAGMENTS ARE ASSERTED. Being told they are wrong without being told
+ * where the handler goes leaves an author exactly where the `never` spelling left
+ * them.
+ */
+test("a name tsudoi already serves is refused by a message naming the method and where it belongs", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        "const config: TsudoiConfig = {",
+        "  customMethod: {",
+        '    "textDocument/hover": {',
+        '      kind: "request",',
+        "      handler: () => Promise.resolve({ result: null }),",
+        "    },",
+        "  },",
+        "};",
+        "void config;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("textDocument/hover");
+  expect(result.output).toContain("declare its handler under methods, not customMethod");
+});
+
+/**
+ * THE HALF THAT KEEPS THE REFUSAL ABOVE FROM BEING A BAN ON EVERYTHING, and it is
+ * ROOM DELIBERATELY LEFT OPEN rather than an oversight: `ConfigMethod` is the
+ * request table plus `initialize`, and a built-in NOTIFICATION is in neither, so
+ * `textDocument/didOpen` is accepted exactly as a name tsudoi never heard of is.
+ *
+ * WHAT IT DOES NOT CLAIM: that declaring one WORKS. Whether a handler can run
+ * beside a built-in is not decided here, and this arm says only that the type
+ * does not foreclose it.
+ */
+test("a name tsudoi never enumerated compiles, and so does a built-in notification's", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        'const entry: CustomMethodEntry = { kind: "request", handler: () => Promise.resolve({ result: null }) };',
+        "const config: TsudoiConfig = {",
+        '  customMethod: { "textDocument/didFocus": entry, "textDocument/didOpen": entry },',
+        "};",
+        "void config;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(`exit ${String(result.code)}\n${result.output}`).toBe("exit 0\n");
+});
+
+/**
  * THE ENTRY AND THE MAP ARE NAMES AN AUTHOR MAY WRITE, which is the half the
  * inline probe above cannot say: contextual typing covers a literal written in
  * place, and an author who factors their entries into a const of their own needs

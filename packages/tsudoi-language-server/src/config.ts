@@ -77,9 +77,129 @@ export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig>
         `function written \`() => { ... }\` returns nothing at all`,
     );
   }
-  const config: TsudoiConfig = { methods: validatedMethods(returned, absolutePath) };
+  const config: TsudoiConfig = {
+    methods: validatedMethods(returned, absolutePath),
+    customMethod: validatedCustomMethod(returned, absolutePath),
+  };
   requireCompletionBesideResolve(config, absolutePath);
   return config;
+}
+
+/**
+ * EVERY KEY `config.methods` MAY CARRY, as the run time can see them: the table's
+ * own rows, plus `initialize` written out by hand exactly as its READ is below.
+ * `ConfigMethod` is this same set one layer up, and nothing holds the two
+ * together but this line -- which is why the sentence the collision is refused
+ * with must be true of `initialize` as well as of a row.
+ */
+function tsudoisOwnMethods(): ReadonlySet<string> {
+  return new Set([...Object.keys(requestEntries), "initialize"]);
+}
+
+/**
+ * WHAT ARRIVED, NAMED IN THE WORDS THE AUTHOR WILL RECOGNISE: the value itself
+ * when it is a string, and its TYPE otherwise. The string case is not a nicety --
+ * `"Request"` and `"request"` are both `string`, so a message naming only the
+ * type says nothing to the author looking straight at their own typo. Everything
+ * else is named by type for the reason the reads above give: `${v as string}` on
+ * a symbol THROWS, turning a diagnostic into a second failure.
+ */
+function named(value: unknown): string {
+  if (typeof value === "string") {
+    return JSON.stringify(value);
+  }
+  return value === null ? "null" : typeof value;
+}
+
+/**
+ * EVERY METHOD THE CONFIG SERVES THAT TSUDOI DID NOT ENUMERATE, READ ONCE AND
+ * MATERIALISED AS PLAIN DATA -- or a ConfigError naming the method and the rule.
+ *
+ * ITS OWN BLOCK AND NEVER A ROW OF THE LOOP ABOVE, for the reason that loop's own
+ * comment gives one key along: that loop reads the TABLE'S keys, and these are
+ * names tsudoi has never heard of, so there is nothing to iterate but what the
+ * author wrote. The two refusals also say different things -- a row of the table
+ * is refused because tsudoi ADVERTISES a capability for it, and a custom method
+ * advertises nothing at all.
+ *
+ * AND THIS IS THE ONLY REFUSAL SOME AUTHORS EVER SEE. The type refuses all four
+ * faults below at compile time, and this function is reached through a CAST FROM
+ * `unknown`: an author who never annotated their config is told by nothing else.
+ */
+function validatedCustomMethod(
+  returned: object,
+  absolutePath: string,
+): TsudoiConfig["customMethod"] {
+  const declared = readOrRefuse(absolutePath, "customMethod", () => {
+    return (returned as { customMethod?: unknown }).customMethod;
+  });
+  if (declared === undefined) {
+    return undefined;
+  }
+  if (typeof declared !== "object" || declared === null) {
+    throw new ConfigError(
+      `config ${absolutePath} declares customMethod as ${named(declared)} instead of an object of ` +
+        `entries keyed by the name each method travels under on the wire; a config that serves no ` +
+        `method of its own omits customMethod entirely`,
+    );
+  }
+  const own = tsudoisOwnMethods();
+  const validated: Record<string, unknown> = {};
+  for (const method of Object.keys(declared)) {
+    if (own.has(method)) {
+      throw new ConfigError(
+        `config ${absolutePath} declares ${method} under customMethod, and ${method} is a method ` +
+          `tsudoi serves itself; declare its handler under methods, not customMethod`,
+      );
+    }
+    const entry = readOrRefuse(absolutePath, `${method} from customMethod`, () => {
+      return (declared as Record<string, unknown>)[method];
+    });
+    if (typeof entry !== "object" || entry === null) {
+      throw new ConfigError(
+        `config ${absolutePath} declares ${method} under customMethod as ${named(entry)} instead of ` +
+          `an entry; an entry declares its kind, its handler, and -- where the kind is notification ` +
+          `-- its gate`,
+      );
+    }
+    const kind = readOrRefuse(absolutePath, `the kind of ${method}`, () => {
+      return (entry as { kind?: unknown }).kind;
+    });
+    if (kind !== "request" && kind !== "notification") {
+      throw new ConfigError(
+        `config ${absolutePath} declares ${method} under customMethod with kind ${named(kind)} ` +
+          `instead of "request" or "notification"; a method name carries no kind of its own, and ` +
+          `tsudoi must know which of the two to register before any message arrives`,
+      );
+    }
+    const handler = readOrRefuse(absolutePath, `the handler for ${method}`, () => {
+      return (entry as { handler?: unknown }).handler;
+    });
+    if (typeof handler !== "function") {
+      throw new ConfigError(
+        `config ${absolutePath} supplies ${named(handler)} as the handler for ${method} under ` +
+          `customMethod instead of a function; tsudoi registers ${method} with the client's ` +
+          `connection, so this would claim a name it cannot serve`,
+      );
+    }
+    if (kind === "request") {
+      validated[method] = { kind, handler };
+      continue;
+    }
+    const gate = readOrRefuse(absolutePath, `the gate of ${method}`, () => {
+      return (entry as { gate?: unknown }).gate;
+    });
+    if (gate !== "lifecycle" && gate !== "always") {
+      throw new ConfigError(
+        `config ${absolutePath} declares the notification ${method} under customMethod with gate ` +
+          `${named(gate)} instead of "lifecycle" or "always"; a notification has no response through ` +
+          `which a client could be told anything, so an entry that decides nothing would run in ` +
+          `every lifecycle state`,
+      );
+    }
+    validated[method] = { kind, gate, handler };
+  }
+  return validated as TsudoiConfig["customMethod"];
 }
 
 /**

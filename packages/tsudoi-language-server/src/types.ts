@@ -775,7 +775,10 @@ export type CustomMethodEntry =
  *
  * A NAME TSUDOI ALREADY SERVES IS REFUSED HERE, AND THE REFUSAL SAYS SO. Each key
  * of the request table -- and `initialize` -- maps to a SENTENCE, so what tsc
- * prints names the method and where the handler belongs. THE BARE `never`
+ * prints names the method and where the handler belongs. THE SENTENCE IS TRUE OF
+ * `initialize` TOO, which is what rules out the spelling that reads better:
+ * `served by tsudoi's own request table` is false of the one key that is not a
+ * row of it, and src/config.ts refuses the same collision in the same words. THE BARE `never`
  * SPELLING IS WHAT THIS REPLACES, and it is what a reader will reach for:
  * MEASURED, an optional `never` reads back as `undefined`, so the refusal arrived
  * as `not assignable to type 'undefined'` -- naming neither the collision nor the
@@ -791,7 +794,7 @@ export type CustomMethodEntry =
  * means is not decided here, and nothing about this type claims it works.
  */
 export type CustomMethodMap = {
-  [M in ConfigMethod]?: `${M} is served by tsudoi's own request table; declare it under methods, not customMethod`;
+  [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethod`;
 } & Record<string, CustomMethodEntry>;
 
 export type TsudoiConfig = {
