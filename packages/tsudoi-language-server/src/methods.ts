@@ -487,6 +487,12 @@ export function customNotifications(
   config: TsudoiConfig,
   tsudoi: Tsudoi,
 ): readonly CustomNotificationEntry[] {
+  // PER METHOD AND NOT PER SESSION, which is the spelling that looks right and
+  // silently loses a diagnostic: one flag for the whole session means the first
+  // report on ANY custom notification permanently silences every other, so an
+  // author who saw the line once never learns a second handler is broken too.
+  // The same reading the table's own token report records one screen up.
+  const reported = new Set<string>();
   const entries: CustomNotificationEntry[] = [];
   for (const [method, entry] of erasedCustomEntries(config)) {
     if (entry.kind !== "notification" || entry.gate === undefined) {
@@ -496,11 +502,60 @@ export function customNotifications(
       method,
       gate: entry.gate,
       run: async (params: unknown): Promise<void> => {
-        await entry.handler({ tsudoi }, params);
+        let answered: unknown;
+        try {
+          answered = await entry.handler({ tsudoi }, params);
+        } catch (error) {
+          // CAUGHT HERE RATHER THAN LET THROUGH, and it is the report's cadence
+          // that forces it: MEASURED, upstream's own notification handling wraps
+          // the awaited handler in a try/catch calling `logger.error`
+          // UNCONDITIONALLY -- three messages, three lines naming the method --
+          // and tsudoi's logger writes stderr. A hook on a notification the
+          // editor sends per keystroke would be one line per keystroke.
+          reportNotificationOnce(
+            reported,
+            method,
+            `notification handler rejected, and a notification has no response to carry it: ` +
+              failureDetail(error),
+          );
+          return;
+        }
+        if (answered !== undefined) {
+          reportNotificationOnce(
+            reported,
+            method,
+            `notification handler answered with a ${typeof answered}; a notification has no ` +
+              `response, so the value was discarded`,
+          );
+        }
       },
     });
   }
   return entries;
+}
+
+/**
+ * Names on stderr, ONCE PER METHOD PER SESSION, what a custom notification's
+ * handler did that a notification cannot carry.
+ *
+ * AND IT IS THE ONLY ENFORCEMENT THERE IS, which is what makes it worth the code
+ * rather than belt-and-braces: `Promise<void>` constrains a real config NOWHERE,
+ * src/config.ts reaching it through a cast from `unknown`, so an author whose
+ * handler answers gets no diagnostic from anything else. MEASURED with this
+ * report deleted and the catch above left in place: a rejecting handler is
+ * observable by NOTHING -- stderr empty, the session still serving, the
+ * rejection caught by the awaiting frame rather than reaching either runtime's
+ * unhandled-rejection path.
+ *
+ * STDERR IS NOT A CHOICE AMONG CHANNELS: src/cli.ts owes zero bytes on stdout,
+ * which belongs to LSP.
+ */
+function reportNotificationOnce(reported: Set<string>, method: string, what: string): void {
+  if (reported.has(method)) {
+    return;
+  }
+  reported.add(method);
+  process.stderr.write(`tsudoi: ${method} ${what}; further reports for this method are silent.\n`);
 }
 
 /**
