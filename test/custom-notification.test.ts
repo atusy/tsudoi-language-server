@@ -24,6 +24,19 @@ interface Recorded {
   readonly params: unknown;
 }
 
+/**
+ * ONE ARM HERE CARRIES ITS RUNTIME IN ITS OWN NAME AND ITS SIBLINGS DO NOT, which
+ * is the condition test/custom-notification-budget.test.ts states for its own
+ * copy of this line rather than a style: a record points at that arm, and
+ * MEASURED at bun 1.3.13, a `<testcase>` carries the `describe` in `classname`
+ * and ONLY the `test()` string in `name` -- so two arms differing by their
+ * describe alone collapse to one result in the re-running registry, last write
+ * winning, and a record naming one would report whichever runtime bun wrote last.
+ */
+function named(runtime: { name: string }, what: string): string {
+  return `${what} (${runtime.name})`;
+}
+
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
     /**
@@ -147,10 +160,10 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * THE THIRD ARM AC1's CONTROL IS READ AGAINST, and without it the control
-     * grades nothing: flipping a declared kind leaves the request unanswered, but
-     * SO DOES A NAME REGISTERED NOWHERE -- upstream answers MethodNotFound in
-     * both -- so the red the flip produces means something only beside this.
+     * THE CONTROL THE BOTH-FORMS ARM IS READ AGAINST, and without it that arm
+     * grades nothing: `both forms reached a handler` means something only beside
+     * a name for which NEITHER does, since a green there is equally what a
+     * registration reaching every name whatsoever would produce.
      *
      * BOTH FORMS OF THE SAME UNDECLARED NAME, because they fail differently: the
      * request is REFUSED, where the notification is dropped in a silence that
@@ -183,24 +196,27 @@ for (const runtime of runtimes) {
      * CLASS: a gate reached for one name and skipped for the next is what a single
      * arm here could not see.
      *
-     * WHAT THE STATE THIS PREVENTS LOOKS LIKE, measured by putting `always` at the
-     * gate in src/methods.ts and reverting: both handlers run BEFORE the handshake,
-     * against a session whose documents are empty and whose roots are null, and
-     * this arm is the only red.
+     * WHAT THE STATE THIS PREVENTS LOOKS LIKE is the weakening recorded against
+     * this arm in test/perturbations.test.ts, so it is re-run rather than
+     * described: with `always` at the gate both handlers run BEFORE the handshake,
+     * against a session whose documents are empty and whose roots are null.
      */
-    test("a custom notification arriving before the handshake is dropped, whatever its name", async () => {
-      const session = LspSession.start(runtime, fixture("custom-method-kinds.ts"));
-      try {
-        session.notify(noted, { at: "too early" });
-        session.notify(pinged, { at: "too early" });
+    test(
+      named(runtime, "a custom notification arriving before the handshake is dropped"),
+      async () => {
+        const session = LspSession.start(runtime, fixture("custom-method-kinds.ts"));
+        try {
+          session.notify(noted, { at: "too early" });
+          session.notify(pinged, { at: "too early" });
 
-        await session.request<InitializeResult>("initialize", initializeParams);
-        const seen = await session.request<Recorded[]>(seenReader, {});
+          await session.request<InitializeResult>("initialize", initializeParams);
+          const seen = await session.request<Recorded[]>(seenReader, {});
 
-        expect(seen).toEqual([]);
-      } finally {
-        session.dispose();
-      }
-    });
+          expect(seen).toEqual([]);
+        } finally {
+          session.dispose();
+        }
+      },
+    );
   });
 }

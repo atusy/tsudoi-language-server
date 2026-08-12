@@ -1157,6 +1157,28 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
+    // THE GATE THE AUTHOR NO LONGER DECLARES, PUT BACK THE WAY THEY MIGHT HAVE
+    // DECLARED IT. When a custom method was an entry object its gate was the
+    // author's and `always` was one of two things they could write; now tsudoi
+    // rules it, and this weakening is that ruling reversed at the one line that
+    // holds it. What it produces is the state the gate exists to prevent -- a
+    // config author's handler running before the handshake, against a session
+    // whose documents are empty and whose roots are null.
+    //
+    // THE ARM IT NAMES CARRIES ITS RUNTIME, for the reason that file's own helper
+    // records: the two runtimes' arms would otherwise be one name in the report.
+    arm: {
+      file: "test/custom-notification.test.ts",
+      name: "a custom notification arriving before the handshake is dropped (bun)",
+    },
+    weakening: {
+      file: "packages/tsudoi-language-server/src/methods.ts",
+      from: `      gate: "lifecycle",`,
+      to: `      gate: "always",`,
+    },
+    alsoReddens: ["a custom notification arriving before the handshake is dropped (deno)"],
+  },
+  {
     // ONE SESSION-WIDE FLAG WHERE THE BUDGET IS PER METHOD -- the same weakening
     // the record above the last one carries over the token report, applied to the
     // report that is the ONLY enforcement a custom notification's contract has.
