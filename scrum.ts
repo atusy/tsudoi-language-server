@@ -892,7 +892,31 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: null,
+  sprint: {
+    number: 97,
+    pbi_id: "PBI-101",
+    goal: "The custom-method surface an author writes is a BARE FUNCTION per name -- what sprint 96 was cancelled for not being -- reusing that sprint's config refusal, stderr budget and registration plumbing rather than rebuilding them.",
+    status: "planning",
+    subtasks: [],
+    impediments: [
+      {
+        description:
+          "THE STAKEHOLDER HAS FORBIDDEN IMPLEMENTATION UNTIL THEY SAY OTHERWISE -- `勝手に実装しないで`, said after this Scrum Master announced entry into execution three times without being asked to. The design is settled and measured and PBI-101 is `ready`; what is missing is PERMISSION and not information.",
+        impact:
+          "Sprint 97 cannot leave `planning`. Nothing else in the backlog can be worked either: PBI-86 is the only other `ready` item and its migration would rewrite the two perturbation records sprint 96 wrote against the surface now being replaced, so taking it would harden a dead design into the instrument.",
+        request:
+          "Say whether to start sprint 97, and whether sprint 96's fourteen commits are kept as the base for a differential or reverted first. The recommendation on record is differential: keep config.ts's refusal block, the per-method stderr budget with its swallow finding, the both-sides registration plumbing, the fixtures and the BaseMethodContext extraction; replace CustomMethodEntry, CustomMethodMap, the declared kind and the required gate.",
+        status: "waiting_human",
+        notes: [
+          "THE STANDING `/agentic-scrum:go` GOAL AND THE STAKEHOLDER'S INSTRUCTION DISAGREE, and this entry is what makes the disagreement an artifact rather than a loop. The goal's Stop Conditions name `a waiting_human impediment blocks progress`; until now none was recorded, so the loop kept reading the backlog as workable when a human had in fact stopped it.",
+          "WHAT THIS IMPEDIMENT IS NOT: a design question. Six criteria are written against a surface whose every claim was measured -- the union types with a shared context, the TS7006 that a split context produces, the LSPAny collapse, the mutual non-assignability of the two names, the separate upstream handler maps.",
+        ],
+      },
+    ],
+    decisions: [
+      "RECORDED SO IT IS NOT RE-LITIGATED: the surface is `Record<string, CustomRequestHandler | CustomNotificationHandler>` with BOTH arms taking the SAME context. Splitting the context is what produced TS7006 on every bare arrow, measured three times, and it is criterion 2's negative control rather than a preference.",
+    ],
+  },
   retrospectives: [
     {
       sprint: 96,
