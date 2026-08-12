@@ -278,6 +278,21 @@ test("exit is refused as a custom hook because its built-in never returns", asyn
   expect(result.output).toContain("exit is a terminal notification");
 });
 
+test("shutdown is refused as a custom method because the lifecycle owns it", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        "const handler: CustomRequestHandler = () => Promise.resolve({ result: null });",
+        "const config: TsudoiConfig = { customMethod: { shutdown: handler } };",
+        "void config;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("shutdown is a lifecycle request");
+});
+
 /**
  * THE MAP AND BOTH HANDLER NAMES ARE NAMES AN AUTHOR MAY WRITE, which is the half
  * the in-place probes above cannot say: an author who factors a handler out into

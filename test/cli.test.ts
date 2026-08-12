@@ -294,6 +294,7 @@ for (const runtime of runtimes) {
     for (const [name, expected] of [
       ["custom-method-collides.ts", ["textDocument/hover", "customMethod", "methods"]],
       ["custom-method-exit.ts", ["exit", "customMethod", "terminates"]],
+      ["custom-method-shutdown.ts", ["shutdown", "customMethod", "lifecycle"]],
       ["custom-method-not-a-function.ts", ["textDocument/didFocus", "number", "function"]],
     ] as const) {
       test(`${name} exits 1 naming the method and the rule, with no stdout`, async () => {

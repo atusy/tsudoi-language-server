@@ -146,6 +146,12 @@ function validatedCustomMethod(
   const own = tsudoisOwnMethods();
   const validated: Record<string, unknown> = {};
   for (const method of Object.keys(declared)) {
+    if (method === "shutdown") {
+      throw new ConfigError(
+        `config ${absolutePath} declares shutdown under customMethod, but shutdown is a lifecycle ` +
+          `request owned by tsudoi and cannot be replaced by a custom handler`,
+      );
+    }
     if (method === "exit") {
       throw new ConfigError(
         `config ${absolutePath} declares exit under customMethod, but exit is a terminal ` +
