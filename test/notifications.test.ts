@@ -153,14 +153,14 @@ test("a folder change outside the initialized window does not mutate the list, a
   expect([...workspaceFolders.folders.values()]).toEqual([served]);
 });
 
-test("a custom didOpen observes the document after the built-in opens it", async () => {
+test("custom document hooks observe the state after each built-in operation", async () => {
   const lifecycle = createLifecycle();
   lifecycle.initialize();
   const documents = createDocumentStore();
   const workspaceFolders = createWorkspaceFolders();
   const { connection, deliver } = recordingConnection();
   const uri = "file:///hooked.ts";
-  let observed: string | undefined;
+  const observed: (string | undefined)[] = [];
   registerNotifications(
     connection,
     lifecycle,
@@ -170,7 +170,23 @@ test("a custom didOpen observes the document after the built-in opens it", async
         method: "textDocument/didOpen",
         gate: "lifecycle",
         run: () => {
-          observed = documents.documents.get(uri)?.getText();
+          observed.push(documents.documents.get(uri)?.getText());
+          return Promise.resolve();
+        },
+      },
+      {
+        method: "textDocument/didChange",
+        gate: "lifecycle",
+        run: () => {
+          observed.push(documents.documents.get(uri)?.getText());
+          return Promise.resolve();
+        },
+      },
+      {
+        method: "textDocument/didClose",
+        gate: "lifecycle",
+        run: () => {
+          observed.push(documents.documents.get(uri)?.getText());
           return Promise.resolve();
         },
       },
@@ -180,8 +196,13 @@ test("a custom didOpen observes the document after the built-in opens it", async
   await deliver("textDocument/didOpen", {
     textDocument: { uri, languageId: "typescript", version: 1, text: "opened" },
   });
+  await deliver("textDocument/didChange", {
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "changed" }],
+  });
+  await deliver("textDocument/didClose", { textDocument: { uri } });
 
-  expect(observed).toBe("opened");
+  expect(observed).toEqual(["opened", "changed", undefined]);
 });
 
 test("a didChange waits for the preceding didOpen hook on the same document", async () => {
@@ -228,6 +249,157 @@ test("a didChange waits for the preceding didOpen hook on the same document", as
   releaseOpen();
   await Promise.all([opening, changing]);
   expect(documents.documents.get(uri)?.getText()).toBe("changed");
+});
+
+test("a held document hook does not delay a lifecycle operation for another document", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const documents = createDocumentStore();
+  const workspaceFolders = createWorkspaceFolders();
+  const { connection, deliver } = recordingConnection();
+  const heldUri = "file:///held.ts";
+  const freeUri = "file:///free.ts";
+  let releaseHeld = () => {};
+  const held = new Promise<void>((resolve) => {
+    releaseHeld = resolve;
+  });
+  let markHeldStarted = () => {};
+  const heldStarted = new Promise<void>((resolve) => {
+    markHeldStarted = resolve;
+  });
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(documents, lifecycle, workspaceFolders),
+    [
+      {
+        method: "textDocument/didOpen",
+        gate: "lifecycle",
+        run: async (params) => {
+          const uri = (params as { textDocument: { uri: string } }).textDocument.uri;
+          if (uri === heldUri) {
+            markHeldStarted();
+            await held;
+          }
+        },
+      },
+    ],
+  );
+
+  const holding = deliver("textDocument/didOpen", {
+    textDocument: { uri: heldUri, languageId: "typescript", version: 1, text: "held" },
+  });
+  await heldStarted;
+  const free = deliver("textDocument/didOpen", {
+    textDocument: { uri: freeUri, languageId: "typescript", version: 1, text: "free" },
+  });
+  await new Promise<void>((resolve) => queueMicrotask(resolve));
+
+  expect(documents.documents.get(freeUri)?.getText()).toBe("free");
+  releaseHeld();
+  await Promise.all([holding, free]);
+});
+
+test("a rejected queued operation does not prevent the next operation", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const { connection, deliver } = recordingConnection();
+  const first = new NotificationType<{ uri: string }>("test/queuedFailure");
+  const second = new NotificationType<{ uri: string }>("test/afterQueuedFailure");
+  const seen: string[] = [];
+  registerNotifications(connection, lifecycle, [
+    {
+      type: first,
+      handler: () => {
+        throw new Error("queued failure");
+      },
+      gate: "lifecycle",
+      queue: (params) => params.uri,
+    },
+    {
+      type: second,
+      handler: (params) => {
+        seen.push(params.uri);
+      },
+      gate: "lifecycle",
+      queue: (params) => params.uri,
+    },
+  ]);
+
+  const failed = Promise.resolve(deliver(first.method, { uri: "file:///same.ts" }));
+  const followed = deliver(second.method, { uri: "file:///same.ts" });
+
+  await expect(failed).rejects.toThrow("queued failure");
+  await followed;
+  expect(seen).toEqual(["file:///same.ts"]);
+});
+
+test("an older completion cannot detach a newer tail for the same queue key", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const { connection, deliver } = recordingConnection();
+  const first = new NotificationType<{ uri: string }>("test/firstTail");
+  const second = new NotificationType<{ uri: string }>("test/secondTail");
+  const third = new NotificationType<{ uri: string }>("test/thirdTail");
+  let releaseFirst = () => {};
+  const firstHeld = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  let releaseSecond = () => {};
+  const secondHeld = new Promise<void>((resolve) => {
+    releaseSecond = resolve;
+  });
+  let markFirstStarted = () => {};
+  const firstStarted = new Promise<void>((resolve) => {
+    markFirstStarted = resolve;
+  });
+  let markSecondStarted = () => {};
+  const secondStarted = new Promise<void>((resolve) => {
+    markSecondStarted = resolve;
+  });
+  const seen: string[] = [];
+  registerNotifications(connection, lifecycle, [
+    {
+      type: first,
+      handler: async () => {
+        markFirstStarted();
+        await firstHeld;
+      },
+      gate: "lifecycle",
+      queue: (params) => params.uri,
+    },
+    {
+      type: second,
+      handler: async () => {
+        markSecondStarted();
+        await secondHeld;
+      },
+      gate: "lifecycle",
+      queue: (params) => params.uri,
+    },
+    {
+      type: third,
+      handler: () => {
+        seen.push("third");
+      },
+      gate: "lifecycle",
+      queue: (params) => params.uri,
+    },
+  ]);
+  const params = { uri: "file:///same.ts" };
+
+  const firstRun = deliver(first.method, params);
+  await firstStarted;
+  const secondRun = deliver(second.method, params);
+  releaseFirst();
+  await secondStarted;
+  const thirdRun = deliver(third.method, params);
+  await new Promise<void>((resolve) => queueMicrotask(resolve));
+
+  expect(seen).toEqual([]);
+  releaseSecond();
+  await Promise.all([firstRun, secondRun, thirdRun]);
+  expect(seen).toEqual(["third"]);
 });
 
 /**
