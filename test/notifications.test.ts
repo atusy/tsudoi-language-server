@@ -96,7 +96,13 @@ test("a handler whose body consults nothing is refused before initialize and aft
   const { connection, deliver } = recordingConnection();
   const seen: string[] = [];
   registerNotifications(connection, lifecycle, [
-    { type: gatedType, handler: (params) => seen.push(params.mark), gate: "lifecycle" },
+    {
+      type: gatedType,
+      handler: (params) => {
+        seen.push(params.mark);
+      },
+      gate: "lifecycle",
+    },
   ]);
 
   deliver("test/gated", { mark: "before initialize" });
@@ -124,7 +130,13 @@ test("an entry gated always reaches its handler before initialize and after shut
   const { connection, deliver } = recordingConnection();
   const seen: string[] = [];
   registerNotifications(connection, lifecycle, [
-    { type: ungatedType, handler: (params) => seen.push(params.mark), gate: "always" },
+    {
+      type: ungatedType,
+      handler: (params) => {
+        seen.push(params.mark);
+      },
+      gate: "always",
+    },
   ]);
 
   deliver("test/ungated", { mark: "before initialize" });
