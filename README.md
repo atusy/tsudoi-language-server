@@ -581,13 +581,17 @@ by nothing else at all.
 the loader either way, naming the method and telling you to declare it under `methods`. That is
 the request table plus `initialize`, and NOT the notifications tsudoi answers for itself.
 
-**So a built-in notification's name is accepted, and taking one DISPLACES tsudoi's own handler.**
-`textDocument/didOpen` passes both refusals, and the JSON-RPC layer beneath registers by
-assignment rather than by chaining -- so yours replaces the handler that fills
-`context.tsudoi.documents`. Measured: the hook runs with the right params and the store is empty
-for the whole session, silently, with nothing on stderr. Running a handler BESIDE a built-in is
-not built. The room is left open for it deliberately rather than by oversight, and until it exists
-those names are yours to avoid.
+**A built-in notification's name is accepted as a hook.** `textDocument/didOpen` passes both
+refusals, but tsudoi registers one composed handler rather than letting the JSON-RPC layer's
+method-keyed assignment displace either side. The built-in operation fulfills first and your
+handler starts after it, so a `didOpen` hook sees the opened document, a `didChange` hook sees the
+changed text, and a `didClose` hook sees the document absent.
+
+The complete built-in-to-custom chain for `didOpen`, `didChange`, and `didClose` is queued by
+document URI. A slow hook delays later lifecycle notifications for that document -- including
+incremental changes -- while another document has its own queue and continues independently. A
+hook that never settles therefore stops further lifecycle work for its document, a cost accepted
+to keep the document state ordered.
 
 ## Cleanup in a handler
 

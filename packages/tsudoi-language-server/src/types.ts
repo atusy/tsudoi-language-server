@@ -778,18 +778,13 @@ export type CustomNotificationHandler = (
  * the sentence itself is refused by the index signature instead, and so is
  * `undefined`.
  *
- * A BUILT-IN NOTIFICATION NAME IS NOT REFUSED, AND THAT IS ROOM LEFT OPEN RATHER
- * THAN SLACK: `ConfigMethod` is the request table plus `initialize`, and
- * `textDocument/didOpen` is in neither.
- *
- * WHAT TAKING ONE COSTS TODAY, MEASURED RATHER THAN LEFT TO BE DISCOVERED,
- * because the room being open reads as the case being served: upstream registers
- * a notification by MAP ASSIGNMENT and not by chaining, so a config's
- * `textDocument/didOpen` REPLACES the handler that fills the document store --
- * the hook runs with the right params, `tsudoi.documents` stays EMPTY for the
- * whole session, and nothing is written anywhere. Running a handler BESIDE a
- * built-in is a separate thing and is not built; this type forecloses it rather
- * than serving it, which is why the refusal is not widened to cover it.
+ * A BUILT-IN NOTIFICATION NAME IS NOT REFUSED, AND THAT IS A HOOK RATHER THAN
+ * SLACK: `ConfigMethod` is the request table plus `initialize`, and
+ * `textDocument/didOpen` is in neither. src/notifications.ts composes one wire
+ * handler because upstream registers by MAP ASSIGNMENT rather than chaining.
+ * The built-in fulfills before the hook starts, and the whole document-lifecycle
+ * chain queues by uri, so the hook observes the state that message produced and
+ * incremental changes for one document cannot overtake each other.
  */
 export type CustomMethodMap = {
   [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethod`;

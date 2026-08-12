@@ -242,9 +242,9 @@ test("a name tsudoi already serves is refused by a message naming the method and
  * request table plus `initialize`, and a built-in NOTIFICATION is in neither, so
  * `textDocument/didOpen` is accepted exactly as a name tsudoi never heard of is.
  *
- * WHAT IT DOES NOT CLAIM: that declaring one WORKS. Taking a built-in
- * notification's name displaces the handler that fills the document store, which
- * is measured and disclosed at `CustomMethodMap` rather than armed here.
+ * WHAT IT DOES NOT CLAIM: that the two handlers are composed in the promised
+ * order. That runtime contract is measured at the notification router; this arm
+ * owns only whether a config author may write the name.
  */
 test("a name tsudoi never enumerated compiles, and so does a built-in notification's", async () => {
   const result = await typeCheckProbe(

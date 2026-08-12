@@ -2,7 +2,7 @@
 
 |                     |                                                                            |
 | ------------------- | -------------------------------------------------------------------------- |
-| **Status**          | proposed                                                                   |
+| **Status**          | accepted                                                                   |
 | **Date**            | 2026-08-13                                                                 |
 | **Decision-makers** | Project stakeholder and maintainers                                        |
 | **Consulted**       | tsudoi-language-server implementation and vscode-jsonrpc dispatch behavior |
@@ -96,6 +96,9 @@ Automated tests must demonstrate all of the following:
 - lifecycle operations for different URIs can proceed independently;
 - a rejected lifecycle task does not poison its URI queue;
 - a close followed by a reopen cannot have its newer queue removed by the older task's cleanup.
+
+The implementation was confirmed on 2026-08-13 by the notification-router tests covering each
+item above and by the Bun and Deno protocol suites covering the real connection path.
 
 ## Pros and Cons of the Options
 

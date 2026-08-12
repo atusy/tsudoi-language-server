@@ -45,7 +45,11 @@ export interface NotificationEntry<P> {
    */
   readonly handler: (params: P) => void;
   readonly gate: NotificationGate;
-  /** Serializes the complete built-in-to-custom operation for one state key. */
+  /**
+   * Which state owns this operation, when later notifications for that state
+   * must wait for the complete built-in-to-custom chain. Entries without one
+   * retain upstream's unconstrained concurrency.
+   */
   readonly queue?: (params: P) => string;
 }
 
@@ -104,12 +108,18 @@ export interface CustomNotificationEntry {
 
 /**
  * Registers every notification tsudoi answers -- its own table AND whatever the
- * config declared -- applying each entry's gate around its handler.
+ * config declared -- composing equal names, applying each entry's gate and
+ * serializing entries that declare a queue key.
  *
  * THE ROUTER KNOWS NOTHING ABOUT ANY PARTICULAR NOTIFICATION -- no name, no
  * carve-out, no set of exceptions. `exit` survives the gate because ITS ENTRY
  * says `always`, at one site, with the reason beside it. A second place that
  * knew which messages are special would be a second place to get it wrong.
+ *
+ * ONE REGISTRATION FOR EQUAL NAMES, because upstream stores one handler per
+ * method rather than a chain. The built-in runs first and its fulfilled promise
+ * admits the custom hook; registering either half separately would evict the
+ * other and make that order inexpressible.
  *
  * ONE LOOP AND ONE GATE FOR BOTH SOURCES, which is the whole reason a config's
  * notifications arrive here rather than being registered wherever they were
@@ -187,11 +197,10 @@ export function registerNotifications<P extends readonly unknown[]>(
   };
 
   for (const entry of merged) {
-    // RETURNED RATHER THAN DROPPED, and it is the one thing this wrapper does
-    // besides gating: upstream AWAITS what a notification handler hands back, so
-    // a config's promise returned here is observed and a promise dropped here
-    // rejects with nobody listening. tsudoi's own table entries return nothing,
-    // and returning nothing is what upstream then awaits.
+    // RETURNED RATHER THAN DROPPED: upstream AWAITS what a notification handler
+    // hands back, so a composed or queued promise returned here is observed and a
+    // promise dropped here rejects with nobody listening. Tsudoi's unqueued table
+    // entries return nothing, and returning nothing is what upstream then awaits.
     const gated = (params: unknown): unknown => {
       if (entry.gate === "lifecycle" && lifecycle.acceptsNotification() === false) {
         return undefined;
