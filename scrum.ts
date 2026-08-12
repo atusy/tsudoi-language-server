@@ -229,6 +229,7 @@ const scrum: ScrumDashboard = {
         "AN ARCHITECTURAL CONSTRAINT THIS ITEM MUST ROUTE THROUGH RATHER THAN AROUND, named because the edit that breaks it is the obvious one: only src/notifications.ts may create a connection or register a notification -- `RequestOnlyConnection` removes `onNotification` from the type every other module sees, and .oxlintrc.json bans the connection factory by import name everywhere else. A `customMethod` surface that registers its own notifications from a new module UNDOES that foreclosure, and the lint entry's own comment records what was measured before it existed: an ungated `onNotification` beside the table ran green on every check with nothing objecting.",
         "THE SEAM WAS TAKEN AT REFINEMENT AND THE HOOK IS PBI-102, which is why this item's story no longer names one. The seam is the one the notes recorded in advance rather than one invented under pressure: the REAL custom method has nothing built-in to order against, so it carries none of the ordering questions, while a hook beside a built-in carries all of them. WHAT THE SPLIT COSTS AND WHY IT IS PAID ANYWAY: the SURFACE is shared, so PBI-102 adds no published name and depends on this item shipping first -- a dependency in one direction, against six criteria that would otherwise be graded in the same sprint as a document store that can be silently corrupted.",
         "AND REGISTERING A CUSTOM METHOD ADVERTISES NOTHING, which is the expectation to set before an author reports it as a bug: `initialize` has no capability to claim for `textDocument/didFocus`, so no client sends one unless it already knew to.",
+        "REBUILT IN SPRINT 97 ON THE SETTLED SURFACE, AND EVERY NOTE BELOW THAT ARGUES FOR THE ENTRY SHAPE IS DEAD -- named here rather than deleted, because each was reasoned from a real measurement and a reader will otherwise re-derive it. `neither base name is published` is REVERSED (`NotificationContext` is published, since the author annotates with it); `a custom method name carries no kind, so the entry must DECLARE it` is REFUTED (the two registration maps are separate, so one name goes on both and the id discriminates beneath tsudoi); `customMethodHandler<K>` and the kind-keyed conditional, with the two notes about its arms being drawn backwards, HAVE NO SUBJECT (the two handler types are written out); and `the core knows the kind by RECALL OF A DECLARATION` is FALSE -- there is no declaration to recall, and the stderr budget instead reports on the form the message ARRIVED in. What survives unchanged: the result wrapper's motive, the `LSPAny` reading, the swallow finding, the stderr cadence, the collision guard, and the eviction a built-in notification's name still buys.",
         "BUILT IN SPRINT 96, ALL SIX CRITERIA MET, and the two readings that differed from what these notes predicted are worth carrying: the collision refusal CAN name the rule under the object entry shape, a per-key template-literal sentinel printing the sentence in full where the bare `never` reads `not assignable to type 'undefined'`; and the unpublished notification context is refused through the artifact as TS2459 `declares it locally, but it is not exported` rather than TS2305, because declaration emit puts the supertype into `dist/types.d.ts` for `BaseRequestContext` to extend.",
       ],
     },
@@ -896,17 +897,27 @@ const scrum: ScrumDashboard = {
     number: 97,
     pbi_id: "PBI-101",
     goal: "The custom-method surface an author writes is a BARE FUNCTION PER NAME with its context annotated -- what sprint 96 was cancelled for not being -- reusing that sprint's config refusal, stderr budget and registration plumbing rather than rebuilding them.",
-    status: "in_progress",
+    status: "review",
     subtasks: [
       {
         test: "RED FIRST: consumer-shaped probe through the built `./types` artifact. Every refusal as a `@ts-expect-error` that must stay SATISFIED -- notification-as-request, request-as-notification, notification context reaching `signal`. The three collapses applied and reverted as controls.",
         implementation:
           "Replace the entry-object surface with the split-context union: `CustomRequestHandler`, `CustomNotificationHandler`, `CustomMethodMap`. `NotificationContext` MUST BE PUBLISHED -- the author annotates with it, which REVERSES sprint 96's `neither base name is published` ruling and is the one place this redesign GROWS the surface rather than shrinking it. Keep the sentence-typed collision guard unchanged.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e49ab4",
+            message:
+              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
+            phase: "green",
+          },
+        ],
         notes: [
           "`CustomMethodEntry`, the declared `kind` and the required `gate` are DELETED here, not deprecated -- nothing outside this repository has ever seen them.",
+          "AND `NotificationGate` WENT THE OTHER WAY, back into src/notifications.ts. It was published in sprint 96 for one reason -- an author declared a gate -- and that reason died with the entry, so a published name nobody outside src/ can write would be surface tsudoi owes an answer about. Neither test/own-subpaths.test.ts nor test/package-shape.test.ts enumerates the subpath's names, so nothing had to be told; the move is the Developer's placement of an internal type.",
+          "THE THREE COLLAPSES WERE APPLIED TO THE BUILT ARTIFACT AND REVERTED, AND THEY DO NOT SHARE A DIRECTIVE: `Promise<unknown>` and `Promise<LSPAny>` each redden the notification-as-request `@ts-expect-error` (TS2578 at the same line, `void` fitting inside a top type), and UNIFYING THE CONTEXTS reddens the `signal` directive ALONE -- the request-as-notification directive stays satisfied under it, the wrapper still refusing `Promise<void>`. So no single directive grades all three, which is why they sit in one arm.",
+          "AND THE PUBLICATION HALF IS MEASURED RATHER THAN TAKEN ON CONSTRUCTION, the arm having lost the withheld name it used to be paired against: with `export` removed from `NotificationContext`, the consumer probe reads TS2459 `declares 'NotificationContext' locally, but it is not exported` -- the same diagnostic sprint 96 recorded for the withheld supertype, now the shape of this arm's own failure.",
         ],
       },
       {
@@ -914,28 +925,52 @@ const scrum: ScrumDashboard = {
         implementation:
           "config.ts drops the `kind`/`gate` validation and reads a bare function per name, keeping its own refusal block beside `initialize`'s. The collision refusal and its message survive unchanged.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e49ab4",
+            message:
+              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "ONE COMMIT WITH THE SUBTASK ABOVE, AND THE TREE FORCED IT rather than convenience: the moment the type takes a bare function it refuses every entry-object fixture, and until config.ts takes one it refuses every bare-function fixture. There is no ordering of the two that leaves the suite green in between, and a transitional config accepting both shapes would be a branch nobody wants and nothing would ask for again.",
+          "THE COLLISION MESSAGE SURVIVED THE FUNCTION-VALUED MAP AND SPRINT 96'S NOTE ASKED FOR THE RE-MEASUREMENT, its own reading having been taken under the object shape: TS2322, `Type '(_context: BaseRequestContext, _params: unknown) => Promise<{ result: null; }>' is not assignable to type '\"textDocument/hover is a method tsudoi serves itself; declare its handler under methods, not customMethod\"'`. The sentence prints in full, so criterion 5 is met by the same sentinel.",
+          "A NAME DECLARED TWICE SHIPPED NO FIXTURE, AND THE READING IS WHY RATHER THAN AN OMISSION. MEASURED, both halves: tsc refuses it as TS1117 `An object literal cannot have multiple properties with the same name`, and at RUN TIME config.ts sees ONE key whose value is the SECOND handler -- the literal has collapsed before tsudoi is handed anything, so there is no state left for a loader to refuse. A fixture would assert TypeScript's own behaviour and nothing of tsudoi's.",
+        ],
       },
       {
         test: "RED FIRST: one name sent as a request is answered; the SAME name sent as a notification runs the handler and nothing goes back. Control: registering on one side only leaves the other form reaching nothing, read against a name absent from the map.",
         implementation:
           "Register every custom name on BOTH `onRequest` and `onNotification`, so upstream's dispatch discriminates by the id. The notification half still routes through notifications.ts and its single gated loop.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: ["The exactly-one-`gateCalls` arm must stay green."],
+        status: "completed",
+        commits: [
+          {
+            hash: "d7eb6cc",
+            message:
+              "feat(methods): one name reaches both of upstream's maps, so tsudoi never asks which kind a message is",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "The exactly-one-`gateCalls` arm stayed green.",
+          "TAKEN FIRST, AHEAD OF THE TWO SUBTASKS WRITTEN BEFORE IT, and the reason is the same one that fused those two: registering every name on both sides is expressible WHILE the entry still declares a kind -- the kind simply stops deciding anything -- so it lands as its own green commit with its own red. Run in the record's order it would have had to share the surface commit, and the sprint's headline finding would have arrived buried in it.",
+          "THE RED THAT PRECEDED IT, on both runtimes: the same name delivered as a notification reached nothing, the recorder holding only the request's entry.",
+        ],
       },
       {
         test: "RED FIRST: fake-editor arms on the RAW response. Control: sending the return bare makes the two arms indistinguishable on the wire.",
         implementation:
           "Request path: `{ result: x }` answers with `x`; resolving `undefined` is `answered nothing` and takes reportHandlerFailure's route. Notification path: a handler that answered is named on stderr once per method per session, and a rejection is SWALLOWED and budgeted by tsudoi rather than left to upstream's unconditional log.",
         type: "behavioral",
-        status: "pending",
+        status: "completed",
         commits: [],
         notes: [
-          "Most of this shipped in sprint 96 and is being REWIRED, not rebuilt. Its swallow measurement stands.",
+          "Most of this shipped in sprint 96 and was REWIRED, not rebuilt. Its swallow measurement stands.",
+          "NO COMMIT OF ITS OWN, AND THAT IS THE HONEST ENTRY: every arm this subtask owns was already in the tree and passed once the surface commit rewired the fixtures under it. What it owed was a reading, not code.",
+          "SO ITS NEGATIVE CONTROL WAS RE-TAKEN RATHER THAN INHERITED, because the fixture driving it CHANGED KIND: `custom-method-answers-nothing.ts` is now a notification-shaped handler reached as a request, which is not the path sprint 96 measured. MEASURED under the new shape, with the wrapper removed from the registration and the null-answering fixture returning its value bare: the `answering nothing is a failure` arm goes RED with `error` undefined and `result` null -- byte-identical to the message the null-answering arm asserts, which stays GREEN. The two states are one message on the wire and the wrapper is the whole of what separates them. THE ECHO ARMS REDDEN TOO under this spelling and that is the perturbation's own artefact rather than a finding: that fixture answers `{ result }`, so passing the return through sends the wrapper itself to the client.",
         ],
       },
       {
@@ -943,44 +978,107 @@ const scrum: ScrumDashboard = {
         implementation:
           "The author declares no gate; tsudoi applies the lifecycle itself. A custom REQUEST before `initialize` takes the same `ServerNotInitialized` path a table row takes -- a different mechanism from the gate and easy to lose with it.",
         type: "behavioral",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e49ab4",
+            message:
+              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
+            phase: "green",
+          },
+          {
+            hash: "252eea5",
+            message:
+              "test(custom-method): the gate tsudoi now rules is re-run as a weakening, because nothing else would notice it moving",
+            phase: "green",
+          },
+        ],
+        notes: [
+          'THE BEHAVIOUR RODE IN WITH THE SURFACE AND ONLY THE CONTROL IS ITS OWN COMMIT: `gate: "lifecycle"` had to be written the moment the entry stopped carrying one, so the ruling landed where the entry died.',
+          "THE CONTROL IS A RECORDED WEAKENING RATHER THAN A SENTENCE, which is the change of status the ruling forces: while the gate was the author's, `always` was one of two things they could write and a fixture could carry it; now it is an edit nobody would make by accident, so the registry is the only thing that keeps re-running it. MEASURED: `always` at that line reddens the pre-handshake arm on BOTH runtimes and nothing else in its file, with both handlers reaching a session whose documents are empty.",
+          "AND THE REQUEST HALF WAS RE-MEASURED RATHER THAN INHERITED, this sprint having changed what the request side registers: deleting the lifecycle refusal from the custom-request registration reddens the two pre-handshake REQUEST arms and NOTHING ELSE IN THE SUITE -- 1261 pass / 3 fail, the third red being a defect of this sprint's own, below.",
+        ],
       },
       {
         test: "The suite passes with every fixture rewritten; `oxlint` stays clean, which for unused handler parameters means `_context` / `_params`.",
         implementation:
           "Rewrite the sprint 96 fixtures and tests to the annotated bare-function form, and delete the arms that graded the entry object.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e49ab4",
+            message:
+              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "A STRUCTURAL SUBTASK INSIDE A BEHAVIOURAL COMMIT, DISCLOSED RATHER THAN SPLIT: a fixture IS a config, so rewriting it is the same edit as changing the shape a config may have. The rule this project keeps -- structural and behavioural never share a commit -- has no reading here in which the two are separable, and pretending otherwise would have meant a commit whose suite was red.",
+          "TWO FIXTURES WERE DELETED WITH THE FIELDS THEY EXISTED TO GET WRONG: the bad kind and the missing gate. `oxlint` stayed clean, which for the handlers that read neither parameter means `_context` / `_params`.",
+        ],
       },
       {
         test: "Surface arms read the wider surface; the README block gains its marker and a `consumers` row, with the corrupt-inside / corrupt-outside arms.",
         implementation:
           "Published surface and README. State that a custom method advertises NOTHING, and that taking a built-in notification name REPLACES the handler that fills the document store.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e49ab4",
+            message:
+              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
+            phase: "green",
+          },
+          {
+            hash: "60f1e7a",
+            message:
+              "docs(types): the resolve-never-annotate discipline is scoped, because it now has an exception beside it",
+            phase: "refactoring",
+          },
+        ],
+        notes: [
+          "THE MARKER AND THE `consumers` ROW WERE ALREADY THERE, sprint 96 having added them with the block; what this owed was the block's new BYTES and a check that the corrupt-inside arm still says no over them. It does, and by construction rather than by luck: that row's subject is the block's IMPORT SPECIFIERS, and the new block still imports -- three names now where it imported one.",
+          "AND THE AUTHOR-FACING EXAMPLES CHANGED NAMES ON THE STAKEHOLDER'S OWN CORRECTION, arriving mid-execution: `textDocument/didFocus` is a NOTIFICATION a real editor extension defines, so a document teaching it as a request teaches a name that is taken. The request example is now an obviously-invented `tsudoi/status` and didFocus is the notification. WHAT IS NOT WRITTEN IS WHICH extension, because that half was handed over rather than measured here. The fixture driving didFocus in BOTH forms is kept deliberately: with the name really being a notification, a test that also sends it as a request is exactly the sprint's claim.",
+          "CLAUDE.md WAS UPDATED AND IS NOT IN ANY COMMIT: it is globally gitignored on this machine, so the architecture note ships nothing and the next reader of a fresh checkout sees the old entry-object block. Recorded rather than worked around.",
+        ],
       },
       {
         test: "Each record MEASURED rather than transcribed.",
         implementation:
           "Sprint 96's two perturbation records grade a surface that no longer exists. Re-measure them against the new one, or delete them and say which.",
         type: "structural",
-        status: "pending",
-        commits: [],
-        notes: [],
+        status: "completed",
+        commits: [
+          {
+            hash: "7e49ab4",
+            message:
+              "feat(types)!: a custom method is an annotated bare function, because a kind an author declares is one tsudoi never asks for",
+            phase: "green",
+          },
+          {
+            hash: "252eea5",
+            message:
+              "test(custom-method): the gate tsudoi now rules is re-run as a weakening, because nothing else would notice it moving",
+            phase: "green",
+          },
+        ],
+        notes: [
+          "ONE REWRITTEN, ONE RE-MEASURED AS IT STOOD, ONE ADDED -- and which is which is the point of this subtask. THE CONDITIONAL-SWAP RECORD IS TARGET DELIBERATELY REMOVED: there is no conditional left to draw backwards, the two handler types being written out. What replaced it at the same arm is the adjacent weakening the new shape does have, `Promise<{ result: unknown }>` traded for `Promise<unknown>` -- one of the three collapses the surface was chosen over, so the registry now re-runs a control the criterion itself names.",
+          "AND ITS `alsoReddens` IS EMPTY, MEASURED AND NOT ASSUMED: the collapse is on the RETURN alone, so every context arm in that file survives it and so does the collision arm, whose refusal is about the NAME. A first prediction that the map arm would redden with it was WRONG and was corrected by the run rather than carried.",
+          "THE STDERR-BUDGET RECORD NEEDED NO EDIT AND READS HELD, its subject -- one session-wide flag where the budget is per method -- having survived the surface change untouched.",
+        ],
       },
       {
         test: "All five checks exit 0 from a clean tree, the reading recorded against the tree the instrument names.",
         implementation: "Definition of Done, then scrum.ts alone and last.",
         type: "structural",
-        status: "pending",
+        status: "completed",
         commits: [],
-        notes: [],
+        notes: [
+          "THE CLOSING READING IS IN THIS SPRINT'S DECISIONS, quoted from the runner's own line rather than restated.",
+        ],
       },
     ],
     impediments: [
@@ -1001,6 +1099,10 @@ const scrum: ScrumDashboard = {
       "THE SURFACE IS SETTLED AND EVERY ARM OF IT WAS MEASURED, ACROSS FOUR SPELLINGS THE STAKEHOLDER TRIED IN ORDER. Split contexts with an ANNOTATED bare function per name, `Promise<{ result: unknown }>` for a request and `Promise<void>` for a notification. The annotation is a COST TAKEN KNOWINGLY: a bare arrow is TS7006 because TypeScript will not infer a parameter from a union of signatures whose parameters disagree.",
       "WHAT THE COST BUYS IS TWO INDEPENDENT CLOSED AXES, which is why this spelling beat the three that preceded it. The split context means a notification handler CANNOT REACH `signal` at all; the `{ result }` wrapper refuses `Promise<void>`, so the two names are mutually non-assignable in BOTH directions. Unifying the context loses the first. `Promise<unknown>` and `Promise<LSPAny>` each lose the second, `void` fitting inside a top type -- and upstream maps `LSPAny` to `any` today, so that one is measured rather than assumed.",
       "THE RUNTIME NEVER ASKS WHICH KIND A MESSAGE IS, because it does not have to: one name is registered on both sides and upstream dispatches by the presence of the id. The stakeholder said this first and was argued down with a measurement that did not cover it, which is what cancelled sprint 96.",
+      "THE CLOSING READING, ON A CLEAN TREE THE INSTRUMENT NAMED -- `tree: 60f1e7a`, with only this file's own commit after it. Definition of Done PASSED, all five checks exit 0: 1264 pass / 0 fail over 92 files, 388.13s, the five long-standing non-gating warnings. THE DURATION IS RECORDED WITHOUT AN EXPLANATION, per sprint 95's own entry: four readings this sprint ran 447s, 411s, 406s and 388s with one at 504s in the middle, and the 504 was taken on a machine that had just run a full suite under a perturbation. That is a candidate and not a finding.",
+      "ALL SIX CRITERIA MET, AND THE TWO THAT SPRINT 96 CANCELLED ARE THE TWO NOW MEASURED HARDEST. Criterion 1: one name answered as a request AND run as a notification in one session, with the arrival list showing nothing written back for the notification, read against a name for which neither form reaches anything. Criterion 2: through the built `./types` artifact, the annotated form compiling and three `@ts-expect-error` refusals staying satisfied, with all three collapses applied and reverted. Criterion 3: the wrapper's own control re-taken under the new fixture. Criterion 4: the budget arms, unchanged and green. Criterion 5: the collision sentence re-measured under a function-valued map. Criterion 6: the gate now a recorded weakening, and the request half re-measured.",
+      "THE ONE DEFECT THIS SPRINT SHIPPED INTO ITS OWN WORKING TREE WAS FOUND BY RUNNING THE SUITE AND NOT BY READING IT: a docblock added to test/custom-notification.test.ts cites `bun 1.3.13`, and test/version-citations.test.ts requires every citing file to be accounted for. It reddened in the same run as a perturbation and was fixed before the commit. WHAT IT COST TO CATCH: nothing, because that run was a full suite -- a targeted re-run of the two custom files would have missed it entirely.",
+      "AND THE SUBTASK ORDER WAS CHANGED, WITH THE TREE AS THE REASON RATHER THAN PREFERENCE. Subtask 3 ran FIRST, because both-sides registration is expressible while the entry still declares a kind and so earns its own red and its own commit. Subtasks 1 and 2 then landed as ONE commit, there being no ordering of type and config that leaves the suite green in between. Subtask 4 has no commit at all and subtask 6's structural work sits inside a behavioural commit; both are disclosed at the subtasks rather than smoothed over.",
     ],
   },
   retrospectives: [
