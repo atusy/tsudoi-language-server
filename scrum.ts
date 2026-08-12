@@ -175,9 +175,9 @@ const scrum: ScrumDashboard = {
         },
         {
           criterion:
-            "A BARE ARROW IN THE MAP IS CONTEXTUALLY TYPED, WITH NO ANNOTATION ANYWHERE. `(context, params) => Promise.resolve()` and `(context, params) => Promise.resolve({ result: x })` both compile under `--strict`, and `context.tsudoi` resolves rather than being `any`. THE TWO PUBLISHED NAMES REMAIN MUTUALLY NON-ASSIGNABLE so an author who DOES annotate is told when they annotated wrongly.",
+            "THE CONTEXTS ARE SPLIT AND THE ANNOTATION IS THE SUPPORTED WAY TO WRITE ONE, which is a stakeholder ruling taken WITH its cost rather than around it: a bare arrow in the map is TS7006 under `--strict`, MEASURED FOUR TIMES, because TypeScript will not infer a parameter from a union of signatures whose parameters disagree. WHAT THE COST BUYS IS TWO CLOSED AXES: `NotificationContext` HAS NO `signal`, so a notification handler cannot reach cancellation at all, and the `{ result: unknown }` wrapper refuses `Promise<void>`, so the two published names are MUTUALLY non-assignable in BOTH directions. Neither axis is closed by the unified-context spelling, and the `unknown` and `LSPAny` spellings each collapse the second one.",
           verification:
-            "Consumer-shaped probe through the built `./types` artifact. THE NEGATIVE CONTROL IS THE MEASUREMENT THAT SETTLED THE SURFACE AND IT MUST STAY RED: giving the two handler types DIFFERENT context types reddens every bare arrow with TS7006 `implicitly has an any type` -- MEASURED THREE TIMES, and it is why the context is unified rather than split. Plus both directions of assignability, each as a `@ts-expect-error` that must stay satisfied.",
+            "Consumer-shaped probe through the built `./types` artifact, with the annotated form compiling and every refusal expressed as a `@ts-expect-error` that must stay SATISFIED -- notification-as-request, request-as-notification, and a notification context reaching `signal`. THE THREE MEASURED COLLAPSES ARE THE NEGATIVE CONTROLS AND EACH MUST REDDEN THIS ARM WHEN APPLIED: unifying the two context types (loses the signal axis), returning `Promise<unknown>` and returning `Promise<LSPAny>` (each makes a notification handler satisfy the request type, `void` fitting inside a top type -- and upstream maps `LSPAny` to `any` today, which is why it is named rather than assumed).",
         },
         {
           criterion:
@@ -895,26 +895,112 @@ const scrum: ScrumDashboard = {
   sprint: {
     number: 97,
     pbi_id: "PBI-101",
-    goal: "The custom-method surface an author writes is a BARE FUNCTION per name -- what sprint 96 was cancelled for not being -- reusing that sprint's config refusal, stderr budget and registration plumbing rather than rebuilding them.",
-    status: "planning",
-    subtasks: [],
+    goal: "The custom-method surface an author writes is a BARE FUNCTION PER NAME with its context annotated -- what sprint 96 was cancelled for not being -- reusing that sprint's config refusal, stderr budget and registration plumbing rather than rebuilding them.",
+    status: "in_progress",
+    subtasks: [
+      {
+        test: "RED FIRST: consumer-shaped probe through the built `./types` artifact. Every refusal as a `@ts-expect-error` that must stay SATISFIED -- notification-as-request, request-as-notification, notification context reaching `signal`. The three collapses applied and reverted as controls.",
+        implementation:
+          "Replace the entry-object surface with the split-context union: `CustomRequestHandler`, `CustomNotificationHandler`, `CustomMethodMap`. `NotificationContext` MUST BE PUBLISHED -- the author annotates with it, which REVERSES sprint 96's `neither base name is published` ruling and is the one place this redesign GROWS the surface rather than shrinking it. Keep the sentence-typed collision guard unchanged.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "`CustomMethodEntry`, the declared `kind` and the required `gate` are DELETED here, not deprecated -- nothing outside this repository has ever seen them.",
+        ],
+      },
+      {
+        test: "RED FIRST: fixture configs -- a colliding name, a non-function value, a name declared twice.",
+        implementation:
+          "config.ts drops the `kind`/`gate` validation and reads a bare function per name, keeping its own refusal block beside `initialize`'s. The collision refusal and its message survive unchanged.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "RED FIRST: one name sent as a request is answered; the SAME name sent as a notification runs the handler and nothing goes back. Control: registering on one side only leaves the other form reaching nothing, read against a name absent from the map.",
+        implementation:
+          "Register every custom name on BOTH `onRequest` and `onNotification`, so upstream's dispatch discriminates by the id. The notification half still routes through notifications.ts and its single gated loop.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: ["The exactly-one-`gateCalls` arm must stay green."],
+      },
+      {
+        test: "RED FIRST: fake-editor arms on the RAW response. Control: sending the return bare makes the two arms indistinguishable on the wire.",
+        implementation:
+          "Request path: `{ result: x }` answers with `x`; resolving `undefined` is `answered nothing` and takes reportHandlerFailure's route. Notification path: a handler that answered is named on stderr once per method per session, and a rejection is SWALLOWED and budgeted by tsudoi rather than left to upstream's unconditional log.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [
+          "Most of this shipped in sprint 96 and is being REWIRED, not rebuilt. Its swallow measurement stands.",
+        ],
+      },
+      {
+        test: "RED FIRST: runtime arms both sides of the handshake, for both kinds. Control: an ungated custom notification reaches its handler before `initialize` with `tsudoi.documents` empty.",
+        implementation:
+          "The author declares no gate; tsudoi applies the lifecycle itself. A custom REQUEST before `initialize` takes the same `ServerNotInitialized` path a table row takes -- a different mechanism from the gate and easy to lose with it.",
+        type: "behavioral",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "The suite passes with every fixture rewritten; `oxlint` stays clean, which for unused handler parameters means `_context` / `_params`.",
+        implementation:
+          "Rewrite the sprint 96 fixtures and tests to the annotated bare-function form, and delete the arms that graded the entry object.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Surface arms read the wider surface; the README block gains its marker and a `consumers` row, with the corrupt-inside / corrupt-outside arms.",
+        implementation:
+          "Published surface and README. State that a custom method advertises NOTHING, and that taking a built-in notification name REPLACES the handler that fills the document store.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "Each record MEASURED rather than transcribed.",
+        implementation:
+          "Sprint 96's two perturbation records grade a surface that no longer exists. Re-measure them against the new one, or delete them and say which.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+      {
+        test: "All five checks exit 0 from a clean tree, the reading recorded against the tree the instrument names.",
+        implementation: "Definition of Done, then scrum.ts alone and last.",
+        type: "structural",
+        status: "pending",
+        commits: [],
+        notes: [],
+      },
+    ],
     impediments: [
       {
         description:
-          "THE STAKEHOLDER HAS FORBIDDEN IMPLEMENTATION UNTIL THEY SAY OTHERWISE -- `勝手に実装しないで`, said after this Scrum Master announced entry into execution three times without being asked to. The design is settled and measured and PBI-101 is `ready`; what is missing is PERMISSION and not information.",
+          "THE STAKEHOLDER HAD FORBIDDEN IMPLEMENTATION -- `勝手に実装しないで`, after this Scrum Master announced entry into execution three times without being asked.",
         impact:
-          "Sprint 97 cannot leave `planning`. Nothing else in the backlog can be worked either: PBI-86 is the only other `ready` item and its migration would rewrite the two perturbation records sprint 96 wrote against the surface now being replaced, so taking it would harden a dead design into the instrument.",
+          "Sprint 97 could not leave `planning`, and PBI-86 was no way around it: its migration would have rewritten the two perturbation records sprint 96 wrote against the surface being replaced.",
         request:
-          "Say whether to start sprint 97, and whether sprint 96's fourteen commits are kept as the base for a differential or reverted first. The recommendation on record is differential: keep config.ts's refusal block, the per-method stderr budget with its swallow finding, the both-sides registration plumbing, the fixtures and the BaseMethodContext extraction; replace CustomMethodEntry, CustomMethodMap, the declared kind and the required gate.",
-        status: "waiting_human",
+          "Say whether to start sprint 97, and whether sprint 96's commits are the differential base or are reverted first.",
+        status: "resolved",
         notes: [
-          "THE STANDING `/agentic-scrum:go` GOAL AND THE STAKEHOLDER'S INSTRUCTION DISAGREE, and this entry is what makes the disagreement an artifact rather than a loop. The goal's Stop Conditions name `a waiting_human impediment blocks progress`; until now none was recorded, so the loop kept reading the backlog as workable when a human had in fact stopped it.",
-          "WHAT THIS IMPEDIMENT IS NOT: a design question. Six criteria are written against a surface whose every claim was measured -- the union types with a shared context, the TS7006 that a split context produces, the LSPAny collapse, the mutual non-assignability of the two names, the separate upstream handler maps.",
+          "RESOLVED BY THE STAKEHOLDER RE-SETTING THE `/agentic-scrum:go` GOAL immediately after settling the last design question. The differential base is kept; nothing is reverted.",
         ],
       },
     ],
     decisions: [
-      "RECORDED SO IT IS NOT RE-LITIGATED: the surface is `Record<string, CustomRequestHandler | CustomNotificationHandler>` with BOTH arms taking the SAME context. Splitting the context is what produced TS7006 on every bare arrow, measured three times, and it is criterion 2's negative control rather than a preference.",
+      "THE SURFACE IS SETTLED AND EVERY ARM OF IT WAS MEASURED, ACROSS FOUR SPELLINGS THE STAKEHOLDER TRIED IN ORDER. Split contexts with an ANNOTATED bare function per name, `Promise<{ result: unknown }>` for a request and `Promise<void>` for a notification. The annotation is a COST TAKEN KNOWINGLY: a bare arrow is TS7006 because TypeScript will not infer a parameter from a union of signatures whose parameters disagree.",
+      "WHAT THE COST BUYS IS TWO INDEPENDENT CLOSED AXES, which is why this spelling beat the three that preceded it. The split context means a notification handler CANNOT REACH `signal` at all; the `{ result }` wrapper refuses `Promise<void>`, so the two names are mutually non-assignable in BOTH directions. Unifying the context loses the first. `Promise<unknown>` and `Promise<LSPAny>` each lose the second, `void` fitting inside a top type -- and upstream maps `LSPAny` to `any` today, so that one is measured rather than assumed.",
+      "THE RUNTIME NEVER ASKS WHICH KIND A MESSAGE IS, because it does not have to: one name is registered on both sides and upstream dispatches by the presence of the id. The stakeholder said this first and was argued down with a measurement that did not cover it, which is what cancelled sprint 96.",
     ],
   },
   retrospectives: [
