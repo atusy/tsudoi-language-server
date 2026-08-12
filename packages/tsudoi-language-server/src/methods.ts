@@ -289,6 +289,30 @@ function requestCancelled(): never {
   throw new ResponseError(LSPErrorCodes.RequestCancelled, "Request cancelled");
 }
 
+/** Waits for admitted document work without making cancellation wait for it. */
+async function waitUnlessCancelled(
+  waiting: Promise<void>,
+  cancellation: CancellationToken,
+): Promise<void> {
+  if (cancellation.isCancellationRequested) {
+    requestCancelled();
+  }
+  let subscription: { dispose(): void } | undefined;
+  const cancelled = new Promise<never>((_resolve, reject) => {
+    subscription = cancellation.onCancellationRequested(() => {
+      reject(new ResponseError(LSPErrorCodes.RequestCancelled, "Request cancelled"));
+    });
+  });
+  try {
+    await Promise.race([waiting, cancelled]);
+  } finally {
+    subscription?.dispose();
+  }
+  if (cancellation.isCancellationRequested) {
+    requestCancelled();
+  }
+}
+
 /**
  * Bridges the connection's CancellationToken onto the AbortSignal a config author
  * already has, one controller per request.
@@ -434,7 +458,10 @@ export function registerMethods(
           );
         }
         if (entry.queue !== undefined && documentQueue !== undefined) {
-          await documentQueue.wait(entry.queue(params));
+          const pending = documentQueue.wait(entry.queue(params));
+          if (pending !== undefined) {
+            await waitUnlessCancelled(pending, cancellation);
+          }
         }
         const handler = config.methods?.[method];
         if (entry.drive === "stream-driven") {

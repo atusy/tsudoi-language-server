@@ -113,7 +113,7 @@ export interface CustomNotificationEntry {
  */
 export interface KeyedOperationQueue {
   enqueue(key: string, operation: () => unknown): Promise<unknown>;
-  wait(key: string): Promise<void>;
+  wait(key: string): Promise<void> | undefined;
 }
 
 export function createKeyedOperationQueue(): KeyedOperationQueue {
@@ -122,7 +122,7 @@ export function createKeyedOperationQueue(): KeyedOperationQueue {
   return {
     enqueue(key: string, run: () => unknown): Promise<unknown> {
       const preceding = tails.get(key) ?? Promise.resolve();
-      const operation = preceding.then(async () => await run());
+      const operation = preceding.then(run);
       const tail = operation.then(
         () => undefined,
         () => undefined,
@@ -145,8 +145,8 @@ export function createKeyedOperationQueue(): KeyedOperationQueue {
         },
       );
     },
-    wait(key: string): Promise<void> {
-      return tails.get(key) ?? Promise.resolve();
+    wait(key: string): Promise<void> | undefined {
+      return tails.get(key);
     },
   };
 }

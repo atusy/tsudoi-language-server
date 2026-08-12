@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { ErrorCodes, type Hover, type InitializeResult } from "vscode-languageserver-protocol";
+import {
+  ErrorCodes,
+  type Hover,
+  type InitializeResult,
+  LSPErrorCodes,
+} from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession, noParams } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { fixture } from "./helpers/spawn.ts";
@@ -45,6 +50,31 @@ function named(runtime: { name: string }, what: string): string {
 
 for (const runtime of runtimes) {
   describe(runtime.name, () => {
+    test("a cancelled document request does not remain parked behind a lifecycle hook", async () => {
+      const session = LspSession.start(runtime, fixture("document-lifecycle-request-barrier.ts"));
+      try {
+        await session.request<InitializeResult>("initialize", initializeParams);
+        session.notify("textDocument/didOpen", {
+          textDocument: {
+            uri: documentUri,
+            languageId: "typescript",
+            version: 1,
+            text: openedText,
+          },
+        });
+
+        const pending = session.issue("textDocument/hover", {
+          textDocument: { uri: documentUri },
+          position: { line: 0, character: 0 },
+        });
+        session.cancel(pending.id);
+
+        expect((await pending.response).error?.code).toBe(LSPErrorCodes.RequestCancelled);
+      } finally {
+        session.dispose();
+      }
+    });
+
     test("a document request waits for an earlier queued change on the same URI", async () => {
       const session = LspSession.start(runtime, fixture("document-lifecycle-request-barrier.ts"));
       try {
