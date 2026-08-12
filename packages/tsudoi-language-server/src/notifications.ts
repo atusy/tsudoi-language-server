@@ -126,17 +126,33 @@ export function registerNotifications<P extends readonly unknown[]>(
   // outside it -- it is a string on every entry, so the required-field check
   // above survives this cast.
   const erased = entries as unknown as readonly NotificationEntry<unknown>[];
+  const customByMethod = new Map(custom.map((entry) => [entry.method, entry]));
   const merged: readonly {
     readonly key: NotificationType<unknown> | string;
     readonly gate: NotificationGate;
     readonly run: (params: unknown) => unknown;
   }[] = [
-    ...erased.map((entry) => ({
-      key: entry.type as NotificationType<unknown>,
+    ...erased.map((entry) => {
+      const key = entry.type as NotificationType<unknown>;
+      const hook = customByMethod.get(key.method);
+      if (hook === undefined) {
+        return { key, gate: entry.gate, run: entry.handler };
+      }
+      customByMethod.delete(key.method);
+      return {
+        key,
+        gate: entry.gate,
+        run: (params: unknown) =>
+          Promise.resolve()
+            .then(() => entry.handler(params))
+            .then(() => hook.run(params)),
+      };
+    }),
+    ...[...customByMethod.values()].map((entry) => ({
+      key: entry.method,
       gate: entry.gate,
-      run: entry.handler,
+      run: entry.run,
     })),
-    ...custom.map((entry) => ({ key: entry.method, gate: entry.gate, run: entry.run })),
   ];
   for (const entry of merged) {
     // RETURNED RATHER THAN DROPPED, and it is the one thing this wrapper does

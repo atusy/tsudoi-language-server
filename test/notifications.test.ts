@@ -36,7 +36,7 @@ applySuiteDeadline();
  */
 function recordingConnection(): {
   connection: NotificationRegistrar;
-  deliver: (method: string, params: unknown) => void;
+  deliver: (method: string, params: unknown) => unknown;
 } {
   const registered = new Map<string, (params: unknown) => void>();
   return {
@@ -54,12 +54,12 @@ function recordingConnection(): {
         return { dispose: () => {} };
       },
     },
-    deliver(method: string, params: unknown): void {
+    deliver(method: string, params: unknown): unknown {
       const handler = registered.get(method);
       if (handler === undefined) {
         throw new Error(`nothing was registered for ${method}`);
       }
-      handler(params);
+      return handler(params);
     },
   };
 }
@@ -151,6 +151,37 @@ test("a folder change outside the initialized window does not mutate the list, a
   lifecycle.shutDown();
   deliver("workspace/didChangeWorkspaceFolders", { event: { added: [late], removed: [] } });
   expect([...workspaceFolders.folders.values()]).toEqual([served]);
+});
+
+test("a custom didOpen observes the document after the built-in opens it", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const documents = createDocumentStore();
+  const workspaceFolders = createWorkspaceFolders();
+  const { connection, deliver } = recordingConnection();
+  const uri = "file:///hooked.ts";
+  let observed: string | undefined;
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(documents, lifecycle, workspaceFolders),
+    [
+      {
+        method: "textDocument/didOpen",
+        gate: "lifecycle",
+        run: () => {
+          observed = documents.documents.get(uri)?.getText();
+          return Promise.resolve();
+        },
+      },
+    ],
+  );
+
+  await deliver("textDocument/didOpen", {
+    textDocument: { uri, languageId: "typescript", version: 1, text: "opened" },
+  });
+
+  expect(observed).toBe("opened");
 });
 
 /**
