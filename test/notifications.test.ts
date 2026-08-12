@@ -363,6 +363,69 @@ test("a held document hook does not delay a lifecycle operation for another docu
   await Promise.all([holding, free]);
 });
 
+test("a reopen waits for the preceding didClose hook on the same document", async () => {
+  const lifecycle = createLifecycle();
+  lifecycle.initialize();
+  const documents = createDocumentStore();
+  const workspaceFolders = createWorkspaceFolders();
+  const { connection, deliver } = recordingConnection();
+  const uri = "file:///reopened.ts";
+  const opened: string[] = [];
+  let releaseClose = () => {};
+  const closeHeld = new Promise<void>((resolve) => {
+    releaseClose = resolve;
+  });
+  let markCloseStarted = () => {};
+  const closeStarted = new Promise<void>((resolve) => {
+    markCloseStarted = resolve;
+  });
+  registerNotifications(
+    connection,
+    lifecycle,
+    notificationEntries(documents, lifecycle, workspaceFolders),
+    [
+      {
+        method: "textDocument/didOpen",
+        gate: "lifecycle",
+        run: () => {
+          const text = documents.documents.get(uri)?.getText();
+          if (text !== undefined) {
+            opened.push(text);
+          }
+          return Promise.resolve();
+        },
+      },
+      {
+        method: "textDocument/didClose",
+        gate: "lifecycle",
+        run: async () => {
+          markCloseStarted();
+          await closeHeld;
+        },
+      },
+    ],
+  );
+
+  await deliver("textDocument/didOpen", {
+    textDocument: { uri, languageId: "typescript", version: 1, text: "first" },
+  });
+  const closing = deliver("textDocument/didClose", { textDocument: { uri } });
+  await closeStarted;
+  const reopening = deliver("textDocument/didOpen", {
+    textDocument: { uri, languageId: "typescript", version: 1, text: "second" },
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  expect(opened).toEqual(["first"]);
+  expect(documents.documents.get(uri)).toBeUndefined();
+
+  releaseClose();
+  await Promise.all([closing, reopening]);
+  expect(opened).toEqual(["first", "second"]);
+  expect(documents.documents.get(uri)?.getText()).toBe("second");
+});
+
 test("a rejected queued operation does not prevent the next operation", async () => {
   const lifecycle = createLifecycle();
   lifecycle.initialize();
