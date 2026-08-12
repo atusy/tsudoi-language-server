@@ -189,6 +189,66 @@ test("a handler of either kind compiles inline, with the author naming no contex
 });
 
 /**
+ * WHAT MAKES THIS FORECLOSURE RATHER THAN DETECTION, in the words
+ * test/notifications.test.ts uses for the same claim one door along: the DoD's
+ * own `tsc --noEmit` can only say that what IS written compiles. That a
+ * notification declared WITHOUT deciding its gate does not compile is a claim
+ * about a config this repository will never contain, so it is asserted against a
+ * throwaway project.
+ *
+ * THE HAZARD IT BUYS AGAINST IS NOT A MISSING FIELD, IT IS A SILENT DEFAULT: a
+ * gate supplied on the config side for an author who wrote none is a handler
+ * running in every lifecycle state -- a `didFocus` hook firing before the
+ * handshake, against a session whose documents are empty.
+ */
+test("a custom notification that decides no gate does not type-check, and the diagnostic names gate", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        "const config: TsudoiConfig = {",
+        "  customMethod: {",
+        '    "textDocument/didBlur": {',
+        '      kind: "notification",',
+        "      handler: () => Promise.resolve(),",
+        "    },",
+        "  },",
+        "};",
+        "void config;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("gate");
+});
+
+/**
+ * AND A REQUEST IS NOT ASKED FOR ONE, which is the direction the arm above cannot
+ * supply: a probe harness that refused every entry would satisfy it. A request
+ * has a RESPONSE to carry a refusal, so the lifecycle answers it rather than
+ * dropping it, and there is nothing for an author to decide.
+ */
+test("a custom request is not asked to decide a gate", async () => {
+  const result = await typeCheckProbe(
+    typesProbe(
+      [
+        "const config: TsudoiConfig = {",
+        "  customMethod: {",
+        '    "textDocument/didFocus": {',
+        '      kind: "request",',
+        "      handler: () => Promise.resolve({ result: null }),",
+        "    },",
+        "  },",
+        "};",
+        "void config;",
+      ].join("\n"),
+    ),
+  );
+
+  expect(`exit ${String(result.code)}\n${result.output}`).toBe("exit 0\n");
+});
+
+/**
  * THE ENTRY AND THE MAP ARE NAMES AN AUTHOR MAY WRITE, which is the half the
  * inline probe above cannot say: contextual typing covers a literal written in
  * place, and an author who factors their entries into a const of their own needs
