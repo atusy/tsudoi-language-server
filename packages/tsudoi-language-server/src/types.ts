@@ -669,9 +669,15 @@ export interface InitializeRequestContext extends BaseRequestContext {
 }
 
 /**
- * THE CONTEXT ONE METHOD'S HANDLER RECEIVES, DERIVED FROM THE METHOD AND NEVER
- * CHOSEN BY THE AUTHOR. `MethodHandler` resolves it, so nothing an author writes
- * selects the shape they are handed.
+ * THE CONTEXT ONE TABLE ROW'S HANDLER RECEIVES, DERIVED FROM THE METHOD AND
+ * NEVER CHOSEN BY THE AUTHOR. `MethodHandler` resolves it, so nothing an author
+ * writes under `methods` selects the shape they are handed.
+ *
+ * `UNDER methods` IS THE SCOPE AND IT USED TO BE THE WHOLE OF IT: a
+ * `customMethod` name resolves nothing -- it says neither which kind it is nor
+ * what its handler receives -- so there the ANNOTATION is what declares it, and
+ * this name is one of the two an author writes. The discipline is unchanged
+ * where a method can be looked up and unavailable where it cannot.
  *
  * IT DEFAULTS, AND WHAT THE DEFAULT BUYS IS THAT `RequestContext` STAYS WRITABLE
  * BARE: the name is published, and sites outside src/ write it with no argument
