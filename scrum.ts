@@ -204,7 +204,7 @@ const scrum: ScrumDashboard = {
             "A compile probe capturing the compiler's TEXT and not merely its exit code: `textDocument/hover` under the custom map is refused with the method name and `methods` in the message, while `textDocument/didFocus` and `textDocument/didOpen` both compile. NEGATIVE CONTROL: the bare `never` spelling passes the refusal arm and FAILS the text arm, which is the whole distance this criterion travels. MEASUREMENT FIRST: the reading in the notes was taken with a FUNCTION-valued map and the ruled entry is an OBJECT, so the refusal's text is re-taken under the entry shape before either arm is believed.",
         },
       ],
-      status: "ready",
+      status: "refining",
       notes: [
         "MEASURED, AND IT REFUTES THE HANDLER TYPE AS FIRST DRAWN: `customMethodHandler<C> = C extends BaseNotificationContext ? Promise<void> : Promise<unknown>` TAKES THE NOTIFICATION ARM FOR BOTH KINDS. A notification context is the WIDER type -- it has fewer members -- so `BaseRequestContext` SATISFIES it and the conditional never reaches its second arm. Probe at `--strict`, exit 0 with `Eq<AsWritten<BaseRequestContext>, Promise<void>>` asserted TRUE, nothing objecting. THE DISCRIMINATION MUST NAME THE MEMBER THAT EXISTS ON ONLY ONE SIDE: `C extends BaseRequestContext ? Promise<unknown> : Promise<void>`, arms swapped, which the same probe confirms on both arms. THE SPELLING THAT READS CORRECTLY IS THE BROKEN ONE, which is why this is a note and not left to be discovered.",
         "MEASURED: A NOTIFICATION CONTEXT THAT ADDS NOTHING IS THE SUPERTYPE, not a sibling of it. The strictest identity instrument in the tree -- the invariance trick in test/initialize-handler-types.test.ts -- reports an empty extension IDENTICAL to `BaseMethodContext`, while reporting `BaseRequestContext` DISTINCT from it. That second reading is the negative control: the instrument does discriminate, so the first is not vacuous. CONSEQUENCE FOR THIS ITEM: no test can defend a `BaseNotificationContext` that adds nothing, so either it carries a member the request context lacks, or the notification side takes the supertype directly and the name is not published.",
@@ -398,6 +398,22 @@ const scrum: ScrumDashboard = {
     },
   ],
   completed: [
+    {
+      number: 96,
+      pbi_id: "PBI-101",
+      goal: "A config author can declare `textDocument/didFocus` in their config and have tsudoi serve it -- as a request whose `null` answer is distinguishable from no answer, or as a gated notification -- while a name tsudoi already owns is refused before the server starts instead of silently shadowing a built-in.",
+      status: "cancelled",
+      subtasks: [],
+      impediments: [],
+      decisions: [
+        "CANCELLED BY THE STAKEHOLDER AT REVIEW, ON THE SURFACE AND NOT ON A RED. Thirteen of thirteen subtasks completed across fourteen commits and the Definition of Done was NEVER RUN -- deliberately, because a green says nothing about a surface that is the wrong shape. The increment requires `{ kind, gate, handler }` per entry; the stakeholder wants a BARE FUNCTION per name, with `customMethodHandler<K>` available as an OPTIONAL annotation. They read a FIXTURE and said the shape was too far from what had been discussed.",
+        "THE ROOT CAUSE IS A TRUE MEASUREMENT USED TO CLOSE A QUESTION IT DID NOT COVER, and it is the Scrum Master's error rather than the team's. MEASURED CORRECTLY: upstream hands a request handler `(params, cancellation)` and no id, so the KIND cannot be read off a message once it arrives. INFERRED WRONGLY FROM IT: that the kind must therefore be DECLARED. What was never checked is whether tsudoi must register on only ONE side -- and it need not. `requestHandlers` and `notificationHandlers` ARE SEPARATE MAPS, so one name registers on BOTH and upstream's own dispatch discriminates by the presence of the id. The entry object, the declared `kind` and every criterion resting on them follow from an inference the measurement never licensed.",
+        "AND THE STAKEHOLDER SAID IT FIRST AND WAS ARGUED DOWN, which is the part worth carrying: `実行時はJSON RPCのidの有無で判定する` was correct, two rounds before the design hardened. It was answered with the id measurement, which was true and beside the point. A correction that arrives as an intuition against a measurement is the shape most likely to be dismissed here.",
+        "NOTHING IN THIS REPOSITORY GRADES WHETHER A SURFACE IS ONE AN AUTHOR WOULD WANT TO WRITE. Every mechanism here answers `is this prose false` or `does this green measure anything`, and both stayed green throughout: the notes were accurate, the measurements real, the criteria discriminating. The design was settled entirely through questions about correctness and type mechanics, ERGONOMICS WAS NEVER AN ACCEPTANCE CRITERION, and refinement then optimised against notes that had already baked the entry object in.",
+        "WHAT SURVIVES AND WHAT DIES, so the disposition is not re-derived later. SURVIVES: config.ts's own refusal block for a key outside the requestEntries loop, the per-method-per-session stderr budget with its swallow finding, the bare-string registration on both sides, the fixtures and test infrastructure, and the `BaseMethodContext` extraction. DIES: `CustomMethodEntry`, `CustomMethodMap`, the declared `kind`, the required `gate`, and PBI-101's criteria 2 and 5 as written. THE CODE DISPOSITION IS THE STAKEHOLDER'S AND IS NOT DECIDED HERE -- the fourteen commits stand in the tree unreverted.",
+        "TWO QUESTIONS THE NEW SHAPE OPENS AND THE OLD ONE ANSWERED, recorded so they are not lost with it: a bare function has nowhere to declare a GATE, and one function serving both dispatch paths can carry only ONE context type -- so a notification handler is handed a signal that never aborts, or the shapes diverge again.",
+      ],
+    },
     {
       number: 95,
       pbi_id: "PBI-100",
@@ -876,270 +892,27 @@ const scrum: ScrumDashboard = {
       },
     ],
   },
-  sprint: {
-    number: 96,
-    pbi_id: "PBI-101",
-    goal: "A config author can declare `textDocument/didFocus` in their config and have tsudoi serve it -- as a request whose `null` answer is distinguishable from no answer, or as a gated notification -- while a name tsudoi already owns is refused before the server starts instead of silently shadowing a built-in.",
-    status: "review",
-    subtasks: [
-      {
-        test: "None -- full Definition of Done green, no test changes.",
-        implementation:
-          "Extract a NON-EXPORTED `BaseMethodContext { readonly tsudoi }` in types.ts; `BaseRequestContext extends` it with `signal` alone. DELETE the prose paragraph asserting the session/message line -- the structure says it now.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "c837364",
-            message:
-              "refactor(types): the session/message line becomes structure, so the prose goes",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "TIDY FIRST, ALONE, AHEAD OF ANY BEHAVIOUR. Measured non-breaking already; a RED here means this is not the extraction that was measured.",
-          "GREEN THROUGHOUT, as predicted: 1208 pass / 0 fail over 87 files, all five checks exit 0 -- identical to the baseline. ONLY THE OPENING PARAGRAPH WENT: the TWO NUMBERED RULES survive, because `InitializeRequestContext`'s docblock cites them by name and deleting either would leave a dangling reference in the one commit that had to be non-breaking.",
-        ],
-      },
-      {
-        test: "No call site's behaviour changes; full DoD green.",
-        implementation:
-          "Widen the method-name parameters in methods.ts to admit a bare string -- `handlerFailure`, `reportHandlerFailure` (also called from server.ts), `reportCleanupFailure`, `answerUnlessCancelled`, `invalidTokenReported`. One named alias rather than five spellings.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "d12cc5c",
-            message:
-              "refactor(methods): one spelling for a reported method name, because the next one is not a key",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "Doing this structurally is what keeps it out of the behavioural commits; it must NOT be smuggled into the custom-request subtask.",
-          "`ReportedMethod = ConfigMethod | (string & {})`, the idiom `Tsudoi.notify` already uses. `handlerFailure`'s `ConfigMethod AND NOT Method` paragraph was NARROWED to the half that survives rather than superseded. 1208 pass / 0 fail, unchanged.",
-        ],
-      },
-      {
-        test: "The recording connection stub in test/notifications.test.ts still satisfies the type; the exactly-one-`gateCalls` arm and `BoundaryIsTheObservingMembers` stay green.",
-        implementation:
-          "`NotificationRegistrar` gains the bare-string `onNotification` overload, which `ProtocolConnection` already declares so it survives the `Omit`. Type only, no caller yet.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "38f546f",
-            message:
-              "refactor(notifications): the registrar admits a name, because a config's own method has nothing else",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "THE STUB DID NOT STILL SATISFY THE TYPE, which is the one place this subtask's own test line was wrong: an object literal implementing one signature is not assignable to a target carrying two overloads, and tsc said so -- TS2322, `string is not assignable to NotificationType<any>`. The stub now takes BOTH shapes through ONE map keyed by the name either arrives under, so `deliver` cannot tell them apart, which is what lets it grade a router that mixed them up. Both named arms stayed green; 1208 pass / 0 fail.",
-        ],
-      },
-      {
-        test: "A measurement, neither red nor green. Do not commit the probe.",
-        implementation:
-          "MEASURE the collision refusal's compiler text under the OBJECT entry shape. The earlier reading was taken with a FUNCTION-valued map and the ruled entry is an object, so AC6 requires this before either of its arms is believed. Record which half can carry the legible sentence.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "IF this shows the type cannot name the rule, the legible refusal is config.ts's alone and the config subtask grows -- one of the two triggers for taking the second cut.",
-          "MEASURED, three sentinel spellings against one OBJECT entry, tsc at --strict, probe not committed. BARE `never`: TS2322 `not assignable to type 'undefined'` -- naming neither the collision nor the rule, exactly as the earlier function-valued reading. PER-KEY TEMPLATE-LITERAL SENTENCE: TS2322 printing the sentence IN FULL, method name and all. SENTENCE AS A REQUIRED PROPERTY NAME: TS2741, also in full. All three ACCEPT `textDocument/didFocus` and `textDocument/didOpen`.",
-          "SO THE TYPE CAN NAME THE RULE AND TRIGGER 1 DID NOT FIRE. Two further readings taken while the probe stood: a malformed entry at a NON-reserved name is still refused, naming `gate`; and the sentinel is NOT inhabited by writing the sentence itself, the index signature refusing a string. The template-literal spelling shipped.",
-        ],
-      },
-      {
-        test: "RED FIRST: consumer-shaped identity probe in the register of test/initialize-handler-types.test.ts. Both negative controls applied and reverted with the reading recorded -- arms swapped must redden, and the conditional rewritten on the context type must redden.",
-        implementation:
-          "`customMethodHandler<K>` keyed on the KIND, resolving context and return from `K`. Graded BY IDENTITY, never by assignability -- that is what makes both known mistakes silent. Surface arm taken through the built `./types` artifact, not src/.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c4a85ff",
-            message:
-              "feat(types): a custom method's shape is resolved from its kind, because its name says nothing",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED taken first: 0 pass / 6 fail, every arm on a name that did not exist. Both controls fired. ARMS SWAPPED: 1 pass / 5 fail, and the SURVIVOR is the reading to keep -- `the two kinds are handed different contexts` stays green because a swap PRESERVES the distinction it asserts. CONDITIONAL REWRITTEN ON THE CONTEXT TYPE: 4 pass / 2 fail, the request kind resolving to `Promise<void>` exactly as the notes measured.",
-          "NAMED `CustomMethodHandler` AND NOT `customMethodHandler`, which is the one deviation from a criterion's literal text: every published type here is PascalCase and `MethodHandler` is the sibling it is modelled on. The criterion's property -- both context and return resolved from the kind -- is met.",
-          "THE SURFACE ARM DID NOT LAND HERE. It landed in subtask 11, through the installed tarball, which is the only route that reads `dist/types.d.ts`.",
-        ],
-      },
-      {
-        test: "RED FIRST: compile probe -- a notification entry with no `gate` exits 1 with the diagnostic naming `gate`; a request entry with no gate exits 0. Control: a defaulted gate makes the first probe pass, which is the whole distance the criterion travels.",
-        implementation:
-          "Fork the entry type for config-supplied entries -- `NotificationEntry` cannot cross, its `type` being a protocol value an author cannot construct and its handler synchronous. `NotificationGate` becomes a published name.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "24ee777",
-            message:
-              "test(types): the gate an author declares is refused by absence, not filled in for them",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE IMPLEMENTATION HALF LANDED IN c4a85ff AND THIS COMMIT CARRIES THE ARMS, which is a TDD deviation recorded rather than glossed: the entry type could not be written without its gate, and subtask 5's inline arm needed the entry. WHAT REPLACED THE RED is the control the subtask names, applied and reverted: `gate` made optional reddens the missing-gate arm and NO OTHER of the file's eight, 7 pass / 1 fail.",
-          "`NotificationGate` MOVED to types.ts rather than being re-exported: types.ts is the published module and notifications.ts imports it back, which keeps one declaration.",
-        ],
-      },
-      {
-        test: "RED FIRST: fixture configs -- a colliding name, a malformed kind, a missing gate at run time, a non-function handler.",
-        implementation:
-          "config.ts reads and refuses `customMethod` in its OWN hand-written block beside `initialize`'s, never as a row of the requestEntries loop -- that site records the measurement that a key outside it is copied nowhere and refused nowhere. Refusal names the method and the rule.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "b52ea93",
-            message:
-              "feat(config): customMethod is read and refused in its own block, because nothing else refuses it",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE PRODUCT OWNER RULED THIS THE REQUIRED HALF OF AC6: the run-time refusal is what every author receives regardless of whether they annotate, so the legible sentence belongs here and the compile-text arm is the half that slips if the sprint runs short. IT DID NOT SLIP -- both halves shipped.",
-          "RED taken first over the four fixtures on both runtimes: 35 pass / 9 fail. THE NINTH RED IS THE ONE THAT WOULD OTHERWISE BE MISSING: an arm reading the LOADED config, because `loadConfig` materialises a fresh object and every refusal is green under a read that is never written into it -- the measured shape src/config.ts already records for `methods.initialize`.",
-          "AND THE TYPE'S SENTENCE WAS FOUND FALSE OF ONE KEY WHILE WRITING THE RUN-TIME ONE: `served by tsudoi's own request table` is false of `initialize`, which is a config key and not a row. Both layers now read `is a method tsudoi serves itself; declare its handler under methods, not customMethod`.",
-          "AC6's NAMED CONTROL, applied and reverted: with the bare `never` sentinel the collision is STILL REFUSED and the text arm alone reddens, 9 pass / 1 fail, the message reading `not assignable to type 'undefined'`. That is the whole distance the criterion travels, measured.",
-        ],
-      },
-      {
-        test: "RED FIRST: fake-editor arms reading the RAW response. Control: an implementation sending the return bare makes the two arms indistinguishable on the wire.",
-        implementation:
-          "Register custom REQUESTS by bare string, reusing requestContext and answerUnlessCancelled. `{ result: null }` answers null with no error; returning nothing is a handler failure taking reportHandlerFailure's existing route. Plus an arm that a customMethod-only config's InitializeResult is UNCHANGED -- a custom method advertises nothing.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "c52281d",
-            message:
-              "feat(methods): a custom request is registered by name, and answering nothing is a failure",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "RED first: 2 pass / 6 fail, the two capability arms born green because nothing was registered yet.",
-          "THE NAMED CONTROL MEASURED SOMETHING ELSE, AND THE INSTRUMENT WAS REPAIRED RATHER THAN THE CRITERION ARGUED WITH. `sending the handler's return BARE` reddens 6 of 8 and does NOT make the pair indistinguishable: it makes them differ differently, `{result:{result:null}}` against `{result:null}`. THE SPELLING THAT DISCHARGES THE PROPERTY is the one the criterion's own prose names -- the missing case silently becoming null, `?.result ?? null` -- which leaves the null-answering arm GREEN and reddens the answering-nothing arm alone, 6 pass / 2 fail. Both readings are recorded; the second is the one the pair rests on.",
-          "AND UPSTREAM SPREADS WHERE THERE IS NO REQUEST TYPE, MEASURED IN ITS SOURCE: absent params call the handler with the TOKEN ALONE, a by-name object arrives as one argument before it, a by-position array arrives spread. The residue -- a one-element positional array is indistinguishable from a by-name value -- is upstream's spread and is recorded at the reading.",
-        ],
-      },
-      {
-        test: "RED FIRST: the handler's effect read back through a LATER request, since a notification has no response. AC1's control is THREE ARMS MOVING TOGETHER -- kind flipped leaves the request unanswered AND the same name as a notification now reaches the handler, read against a name absent from the map where neither form reaches anything.",
-        implementation:
-          "Custom notifications register through notifications.ts -- the custom table reaches createGatedConnection and merges into registerNotifications's SINGLE loop. No new module, no lint exemption, RequestOnlyConnection untouched. Bare string and NOT a synthesized NotificationType, which would make upstream emit a params-shape error for a params-less message.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "6f0bfc7",
-            message: "feat(notifications): a config's own notifications join the router's one loop",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "The exactly-one-`gateCalls` arm must stay green. The hazard is that the next reader fixes the test instead of the code. IT STAYED GREEN, and so did `BoundaryIsTheObservingMembers`.",
-          "RED first: 4 pass / 4 fail, the two arms needing registration. AC1's CONTROL MEASURED ON THE WIRE, each cell a separate session so a shared recorder could not answer for the other -- and the FIRST spelling of it was wrong for exactly that reason, one session recording the request and reading it back as the notification's effect. DECLARED A REQUEST: request answered, notification reaches nothing. KIND FLIPPED: request -32601, notification REACHES it. DECLARED NOWHERE: -32601 and reaches nothing, in BOTH states. The flip moves both halves in one edit; the undeclared row is what makes that mean something.",
-          "THE DISCRIMINATION IS NOW A PERMANENT ARM rather than only that reading, which is what the dashboard's own bar asks of a perturbation whose result is going to be relied on.",
-        ],
-      },
-      {
-        test: "MEASURE FIRST, before the arm is believed: with the report removed, confirm a rejecting handler is observable by NOTHING -- tsudoi awaits it, so the awaiting frame catches it. RED: one fixture, two custom notifications, one answering and one rejecting, each driven REPEATEDLY. Control: a session-wide flag loses the second method's line.",
-        implementation:
-          "tsudoi CATCHES the rejection inside its own handler and reports on its own per-method-per-session budget. Letting it propagate hands the report to upstream's unconditional logger.error -- one line per message. Arms: exactly one `tsudoi: ` line per method, the session still answers afterwards, no non-LSP byte on stdout.",
-        type: "behavioral",
-        status: "completed",
-        commits: [
-          {
-            hash: "2bf815f",
-            message:
-              "feat(methods): a broken notification handler is named once per method, on tsudoi's own budget",
-            phase: "green",
-          },
-        ],
-        notes: [
-          "THE SUBTASK MOST LIKELY TO LAND GREEN MEASURING NOTHING, which is why the silence is measured before the arm is trusted.",
-          "THE SWALLOW MEASUREMENT CAME BACK EXACTLY AS THE NOTES PREDICTED, so the second cut's trigger 2 did not fire either. Three readings on one fixture driven three times per method. PROPAGATING: 3 stderr lines for 3 messages, upstream's own logger naming the method, and the ANSWERING handler reported by nothing. CAUGHT AND NOT REPORTED: stderr EMPTY, both handlers having run three times, the session still serving -- observable by nothing at all. CAUGHT AND REPORTED: one line per method.",
-          "RED first: 0 pass / 6 fail. CONTROL, a single session-wide flag: 0 pass / 6 fail rather than the one arm, because the arms fence on BOTH markers arriving -- a wider red than the loss, caused by exactly it, and recorded that way rather than narrowed.",
-        ],
-      },
-      {
-        test: "The surface tests read the wider surface; the README block gains its marker AND a `consumers` row, plus the corrupt-inside-subject (must go false) and corrupt-outside-subject (must stay true) arms.",
-        implementation:
-          "Published surface and README. State in prose that a custom method ADVERTISES NOTHING -- the first thing an author will file as a bug.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "7a96ba1",
-            message:
-              "docs: the published surface is read through the artifact, and the README says what it costs",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "NO NEW `consumers` ROW WAS OWED: the block takes the existing `snippet` marker, whose row already covers this checkout's own README, so the sweep arms it and the corrupt-inside / corrupt-outside arms are DISCOVERED from the document rather than listed. What the block did owe was test/readme-snippet-types.test.ts's count, raised deliberately, with the third block COMPILED beside the second rather than left to the specifiers row.",
-          "AC2's SURFACE ARM LANDED HERE AND IS THE ONE THING THAT WAS OTHERWISE GRADED BY NOTHING: every other arm about these types resolves `./src/types.ts` through a symlink, a file no stranger receives. One arm through the installed tarball imports the five published names beside the unpublished one in a single statement, because an absence read alone is satisfied by a subpath that resolved nothing.",
-          "MEASURED, AND NOT THE DIAGNOSTIC PREDICTED: TS2459 `declares 'BaseMethodContext' locally, but it is not exported`, not TS2305. The supertype IS emitted into `dist/types.d.ts`, `BaseRequestContext` extending it, so the artifact DECLARES AND WITHHOLDS rather than omits -- the stronger reading, since TS2305 would also be produced by a tree shipping no such declaration at all.",
-          "AND A RESIDUE WAS MEASURED AND DISCLOSED RATHER THAN DISCOVERED LATER: a config declaring `textDocument/didOpen` under customMethod REPLACES the handler that fills the document store -- the hook runs with the right params, `tsudoi.documents` is empty for the whole session, nothing on stderr. Upstream registers by map assignment and not by chaining. NOT ARMED, on the standing argument that an arm would pin the displacement as promised behaviour; the README and the type both say it.",
-        ],
-      },
-      {
-        test: "Each record MEASURED rather than transcribed.",
-        implementation:
-          "Perturbation records for the two new weakenings: the handler type's arms swapped, and a session-wide flag in place of the per-method Set.",
-        type: "structural",
-        status: "completed",
-        commits: [
-          {
-            hash: "6f25680",
-            message:
-              "test(perturbations): two records for the two weakenings this increment made available",
-            phase: "refactoring",
-          },
-        ],
-        notes: [
-          "PBI-86 is `ready` and rewrites the record shape. It did NOT land first, so both records are written in the current `arm` / `alsoReddens` / `redAt` shape and join its migration.",
-          "MEASURED RATHER THAN TRANSCRIBED, AND THE FIRST READING WAS WRONG: written with an empty `alsoReddens`, the swapped-arms record read DISARMED naming EIGHT reddened arms. The registry's own list is what shipped. The two survivors are the reading worth keeping -- `the two kinds are handed different contexts` stays green because a SWAP preserves the distinction it asserts.",
-          "AND THE ARMS HAD TO BE RENAMED BEFORE A RECORD COULD NAME ONE. MEASURED at bun 1.3.13 on the budget file: bun's JUnit report carries the describe in `classname` and only the `test()` string in `name`, so two arms differing by their describe collapse to ONE result and a record grades whichever runtime bun wrote last. test/code-action.test.ts states the condition for taking its per-runtime naming -- the day a file gains a record -- and this was that day.",
-          "test/version-citations.test.ts caught the new `bun 1.3.13` citation and it is accounted for.",
-        ],
-      },
-      {
-        test: "All five checks exit 0 from a clean tree; the reading recorded against the tree the instrument names.",
-        implementation: "Definition of Done, then scrum.ts alone and last.",
-        type: "structural",
-        status: "completed",
-        commits: [],
-        notes: [
-          "TAKEN THROUGH scripts/definition-of-done.ts ON A CLEAN TREE AT 6f25680, tree ff003233. PASSED, all five: bun test exit 0 at 1260 pass / 0 fail over 92 files; oxlint exit 0 with the one long-standing non-gating require-yield warning at test/fixtures/throws-on-cancel.ts; oxfmt --check . exit 0 over 259 files; tsc --noEmit exit 0; typecheck-workspaces exit 0. The FIRST check is green in the same run, which is what makes the fourth's colour a statement about `dist/`.",
-          "AND THE READING WAS RE-TAKEN AFTER bc14a26, WHICH CLOSED TWO BRANCHES THIS RECORD HAD ALREADY CALLED DONE: a custom request carrying NO PARAMS -- the branch where upstream hands a handler the CANCELLATION TOKEN in the params slot -- and a custom request arriving BEFORE the handshake, whose lifecycle refusal nothing drove. A params-less NOTIFICATION joined them, since that is the arm the `bare string and not a synthesized NotificationType` ruling actually rests on. Neither was required by a criterion and both were reachable; found by reading the increment rather than by the suite. Re-taken by the five commands directly, with scrum.ts in the tree: 1266 pass / 0 fail over 92 files, oxlint 0, oxfmt 0, tsc --noEmit 0, typecheck-workspaces 0.",
-          "ONE FULL RUN IN BETWEEN REPORTED A RED AND IT IS DISCLOSED RATHER THAN DROPPED: test/protocol.test.ts's fallback arm timed out at its own 4000ms budget on a loaded machine, in a run that also took 328s against a 285s neighbour. That file is green twice alone and green in the reading above, and nothing in bc14a26 is on its path -- the class PBI-93 already carries, one file along.",
-          "scrum.ts IS OVER THE HEADER'S 1000-LINE TARGET AND WAS ALREADY OVER IT: 1239 lines at this sprint's base 318532a, and this record added to it. NOT COMPACTED HERE, deliberately -- the live sprint record is what the outstanding `revise` round reads, and compacting it mid-review removes the thing under review. It is the Review or Retrospective event's to take.",
-          "CLAUDE.md's `What this is` gained `customMethod` -- LOCAL ONLY, that file being untracked here, so the edit persists for nobody else. `definition_of_done.checks` did not move, so the Commands section needed nothing.",
-        ],
-      },
-    ],
-    impediments: [],
-    decisions: [
-      "THE ITEM WAS SPLIT IN REFINEMENT AND THIS SPRINT TAKES THE HALF WITH NO OPEN SEMANTICS. PBI-102 holds the hook, and with it the ordering ruling, the eviction it implies and the gate question. The seam was recorded in the notes BEFORE refinement rather than invented under pressure.",
-      "THE PRODUCT OWNER NAMED WHAT MAY NOT SLIP: criteria 1, 2, 3, 5 and the REFUSAL half of 6. What may slip without the increment becoming dishonest: criterion 4's stderr budget and 6's legibility half -- provided no README or docblock claims tsudoi budgets the report this sprint. A slipped 4 fails LOUD, through upstream's own unconditional log, rather than silently.",
-      "THE SECOND CUT IS NAMED IN ADVANCE, between the REQUEST kind and the NOTIFICATION kind, and it falls between subtasks 9 and 10 so nothing needs re-planning to take it. Its triggers: the collision measurement showing the type cannot name the rule at all, or the swallow measurement coming back differently from what the notes predict.",
-      "THE PRODUCT OWNER ALSO RULED PBI-102's OPEN GATE QUESTION, recorded here so it is not lost and ATTRIBUTED because it is the PO's and not the human stakeholder's: a hook takes THE BUILT-IN'S GATE and an author declares none for one. An `always` hook on lifecycle-gated `didOpen` is precisely the fires-for-a-document-the-store-never-opened defect. That ruling is PBI-102's to carry into its own refinement, where the human may overturn it.",
-      "THE SECOND CUT WAS NOT TAKEN, AND BOTH TRIGGERS WERE DECIDED ON A READING RATHER THAN ON A JUDGEMENT. TRIGGER 1, the collision text: the type CAN name the rule -- a per-key template-literal sentinel prints the sentence in full under the OBJECT entry shape, where the bare `never` spelling reads `not assignable to type 'undefined'`. TRIGGER 2, the swallow: caught and unreported, a rejecting handler is observable by NOTHING, stderr empty and the session still serving, which is what the notes predicted. All thirteen subtasks shipped.",
-      "EVERY CRITERION IS MET AND NOTHING SLIPPED, including the two the Product Owner said MAY slip: criterion 4's stderr budget landed with its measurement taken before the arm was believed, and 6's legibility half landed at both layers. No README or docblock claims tsudoi budgets a report it does not.",
-      "ONE DEVIATION FROM A CRITERION'S LITERAL TEXT, recorded because concealment was available: criterion 2 spells the type `customMethodHandler` and what shipped is `CustomMethodHandler`. Every published type here is PascalCase and `MethodHandler` is the sibling it is modelled on; the notes already delegate the entry type's spelling to the Developer. The criterion's PROPERTY -- both the context and the return resolved from the kind, neither base name published -- is met and graded by identity.",
-      "AND ONE RESIDUE SHIPPED KNOWINGLY, MEASURED AND DISCLOSED IN BOTH PLACES A READER MEETS IT: a config declaring `textDocument/didOpen` under customMethod REPLACES the handler filling the document store. The hook runs with the right params, `tsudoi.documents` is empty for the whole session, and nothing is written anywhere. That is the eviction PBI-102's own notes predicted, arriving through the room criterion 6 requires be left open; refusing it here would fail that criterion. NOT ARMED -- an arm would pin the displacement as promised behaviour -- and it is PBI-102's to close.",
-    ],
-  },
+  sprint: null,
   retrospectives: [
+    {
+      sprint: 96,
+      improvements: [
+        {
+          action:
+            "RENDER THE AUTHOR-FACING SURFACE AS A CONFIG AN AUTHOR WOULD WRITE, AND PUT IT IN FRONT OF THE STAKEHOLDER, BEFORE ANY OF IT IS BUILT. Sprint 96 settled a surface across many rounds of real measurement and shipped thirteen subtasks before the stakeholder saw what writing against it looked like -- and they saw it in a FIXTURE, which is simply the first artifact in the whole process that rendered the surface as code an author types. WHAT THIS IS NOT: a review step, or more attention. Sprint 47 already measured that attention pointed at a class still misses an instance of it. What failed here is that every question asked during design was answerable by measurement -- can the kind be read off the wire, does the conditional discriminate, what does the refusal print -- and NONE of them was `how much ceremony does this cost the person writing it`. A sketch answers that one and nothing else does. IT COSTS ONE FILE AND IT WOULD HAVE MOVED THIS SPRINT'S ENTIRE COST.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+        {
+          action:
+            "WHEN A MEASUREMENT CLOSES A QUESTION, STATE WHAT IT DOES NOT COVER IN THE SAME BREATH. The id measurement here was true, reproducible and recorded -- and it licensed a conclusion two steps wider than itself, because `the kind cannot be read off an arriving message` was written down as `the kind must be declared`. The gap was the unexamined premise that tsudoi registers on ONE side. THE TELL WAS PRESENT AND WAS DISMISSED: the stakeholder's own intuition contradicted the inference two rounds before the design hardened, and was answered with the measurement rather than with a check of what the measurement covered. A correction arriving as an intuition against a measurement is the shape this project is worst at hearing, precisely because measurements outrank opinions here.",
+          timing: "immediate",
+          status: "active",
+          outcome: null,
+        },
+      ],
+    },
     {
       sprint: 87,
       improvements: [
