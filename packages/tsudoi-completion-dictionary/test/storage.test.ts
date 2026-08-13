@@ -242,7 +242,7 @@ test("a prefix query carries an exclusive upper bound into SQLite", () => {
   queryEntries(database, ["/dictionary"], "Ab", 10);
 
   expect(sql).toContain("entry.search_key < ?");
-  expect(params).toEqual(["/dictionary", "ab", "ac", "ab", "ab", 10]);
+  expect(params).toEqual(["/dictionary", "ab", "ac", 10]);
 });
 
 test("the exclusive bound retains suffixes after the maximum Unicode scalar", async () => {
@@ -254,6 +254,44 @@ test("the exclusive bound retains suffixes after the maximum Unicode scalar", as
     await indexFile(database, path);
 
     expect(queryEntries(database, [path], `a${maximum}`, 10)).toEqual([`a${maximum}tail`]);
+  } finally {
+    database.close();
+  }
+});
+
+test("a NUL in an entry and prefix is matched as ordinary UTF-8 text", async () => {
+  const { path, databasePath } = temporaryDictionary("a\0b\n");
+  const database = await openSqlite(databasePath);
+  try {
+    initializeDatabase(database);
+    await indexFile(database, path);
+
+    expect(queryEntries(database, [path], "a\0", 10)).toEqual(["a\0b"]);
+  } finally {
+    database.close();
+  }
+});
+
+test("initialization migrates the known legacy prefix index", async () => {
+  const { databasePath } = temporaryDictionary("");
+  const database = await openSqlite(databasePath);
+  try {
+    initializeDatabase(database);
+    database.exec(
+      "CREATE INDEX dictionary_entry_prefix " + "ON dictionary_entry(path, generation, search_key)",
+    );
+    database.exec("PRAGMA user_version = 0");
+
+    initializeDatabase(database);
+
+    const indexes = database
+      .prepare(
+        "SELECT name FROM sqlite_schema WHERE type = 'index' AND name LIKE 'dictionary_entry_prefix%'",
+      )
+      .all()
+      .map((row) => row.name);
+    expect(indexes).toEqual(["dictionary_entry_prefix_v2"]);
+    expect(database.prepare("PRAGMA user_version").get()?.user_version).toBe(1);
   } finally {
     database.close();
   }

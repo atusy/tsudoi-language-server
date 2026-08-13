@@ -8,12 +8,17 @@ interface FileRecord {
 }
 
 const indexFormat = "2";
+const schemaVersion = 1;
 
 export function initializeDatabase(database: SqliteDatabase): void {
   database.exec("PRAGMA journal_mode = WAL");
   database.exec("PRAGMA synchronous = NORMAL");
   database.exec("PRAGMA foreign_keys = ON");
   database.exec("PRAGMA busy_timeout = 250");
+  const version = database.prepare("PRAGMA user_version").get()?.user_version;
+  if (typeof version !== "number" || version > schemaVersion) {
+    throw new Error(`unsupported dictionary database schema version ${String(version)}`);
+  }
   database.exec(`
     CREATE TABLE IF NOT EXISTS dictionary_file (
       path TEXT PRIMARY KEY,
@@ -31,6 +36,8 @@ export function initializeDatabase(database: SqliteDatabase): void {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS dictionary_entry_prefix_v2
       ON dictionary_entry(path, generation, search_key, value);
+    DROP INDEX IF EXISTS dictionary_entry_prefix;
+    PRAGMA user_version = ${schemaVersion};
   `);
 }
 
@@ -180,18 +187,10 @@ export function queryEntries(
        WHERE entry.path IN (${placeholders})
          AND entry.search_key >= ?
          ${upperClause}
-         AND substr(entry.search_key, 1, length(?)) = ?
        ORDER BY entry.search_key, entry.value
        LIMIT ?`,
     )
-    .all(
-      ...paths,
-      searchKey,
-      ...(upperBound === undefined ? [] : [upperBound]),
-      searchKey,
-      searchKey,
-      maxItems,
-    );
+    .all(...paths, searchKey, ...(upperBound === undefined ? [] : [upperBound]), maxItems);
   return rows.map((row) => {
     if (typeof row.value !== "string") {
       throw new TypeError("a dictionary entry has an invalid shape");
