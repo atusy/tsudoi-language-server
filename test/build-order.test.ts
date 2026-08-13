@@ -40,6 +40,7 @@ test("the derived order is the order this repository must be built in", () => {
     join(repoRoot, "packages", "tsudoi-completion-dictionary"),
     join(repoRoot, "packages", "tsudoi-completion-document"),
     join(repoRoot, "packages", "tsudoi-completion-path"),
+    join(repoRoot, "packages", "tsudoi-completion-shell"),
     join(repoRoot, "packages", "tsudoi-hover-wordnet"),
   ]);
   // AND THE ALPHABET NOW GETS THIS REPOSITORY WRONG, asserted here because it

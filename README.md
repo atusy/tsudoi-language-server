@@ -668,6 +668,7 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | [`@atusy/tsudoi-adapter-efm-config`](packages/tsudoi-adapter-efm-config/README.md)       | whatever an efm `config.yaml` describes               |
   | [`@atusy/tsudoi-completion-dictionary`](packages/tsudoi-completion-dictionary/README.md) | `textDocument/completion`, from dictionary files      |
   | [`@atusy/tsudoi-completion-document`](packages/tsudoi-completion-document/README.md)     | `textDocument/completion`, from open documents' words |
+  | [`@atusy/tsudoi-completion-shell`](packages/tsudoi-completion-shell/README.md)           | `textDocument/completion`, from a native shell        |
 
   **Neither brings tsudoi, and neither manifest will warn you.** Both declare
   `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not a

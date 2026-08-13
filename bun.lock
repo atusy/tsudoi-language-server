@@ -9,6 +9,7 @@
         "@atusy/tsudoi-completion-dictionary": "0.0.0",
         "@atusy/tsudoi-completion-document": "0.0.0",
         "@atusy/tsudoi-completion-path": "0.0.0",
+        "@atusy/tsudoi-completion-shell": "0.0.0",
         "@atusy/tsudoi-hover-wordnet": "0.0.0",
         "@atusy/tsudoi-language-server": "0.0.0",
         "@types/bun": "^1.3.0",
@@ -77,6 +78,20 @@
         "@atusy/tsudoi-language-server",
       ],
     },
+    "packages/tsudoi-completion-shell": {
+      "name": "@atusy/tsudoi-completion-shell",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@types/bun": "^1.3.0",
+        "@types/node": "^24.0.0",
+      },
+      "peerDependencies": {
+        "@atusy/tsudoi-language-server": "*",
+      },
+      "optionalPeers": [
+        "@atusy/tsudoi-language-server",
+      ],
+    },
     "packages/tsudoi-hover-wordnet": {
       "name": "@atusy/tsudoi-hover-wordnet",
       "version": "0.0.0",
@@ -111,6 +126,8 @@
     "@atusy/tsudoi-completion-document": ["@atusy/tsudoi-completion-document@workspace:packages/tsudoi-completion-document"],
 
     "@atusy/tsudoi-completion-path": ["@atusy/tsudoi-completion-path@workspace:packages/tsudoi-completion-path"],
+
+    "@atusy/tsudoi-completion-shell": ["@atusy/tsudoi-completion-shell@workspace:packages/tsudoi-completion-shell"],
 
     "@atusy/tsudoi-hover-wordnet": ["@atusy/tsudoi-hover-wordnet@workspace:packages/tsudoi-hover-wordnet"],
 

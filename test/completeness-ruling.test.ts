@@ -53,6 +53,7 @@ const ruled = [
   "packages/tsudoi-completion-document/src/corpus.ts",
   "packages/tsudoi-completion-dictionary/src/dictionary.ts",
   "packages/tsudoi-completion-path/src/completion.ts",
+  "packages/tsudoi-completion-shell/src/shell.ts",
   "test/fixtures/all-methods.ts",
   "test/fixtures/completion-cancel.ts",
   "test/fixtures/completion-chunks.ts",
