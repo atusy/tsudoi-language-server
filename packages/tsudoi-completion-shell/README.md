@@ -53,8 +53,8 @@ selected shell's own configuration.
 `maxItems` bounds the LSP response, `timeoutMs` bounds one native request, and `idleTimeoutMs`
 bounds how long an unused process remains alive. Requests to one handler are serialized because
 the capture protocol has one response terminator and cannot safely multiplex answers. The shell
-may still perform arbitrary work while computing candidates, so use completion definitions and
-configuration you trust.
+computes candidates rather than this package enumerating commands itself, so it may still perform
+arbitrary work; use completion definitions and configuration you trust.
 
 ## Installing it
 
@@ -82,6 +82,9 @@ The tarball is written at the workspace root. In your own project:
 ```sh
 bun install ../tsudoi-language-server/tsudoi-completion-shell.tgz
 ```
+
+The pack command is extracted and **executed** by this repository's tests. The install command is
+**never run** there; its path is checked, **not the command** or its package-manager behavior.
 
 ## License and credits
 
