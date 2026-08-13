@@ -96,10 +96,12 @@ for (const runtime of ["bun", "deno"] as const) {
       expect(result.status).toBe(0);
       expect(result.signal).toBeNull();
       expect(result.stderr).toBe("");
-      expect(JSON.parse(result.stdout)).toEqual({
-        during: ["old-entry"],
-        after: ["new-entry"],
-      });
+      const output = JSON.parse(result.stdout) as { during: string[]; after: string[] };
+      // The Worker may commit before or after the immediate read. Atomicity,
+      // not scheduling, is the cross-runtime contract; the controlled unit test
+      // holds a refresh pending when it asserts the old-snapshot case.
+      expect([["old-entry"], ["new-entry"]]).toContainEqual(output.during);
+      expect(output.after).toEqual(["new-entry"]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
