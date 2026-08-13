@@ -32,11 +32,11 @@ dictionary file to be registered. Registration begins immediately in a Worker; c
 that work reads the previous committed generation, or yields nothing when the database has never
 held that file.
 
-**It needs tsudoi at run time, whatever the manifest says.** Tsudoi is an `optional` **peer** only
-because tsudoi is **unpublished**. This package does not install it, and installing this package
-alone eventually fails with `Cannot find module '@atusy/tsudoi-language-server/types'`. The flag
-means the package manager must not fetch an unavailable peer, not that completion works without
-its host.
+Tsudoi is an `optional` **peer** only because tsudoi is **unpublished**. This package does not
+install it. Its JavaScript artifact can load without tsudoi because the handler imports are
+type-only, but a TypeScript consumer needs the peer to resolve the public handler types, and the
+returned handler is useful only inside a tsudoi host. The flag means the package manager must not
+fetch an unavailable peer; it does not make the host relationship optional.
 
 ## Options
 
