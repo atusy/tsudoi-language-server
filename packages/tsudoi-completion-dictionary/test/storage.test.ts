@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openSqlite } from "../src/sqlite.ts";
@@ -55,6 +55,27 @@ test("the content hash skips unchanged bytes and replaces changed bytes", async 
     expect(after.mtimeMs).toBe(before.mtimeMs);
     expect(await indexFile(database, path)).toBe(true);
     expect(queryEntries(database, [path], "", 10)).toEqual(["after!"]);
+  } finally {
+    database.close();
+  }
+});
+
+test("the write lock is acquired before the source snapshot is read", async () => {
+  const { path, databasePath } = temporaryDictionary("stale\n");
+  const database = await openSqlite(databasePath);
+  initializeDatabase(database);
+  const lockingDatabase = {
+    ...database,
+    exec: (sql: string) => {
+      database.exec(sql);
+      if (sql === "BEGIN IMMEDIATE") {
+        unlinkSync(path);
+      }
+    },
+  } satisfies SqliteDatabase;
+  try {
+    expect(indexFile(lockingDatabase, path)).rejects.toThrow();
+    expect(queryEntries(database, [path], "", 10)).toEqual([]);
   } finally {
     database.close();
   }

@@ -64,18 +64,15 @@ async function snapshot(path: string): Promise<FileSnapshot> {
 }
 
 export async function indexFile(database: SqliteDatabase, path: string): Promise<boolean> {
-  const next = await snapshot(path);
-  if (fileRecord(database, path)?.contentHash === next.contentHash) {
-    return false;
-  }
-
   database.exec("BEGIN IMMEDIATE");
   try {
-    // Another process may have published the same bytes while this process was
-    // hashing them, so the authority is read again after taking the write lock.
+    // Snapshot only after taking the shared database's write lock. Otherwise a
+    // slower process can read old bytes, wait behind a newer publisher, and
+    // then replace that newer generation with its stale snapshot.
+    const next = await snapshot(path);
     const current = fileRecord(database, path);
     if (current?.contentHash === next.contentHash) {
-      database.exec("ROLLBACK");
+      database.exec("COMMIT");
       return false;
     }
     const generation = (current?.generation ?? 0) + 1;
