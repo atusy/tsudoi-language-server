@@ -20,8 +20,9 @@ scope.addEventListener("message", (event) => {
 
 async function refresh(message: RefreshMessage): Promise<void> {
   const errors: Array<{ path: string; message: string }> = [];
-  const database = await openSqlite(message.databasePath);
+  let database: Awaited<ReturnType<typeof openSqlite>> | undefined;
   try {
+    database = await openSqlite(message.databasePath);
     initializeDatabase(database);
     for (const path of message.files) {
       try {
@@ -30,8 +31,14 @@ async function refresh(message: RefreshMessage): Promise<void> {
         errors.push({ path, message: String(error) });
       }
     }
+  } catch (error) {
+    errors.push({ path: message.databasePath, message: String(error) });
   } finally {
-    database.close();
+    try {
+      database?.close();
+    } catch (error) {
+      errors.push({ path: message.databasePath, message: String(error) });
+    }
   }
   scope.postMessage({ type: "done", errors });
   scope.close();

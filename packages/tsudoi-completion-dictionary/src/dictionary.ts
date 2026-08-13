@@ -61,6 +61,7 @@ const workerRuntime: RefreshRuntime = {
         );
       });
       worker.addEventListener("error", (event) => {
+        event.preventDefault();
         worker.terminate();
         rejectRefresh(event.error ?? new Error(event.message));
       });

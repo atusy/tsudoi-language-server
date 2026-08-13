@@ -12,6 +12,9 @@ applySuiteDeadline();
 const entry = pathToFileURL(
   join(repoRoot, "packages", "tsudoi-completion-dictionary", "dist", "index.js"),
 ).href;
+const workerEntry = pathToFileURL(
+  join(repoRoot, "packages", "tsudoi-completion-dictionary", "dist", "worker.js"),
+).href;
 
 function probeSource(): string {
   return `
@@ -59,6 +62,22 @@ process.stdout.write(JSON.stringify({ during, after: await labels() }));
 `;
 }
 
+function workerFailureProbeSource(): string {
+  return `
+const root = process.argv[2];
+const worker = new Worker(${JSON.stringify(workerEntry)}, { type: "module" });
+const result = await new Promise((resolve, reject) => {
+  worker.addEventListener("message", (event) => resolve(event.data));
+  worker.addEventListener("error", (event) => {
+    event.preventDefault();
+    reject(event.error ?? new Error(event.message));
+  });
+  worker.postMessage({ databasePath: root, files: [] });
+});
+process.stdout.write(JSON.stringify(result));
+`;
+}
+
 for (const runtime of ["bun", "deno"] as const) {
   test(`${runtime} loads its native SQLite adapter and swaps Worker snapshots`, () => {
     const root = mkdtempSync(join(tmpdir(), `tsudoi-dictionary-${runtime}-`));
@@ -86,3 +105,25 @@ for (const runtime of ["bun", "deno"] as const) {
     }
   });
 }
+
+test("deno reports a Worker-level SQLite failure without an unhandled child error", () => {
+  const root = mkdtempSync(join(tmpdir(), "tsudoi-dictionary-worker-failure-"));
+  try {
+    const probe = join(root, "probe.mjs");
+    writeFileSync(probe, workerFailureProbeSource());
+    const result = spawnSync("deno", ["run", "-A", probe, root], {
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.signal).toBeNull();
+    expect(result.stderr).toBe("");
+    expect(JSON.parse(result.stdout)).toEqual({
+      type: "done",
+      errors: [{ path: root, message: expect.any(String) }],
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
