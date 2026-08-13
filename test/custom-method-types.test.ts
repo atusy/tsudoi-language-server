@@ -157,7 +157,7 @@ test("a handler of either kind compiles in the map, with the author annotating t
     typesProbe(
       [
         "const config: TsudoiConfig = {",
-        "  customMethod: {",
+        "  customMethods: {",
         '    "textDocument/didFocus": (context: BaseRequestContext, params: unknown) => {',
         "      void context.signal;",
         "      void params;",
@@ -194,7 +194,7 @@ test("a bare arrow in the map is refused, the parameter having no type to infer 
     typesProbe(
       [
         "const config: TsudoiConfig = {",
-        '  customMethod: { "textDocument/didFocus": (context, params) => Promise.resolve({ result: [context, params] }) },',
+        '  customMethods: { "textDocument/didFocus": (context, params) => Promise.resolve({ result: [context, params] }) },',
         "};",
         "void config;",
       ].join("\n"),
@@ -221,7 +221,7 @@ test("a name tsudoi already serves is refused by a message naming the method and
     typesProbe(
       [
         "const config: TsudoiConfig = {",
-        "  customMethod: {",
+        "  customMethods: {",
         '    "textDocument/hover": (_context: BaseRequestContext, _params: unknown) =>',
         "      Promise.resolve({ result: null }),",
         "  },",
@@ -233,7 +233,7 @@ test("a name tsudoi already serves is refused by a message naming the method and
 
   expect(result.code).toBe(1);
   expect(result.output).toContain("textDocument/hover");
-  expect(result.output).toContain("declare its handler under methods, not customMethod");
+  expect(result.output).toContain("declare its handler under methods, not customMethods");
 });
 
 /**
@@ -253,7 +253,7 @@ test("a name tsudoi never enumerated compiles, and so does a built-in notificati
         "const handler: CustomNotificationHandler = (_context: NotificationContext, _params: unknown) =>",
         "  Promise.resolve();",
         "const config: TsudoiConfig = {",
-        '  customMethod: { "textDocument/didFocus": handler, "textDocument/didOpen": handler },',
+        '  customMethods: { "textDocument/didFocus": handler, "textDocument/didOpen": handler },',
         "};",
         "void config;",
       ].join("\n"),
@@ -268,7 +268,7 @@ test("exit is refused as a custom hook because its built-in never returns", asyn
     typesProbe(
       [
         "const handler: CustomNotificationHandler = () => Promise.resolve();",
-        "const config: TsudoiConfig = { customMethod: { exit: handler } };",
+        "const config: TsudoiConfig = { customMethods: { exit: handler } };",
         "void config;",
       ].join("\n"),
     ),
@@ -283,7 +283,7 @@ test("shutdown is refused as a custom method because the lifecycle owns it", asy
     typesProbe(
       [
         "const handler: CustomRequestHandler = () => Promise.resolve({ result: null });",
-        "const config: TsudoiConfig = { customMethod: { shutdown: handler } };",
+        "const config: TsudoiConfig = { customMethods: { shutdown: handler } };",
         "void config;",
       ].join("\n"),
     ),
@@ -299,7 +299,7 @@ test("shutdown is refused as a custom method because the lifecycle owns it", asy
  * its own FILE has no contextual type to lean on, and that case is exactly why
  * the notification context is published at all.
  */
-test("the map and both handler names are writable, and a map of handlers is a config's customMethod", async () => {
+test("the map and both handler names are writable, and a map of handlers is a config's customMethods", async () => {
   const result = await typeCheckProbe(
     typesProbe(
       [
@@ -308,7 +308,7 @@ test("the map and both handler names are writable, and a map of handlers is a co
         "const notes: CustomNotificationHandler = (_context: NotificationContext, _params: unknown) =>",
         "  Promise.resolve();",
         'const map: CustomMethodMap = { "textDocument/didFocus": answers, "textDocument/didBlur": notes };',
-        "const config: TsudoiConfig = { customMethod: map };",
+        "const config: TsudoiConfig = { customMethods: map };",
         "void config;",
       ].join("\n"),
     ),

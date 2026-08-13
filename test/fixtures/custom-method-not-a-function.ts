@@ -8,7 +8,7 @@
  * gives.
  */
 export default () => ({
-  customMethod: {
+  customMethods: {
     "textDocument/didFocus": 5,
   },
 });

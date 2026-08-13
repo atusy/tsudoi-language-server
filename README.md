@@ -511,7 +511,7 @@ is no second call in which to fill in an edit you deferred.
 
 ## Methods tsudoi never heard of
 
-The keys above are the ones tsudoi enumerated. `customMethod`, beside `methods` rather than inside
+The keys above are the ones tsudoi enumerated. `customMethods`, beside `methods` rather than inside
 it, is where you declare the rest: `textDocument/didFocus`, an extension your own client speaks,
 anything with a name.
 
@@ -535,7 +535,7 @@ import type {
 } from "@atusy/tsudoi-language-server/types";
 
 const config: TsudoiConfig = {
-  customMethod: {
+  customMethods: {
     // A REQUEST is answered under `result`. `{ result: null }` IS an answer; returning nothing is not.
     "tsudoi/status": (context: RequestContext, params: unknown) =>
       Promise.resolve({ result: { rootUri: context.tsudoi.rootUri, params } }),
@@ -604,7 +604,7 @@ code actions cannot overtake an earlier `didChange`. Cancelling the request ends
 scheduler only when the config declares a `didOpen`, `didChange`, or `didClose` hook, so document
 updates keep their direct synchronous path for configs without document-lifecycle hooks.
 
-`exit` is the exception and is refused under `customMethod`: its built-in handler terminates the
+`exit` is the exception and is refused under `customMethods`: its built-in handler terminates the
 process and cannot fulfill before any custom handler starts.
 `shutdown` is also reserved: it is the lifecycle request owned by tsudoi and cannot be replaced by
 a custom request handler.

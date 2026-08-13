@@ -31,7 +31,7 @@ const count = (method: string): void => {
 };
 
 export default () => ({
-  customMethod: {
+  customMethods: {
     "tsudoi/answers": (): Promise<number> => {
       count("tsudoi/answers");
       return Promise.resolve(ran["tsudoi/answers"] ?? 0);

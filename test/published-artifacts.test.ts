@@ -280,7 +280,7 @@ test("a custom method's own names ship, and the annotated form an author writes 
       "declare const useRequestHandler: CustomRequestHandler;",
       "declare const useNotificationHandler: CustomNotificationHandler;",
       "export const config: TsudoiConfig = {",
-      "  customMethod: {",
+      "  customMethods: {",
       '    "textDocument/didFocus": (context: RequestContext, params: unknown) =>',
       "      Promise.resolve({ result: { rootUri: context.tsudoi.rootUri, params } }),",
       '    "tsudoi/ping": (context: NotificationContext, params: unknown) =>',

@@ -79,7 +79,7 @@ export async function loadConfig(argv: readonly string[]): Promise<TsudoiConfig>
   }
   const config: TsudoiConfig = {
     methods: validatedMethods(returned, absolutePath),
-    customMethod: validatedCustomMethod(returned, absolutePath),
+    customMethods: validatedCustomMethods(returned, absolutePath),
   };
   requireCompletionBesideResolve(config, absolutePath);
   return config;
@@ -126,21 +126,21 @@ function named(value: unknown): string {
  * faults below at compile time, and this function is reached through a CAST FROM
  * `unknown`: an author who never annotated their config is told by nothing else.
  */
-function validatedCustomMethod(
+function validatedCustomMethods(
   returned: object,
   absolutePath: string,
-): TsudoiConfig["customMethod"] {
-  const declared = readOrRefuse(absolutePath, "customMethod", () => {
-    return (returned as { customMethod?: unknown }).customMethod;
+): TsudoiConfig["customMethods"] {
+  const declared = readOrRefuse(absolutePath, "customMethods", () => {
+    return (returned as { customMethods?: unknown }).customMethods;
   });
   if (declared === undefined) {
     return undefined;
   }
   if (typeof declared !== "object" || declared === null) {
     throw new ConfigError(
-      `config ${absolutePath} declares customMethod as ${named(declared)} instead of an object of ` +
+      `config ${absolutePath} declares customMethods as ${named(declared)} instead of an object of ` +
         `handlers keyed by the name each method travels under on the wire; a config that serves no ` +
-        `method of its own omits customMethod entirely`,
+        `method of its own omits customMethods entirely`,
     );
   }
   const own = tsudoisOwnMethods();
@@ -148,20 +148,20 @@ function validatedCustomMethod(
   for (const method of Object.keys(declared)) {
     if (method === "shutdown") {
       throw new ConfigError(
-        `config ${absolutePath} declares shutdown under customMethod, but shutdown is a lifecycle ` +
+        `config ${absolutePath} declares shutdown under customMethods, but shutdown is a lifecycle ` +
           `request owned by tsudoi and cannot be replaced by a custom handler`,
       );
     }
     if (method === "exit") {
       throw new ConfigError(
-        `config ${absolutePath} declares exit under customMethod, but exit is a terminal ` +
+        `config ${absolutePath} declares exit under customMethods, but exit is a terminal ` +
           `notification whose built-in handler terminates the process and never reaches a hook`,
       );
     }
     if (own.has(method)) {
       throw new ConfigError(
-        `config ${absolutePath} declares ${method} under customMethod, and ${method} is a method ` +
-          `tsudoi serves itself; declare its handler under methods, not customMethod`,
+        `config ${absolutePath} declares ${method} under customMethods, and ${method} is a method ` +
+          `tsudoi serves itself; declare its handler under methods, not customMethods`,
       );
     }
     const handler = readOrRefuse(absolutePath, `the handler for ${method}`, () => {
@@ -170,13 +170,13 @@ function validatedCustomMethod(
     if (typeof handler !== "function") {
       throw new ConfigError(
         `config ${absolutePath} supplies ${named(handler)} as the handler for ${method} under ` +
-          `customMethod instead of a function; tsudoi registers ${method} with the client's ` +
+          `customMethods instead of a function; tsudoi registers ${method} with the client's ` +
           `connection, so this would claim a name it cannot serve`,
       );
     }
     validated[method] = handler;
   }
-  return validated as TsudoiConfig["customMethod"];
+  return validated as TsudoiConfig["customMethods"];
 }
 
 /**

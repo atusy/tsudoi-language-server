@@ -48,7 +48,7 @@ const note = (method: string) => {
 };
 
 export default () => ({
-  customMethod: {
+  customMethods: {
     "textDocument/didFocus": record("textDocument/didFocus"),
     "textDocument/didBlur": note("textDocument/didBlur"),
     "tsudoi/ping": note("tsudoi/ping"),

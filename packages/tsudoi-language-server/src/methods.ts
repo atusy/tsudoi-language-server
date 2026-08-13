@@ -517,7 +517,7 @@ type ErasedCustomHandler = (context: unknown, params: unknown) => Promise<unknow
 function erasedCustomEntries(
   config: TsudoiConfig,
 ): readonly (readonly [string, ErasedCustomHandler])[] {
-  return Object.entries(config.customMethod ?? {}) as unknown as readonly (readonly [
+  return Object.entries(config.customMethods ?? {}) as unknown as readonly (readonly [
     string,
     ErasedCustomHandler,
   ])[];

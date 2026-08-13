@@ -10,7 +10,7 @@
 
 ## Context and Problem Statement
 
-`customMethod` registers every declared name as both a request and a notification. When a config
+`customMethods` registers every declared name as both a request and a notification. When a config
 declares a built-in notification such as `textDocument/didOpen`, vscode-jsonrpc's method-keyed
 handler map lets the later custom registration replace tsudoi's built-in handler. The custom
 handler runs, but the document store is not updated.
@@ -51,7 +51,7 @@ documents.
 Tsudoi registers exactly one wire handler for a non-terminal built-in notification name. That
 handler invokes the built-in operation first and invokes the custom handler only after the built-in
 operation has fulfilled. The handler's returned promise settles only after the custom handler
-settles. The terminal `exit` notification is refused under `customMethod`, because its built-in
+settles. The terminal `exit` notification is refused under `customMethods`, because its built-in
 operation terminates the process and cannot fulfill before a hook starts.
 
 For `textDocument/didOpen`, `textDocument/didChange`, and `textDocument/didClose`, this entire
@@ -82,7 +82,7 @@ only if no newer tail for the same URI has replaced it.
 
 **Positive:**
 
-- Declaring a built-in notification under `customMethod` no longer disables tsudoi's state update.
+- Declaring a built-in notification under `customMethods` no longer disables tsudoi's state update.
 - Custom handlers always observe the post-operation document state.
 - Incremental changes for a document cannot overtake one another.
 - An asynchronously waiting handler for one document imposes no queue dependency on another.

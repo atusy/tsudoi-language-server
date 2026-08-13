@@ -19,7 +19,7 @@ export const nullAnswering = "textDocument/didFocus";
 
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
-    customMethod: {
+    customMethods: {
       "textDocument/didFocus": (_context: RequestContext, _params: unknown) =>
         Promise.resolve({ result: null }),
     },

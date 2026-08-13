@@ -24,7 +24,7 @@ export default (): Promise<TsudoiConfig> => {
         return Promise.resolve({ contents: { kind: "plaintext", value: text } });
       },
     },
-    customMethod: {
+    customMethods: {
       "textDocument/didOpen": async (
         _context: NotificationContext,
         _params: unknown,

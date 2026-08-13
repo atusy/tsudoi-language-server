@@ -576,7 +576,7 @@ export type ConfigMethod = keyof ConfigMethodMap;
  * this surface GREW rather than shrank. A method of the table resolves its own
  * context from its name -- the discipline stated at `RequestContext`, that
  * nothing an author writes selects the shape they are handed -- and
- * `textDocument/didFocus` resolves nothing at all, so under `customMethod` the
+ * `textDocument/didFocus` resolves nothing at all, so under `customMethods` the
  * ANNOTATION is what says which kind the author meant. A type nobody can spell
  * cannot be annotated with.
  *
@@ -674,7 +674,7 @@ export interface InitializeRequestContext extends BaseRequestContext {
  * writes under `methods` selects the shape they are handed.
  *
  * `UNDER methods` IS THE SCOPE AND IT USED TO BE THE WHOLE OF IT: a
- * `customMethod` name resolves nothing -- it says neither which kind it is nor
+ * `customMethods` name resolves nothing -- it says neither which kind it is nor
  * what its handler receives -- so there the ANNOTATION is what declares it, and
  * this name is one of the two an author writes. The discipline is unchanged
  * where a method can be looked up and unavailable where it cannot.
@@ -787,9 +787,9 @@ export type CustomNotificationHandler = (
  * incremental changes for one document cannot overtake each other.
  */
 export type CustomMethodMap = {
-  [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethod`;
+  [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethods`;
 } & {
-  shutdown?: "shutdown is a lifecycle request owned by tsudoi and cannot be declared under customMethod";
+  shutdown?: "shutdown is a lifecycle request owned by tsudoi and cannot be declared under customMethods";
   exit?: "exit is a terminal notification whose built-in handler never returns to a custom hook";
 } & Record<string, CustomRequestHandler | CustomNotificationHandler>;
 
@@ -802,7 +802,7 @@ export type TsudoiConfig = {
    * file as a bug: `initialize` has no capability to claim for
    * `textDocument/didFocus`, so no client sends one unless it already knew to.
    */
-  customMethod?: CustomMethodMap;
+  customMethods?: CustomMethodMap;
 };
 
 /**

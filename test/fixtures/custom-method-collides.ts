@@ -11,7 +11,7 @@
  * whether or not they annotate.
  */
 export default () => ({
-  customMethod: {
+  customMethods: {
     "textDocument/hover": (_context: unknown, _params: unknown) =>
       Promise.resolve({ result: null }),
   },

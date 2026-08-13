@@ -11,7 +11,7 @@
 export const answersNothing = "textDocument/didFocus";
 
 export default () => ({
-  customMethod: {
+  customMethods: {
     "textDocument/didFocus": (_context: unknown, _params: unknown) => Promise.resolve(),
   },
 });

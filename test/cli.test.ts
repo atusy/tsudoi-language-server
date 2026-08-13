@@ -267,14 +267,14 @@ for (const runtime of runtimes) {
     }
 
     /**
-     * `customMethod` IS READ AND REFUSED IN A BLOCK OF ITS OWN, and these are its
+     * `customMethods` IS READ AND REFUSED IN A BLOCK OF ITS OWN, and these are its
      * arms. WHY IT CANNOT JOIN THE LOOP TWO UP: those keys are refused because
      * tsudoi ADVERTISES a capability for each, and a custom method advertises
      * nothing at all -- no `initialize` has a capability to claim for
      * `textDocument/didFocus`, so no client sends one unless it already knew to.
      *
      * TWO ARMS AND TWO DIFFERENT FIXES, which is why they are rows rather than
-     * one `invalid customMethod` -- and there are two rather than four because a
+     * one `invalid customMethods` -- and there are two rather than four because a
      * handler declaring a KIND and a GATE was what sprint 96 was cancelled for:
      * a bare function has neither to get wrong, so those refusals have no subject
      * left to refuse.
@@ -292,9 +292,9 @@ for (const runtime of runtimes) {
      * refusal an unannotated author ever receives.
      */
     for (const [name, expected] of [
-      ["custom-method-collides.ts", ["textDocument/hover", "customMethod", "methods"]],
-      ["custom-method-exit.ts", ["exit", "customMethod", "terminates"]],
-      ["custom-method-shutdown.ts", ["shutdown", "customMethod", "lifecycle"]],
+      ["custom-method-collides.ts", ["textDocument/hover", "customMethods", "methods"]],
+      ["custom-method-exit.ts", ["exit", "customMethods", "terminates"]],
+      ["custom-method-shutdown.ts", ["shutdown", "customMethods", "lifecycle"]],
       ["custom-method-not-a-function.ts", ["textDocument/didFocus", "number", "function"]],
     ] as const) {
       test(`${name} exits 1 naming the method and the rule, with no stdout`, async () => {
