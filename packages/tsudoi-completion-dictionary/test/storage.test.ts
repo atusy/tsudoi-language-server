@@ -340,6 +340,7 @@ test("initialization refuses an unrelated database without changing its index", 
       CREATE TABLE unrelated (value TEXT NOT NULL);
       CREATE UNIQUE INDEX dictionary_entry_prefix ON unrelated(value);
     `);
+    const journalMode = database.prepare("PRAGMA journal_mode").get();
 
     expect(() => initializeDatabase(database)).toThrow("dictionary database must be dedicated");
     expect(
@@ -350,6 +351,7 @@ test("initialization refuses an unrelated database without changing its index", 
         .get("dictionary_entry_prefix"),
     ).toEqual({ tableName: "unrelated" });
     expect(database.prepare("PRAGMA user_version").get()?.user_version).toBe(0);
+    expect(database.prepare("PRAGMA journal_mode").get()).toEqual(journalMode);
   } finally {
     database.close();
   }

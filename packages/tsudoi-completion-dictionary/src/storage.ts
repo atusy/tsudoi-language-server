@@ -11,10 +11,6 @@ const indexFormat = "2";
 const schemaVersion = 1;
 
 export function initializeDatabase(database: SqliteDatabase): void {
-  database.exec("PRAGMA journal_mode = WAL");
-  database.exec("PRAGMA synchronous = NORMAL");
-  database.exec("PRAGMA foreign_keys = ON");
-  database.exec("PRAGMA busy_timeout = 250");
   const foreignTables = database
     .prepare(
       "SELECT name FROM sqlite_schema " +
@@ -28,6 +24,10 @@ export function initializeDatabase(database: SqliteDatabase): void {
       `dictionary database must be dedicated; found unrelated tables ${foreignTables.map(String).join(", ")}`,
     );
   }
+  database.exec("PRAGMA journal_mode = WAL");
+  database.exec("PRAGMA synchronous = NORMAL");
+  database.exec("PRAGMA foreign_keys = ON");
+  database.exec("PRAGMA busy_timeout = 250");
   const version = database.prepare("PRAGMA user_version").get()?.user_version;
   if (typeof version !== "number" || version > schemaVersion) {
     throw new Error(`unsupported dictionary database schema version ${String(version)}`);
