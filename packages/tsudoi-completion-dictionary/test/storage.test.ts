@@ -1,5 +1,14 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openSqlite } from "../src/sqlite.ts";
@@ -60,6 +69,25 @@ test("leading whitespace is preserved in the value but excluded from its search 
     await indexFile(database, path);
 
     expect(queryEntries(database, [path], "al", 10)).toEqual(["  alpha  "]);
+  } finally {
+    database.close();
+  }
+});
+
+test("an older search-key format is reindexed even when file bytes are unchanged", async () => {
+  const { path, databasePath } = temporaryDictionary("  alpha\n");
+  const database = await openSqlite(databasePath);
+  try {
+    initializeDatabase(database);
+    await indexFile(database, path);
+    const legacyHash = createHash("sha256").update(readFileSync(path)).digest("hex");
+    database
+      .prepare("UPDATE dictionary_file SET content_hash = ? WHERE path = ?")
+      .run(legacyHash, path);
+    database.prepare("UPDATE dictionary_entry SET search_key = value").run();
+
+    expect(await indexFile(database, path)).toBe(true);
+    expect(queryEntries(database, [path], "al", 10)).toEqual(["  alpha"]);
   } finally {
     database.close();
   }

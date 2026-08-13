@@ -7,6 +7,8 @@ interface FileRecord {
   readonly generation: number;
 }
 
+const indexFormat = "2";
+
 export function initializeDatabase(database: SqliteDatabase): void {
   database.exec("PRAGMA journal_mode = WAL");
   database.exec("PRAGMA synchronous = NORMAL");
@@ -108,8 +110,9 @@ export async function indexFile(database: SqliteDatabase, path: string): Promise
     // slower process can read old bytes, wait behind a newer publisher, and
     // then replace that newer generation with its stale snapshot.
     const contentHash = await hashFile(path);
+    const indexedHash = `${indexFormat}:${contentHash}`;
     const current = fileRecord(database, path);
-    if (current?.contentHash === contentHash) {
+    if (current?.contentHash === indexedHash) {
       database.exec("COMMIT");
       return false;
     }
@@ -119,7 +122,7 @@ export async function indexFile(database: SqliteDatabase, path: string): Promise
         .prepare(
           "INSERT INTO dictionary_file (path, content_hash, active_generation) VALUES (?, ?, ?)",
         )
-        .run(path, contentHash, generation);
+        .run(path, indexedHash, generation);
     }
 
     await insertEntries(database, path, generation, contentHash);
@@ -128,7 +131,7 @@ export async function indexFile(database: SqliteDatabase, path: string): Promise
         .prepare(
           "UPDATE dictionary_file SET content_hash = ?, active_generation = ? WHERE path = ?",
         )
-        .run(contentHash, generation, path);
+        .run(indexedHash, generation, path);
     }
     database
       .prepare("DELETE FROM dictionary_entry WHERE path = ? AND generation <> ?")
