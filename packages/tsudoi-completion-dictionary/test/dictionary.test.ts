@@ -68,7 +68,7 @@ test("completion reads the committed snapshot without waiting for refresh", asyn
   });
   const runtime: RefreshRuntime = { refresh: () => refresh };
   const handler = await makeCompleteDictionary(
-    { files: [path], databasePath, minPrefixLength: 0 },
+    { files: [path], databasePath, minPrefixLength: 0, refreshIntervalMs: 0 },
     runtime,
   );
 
@@ -134,7 +134,7 @@ test("requests during one refresh coalesce into one follow-up refresh", async ()
     },
   };
   const handler = await makeCompleteDictionary(
-    { files: [path], databasePath, minPrefixLength: 0 },
+    { files: [path], databasePath, minPrefixLength: 0, refreshIntervalMs: 0 },
     runtime,
   );
   expect(refreshes).toHaveLength(1);
@@ -145,8 +145,38 @@ test("requests during one refresh coalesce into one follow-up refresh", async ()
   expect(refreshes).toHaveLength(1);
 
   refreshes[0]?.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
   expect(refreshes).toHaveLength(2);
   refreshes[1]?.resolve();
+});
+
+test("a queued follow-up respects the refresh interval", async () => {
+  const { path, databasePath } = fixture("alpha\n");
+  const refreshes: Array<ReturnType<typeof Promise.withResolvers<void>>> = [];
+  const runtime: RefreshRuntime = {
+    refresh: () => {
+      const refresh = Promise.withResolvers<void>();
+      refreshes.push(refresh);
+      return refresh.promise;
+    },
+  };
+  const handler = await makeCompleteDictionary(
+    { files: [path], databasePath, minPrefixLength: 0, refreshIntervalMs: 50 },
+    runtime,
+  );
+
+  await labels(handler, "");
+  refreshes[0]?.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  expect(refreshes).toHaveLength(1);
+
+  await new Promise<void>((resolve) => setTimeout(resolve, 60));
+  expect(refreshes).toHaveLength(2);
+  await labels(handler, "");
+  refreshes[1]?.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  expect(refreshes).toHaveLength(2);
+  await new Promise<void>((resolve) => setTimeout(resolve, 60));
+  expect(refreshes).toHaveLength(3);
+  refreshes[2]?.resolve();
 });
