@@ -40,7 +40,7 @@ fetch an unavailable peer; it does not make the host relationship optional. Cons
 missing peer is a TypeScript resolution error such as `TS2307`, not the runtime message
 `Cannot find module` that a value import would produce.
 
-## Options
+## Factory options
 
 | option              | default                    | effect                                                       |
 | ------------------- | -------------------------- | ------------------------------------------------------------ |
@@ -48,7 +48,6 @@ missing peer is a TypeScript resolution error such as `TS2307`, not the runtime 
 | `databasePath`      | the user's platform cache  | a dedicated persistent SQLite database file                  |
 | `filters`           | `[dictionaryPrefixFilter]` | server-side candidate pipeline                               |
 | `minPrefixLength`   | `2`                        | minimum non-whitespace text before the cursor                |
-| `maxItems`          | `500`                      | maximum distinct entries returned                            |
 | `refreshIntervalMs` | `1000`                     | throttle while no refresh is already running                 |
 | `onError`           | no callback                | observes background file, hash, Worker, and SQLite failures  |
 
@@ -57,8 +56,9 @@ its `\r`, a final line needs no newline, and surrounding spaces are preserved. M
 case by storing a lowercase search key; the original line is returned unchanged.
 
 Filters receive the candidate iterable and `{ typed }`, and may drop, reorder, or rewrite entries.
-They run in the order supplied. The result is then deduplicated and bounded by `maxItems`. Passing
-`filters: []` disables server-side matching and leaves final filtering to the LSP client.
+They run in the order supplied. The result is then deduplicated and bounded by the request's
+`maxItems`. Passing `filters: []` disables server-side matching and leaves final filtering to the
+LSP client.
 
     import type { DictionaryFilter } from "@atusy/tsudoi-completion-dictionary";
 
@@ -73,14 +73,23 @@ They run in the order supplied. The result is then deduplicated and bounded by `
       filters: [suffixFilter],
     });
 
+## Completion options
+
+`maxItems` belongs to one completion call, matching `completeCorpus`, rather than to the long-lived
+dictionary factory. It defaults to `500`.
+
+```ts
+yield * completeDictionary(context, params, { maxItems: 1000 });
+```
+
 `databasePath` is owned as a rebuildable cache by this package. Initialization refuses a database
 that already contains unrelated application tables instead of migrating or deleting their schema.
 
 ## What bounds it
 
 The default prefix filter uses SQLite's indexed prefix range to narrow candidates, then applies the
-same prefix rule in the LSP handler. `minPrefixLength` prevents very broad queries, `maxItems`
-bounds the response, and
+same prefix rule in the LSP handler. `minPrefixLength` prevents very broad queries, the invocation's
+`maxItems` bounds the response, and
 `refreshIntervalMs` prevents every idle keystroke from starting another hash pass. Requests that
 arrive during one refresh coalesce into one follow-up scheduled at that interval, so sustained
 typing cannot create an uninterrupted chain of Workers. Registration still reads every byte of a
