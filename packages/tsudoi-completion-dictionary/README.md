@@ -61,12 +61,14 @@ Prefix filtering happens in SQLite **rather than** loading the whole dictionary 
 arrive during one refresh coalesce into one immediate follow-up, so a change observed while the
 Worker was busy is not deferred for the whole interval. Registration still reads every byte of a
 file whose refresh runs because the content hash, not mtime or size, is the authority for whether
-its entries changed.
+its entries changed. Changed files are streamed a second time to decode and insert their lines;
+peak JavaScript memory is bounded by stream buffers and the longest individual line rather than
+the whole dictionary.
 
-The limits bound a request and refresh frequency, not database size or dictionary file size. Old
-generations are removed in the transaction that publishes a new generation. Rows for paths no
-factory currently names may remain in a shared database, but queries include only the factory's
-own normalized `files`.
+The limits bound a request and refresh frequency, not database size, processing time, or an
+individual line's size. Old generations are removed in the transaction that publishes a new
+generation. Rows for paths no factory currently names may remain in a shared database, but queries
+include only the factory's own normalized `files`.
 
 ## Failure and concurrency semantics
 

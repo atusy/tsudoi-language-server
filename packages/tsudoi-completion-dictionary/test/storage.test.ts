@@ -37,6 +37,21 @@ test("indexes one whole UTF-8 line per entry and searches by prefix", async () =
   }
 });
 
+test("streams a line and UTF-8 scalar across input chunk boundaries", async () => {
+  const long = `${"a".repeat(70_000)}é`;
+  const { path, databasePath } = temporaryDictionary(`${long}\nlast`);
+  const database = await openSqlite(databasePath);
+  try {
+    initializeDatabase(database);
+    await indexFile(database, path);
+
+    expect(queryEntries(database, [path], "aaaa", 10)).toEqual([long]);
+    expect(queryEntries(database, [path], "last", 10)).toEqual(["last"]);
+  } finally {
+    database.close();
+  }
+});
+
 test("the content hash skips unchanged bytes and replaces changed bytes", async () => {
   const { path, databasePath } = temporaryDictionary("before\n");
   const fixedTime = new Date(1_700_000_000_000);

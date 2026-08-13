@@ -1,14 +1,10 @@
-import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
 import type { SqliteDatabase } from "./sqlite.ts";
 
 interface FileRecord {
   readonly contentHash: string;
   readonly generation: number;
-}
-
-interface FileSnapshot {
-  readonly contentHash: string;
-  readonly entries: readonly string[];
 }
 
 export function initializeDatabase(database: SqliteDatabase): void {
@@ -52,15 +48,57 @@ function fileRecord(database: SqliteDatabase, path: string): FileRecord | undefi
   return { contentHash: row.contentHash, generation: row.generation };
 }
 
-async function snapshot(path: string): Promise<FileSnapshot> {
-  const bytes = await readFile(path);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  const contentHash = Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  const entries = text.split(/\r?\n/u).filter((line) => line !== "");
-  return { contentHash, entries };
+async function hashFile(path: string): Promise<string> {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(path)) {
+    hash.update(chunk);
+  }
+  return hash.digest("hex");
+}
+
+async function insertEntries(
+  database: SqliteDatabase,
+  path: string,
+  generation: number,
+  expectedHash: string,
+): Promise<void> {
+  const insert = database.prepare(
+    "INSERT INTO dictionary_entry (path, generation, ordinal, value, search_key) " +
+      "VALUES (?, ?, ?, ?, ?)",
+  );
+  const hash = createHash("sha256");
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  let pending = "";
+  let ordinal = 0;
+  const insertCompleteLines = (): void => {
+    let newline = pending.indexOf("\n");
+    while (newline !== -1) {
+      let value = pending.slice(0, newline);
+      if (value.endsWith("\r")) {
+        value = value.slice(0, -1);
+      }
+      if (value !== "") {
+        insert.run(path, generation, ordinal, value, value.toLowerCase());
+        ordinal += 1;
+      }
+      pending = pending.slice(newline + 1);
+      newline = pending.indexOf("\n");
+    }
+  };
+
+  for await (const chunk of createReadStream(path)) {
+    hash.update(chunk);
+    pending += decoder.decode(chunk, { stream: true });
+    insertCompleteLines();
+  }
+  pending += decoder.decode();
+  insertCompleteLines();
+  if (pending !== "") {
+    insert.run(path, generation, ordinal, pending, pending.toLowerCase());
+  }
+  if (hash.digest("hex") !== expectedHash) {
+    throw new Error(`dictionary ${JSON.stringify(path)} changed while it was being indexed`);
+  }
 }
 
 export async function indexFile(database: SqliteDatabase, path: string): Promise<boolean> {
@@ -69,9 +107,9 @@ export async function indexFile(database: SqliteDatabase, path: string): Promise
     // Snapshot only after taking the shared database's write lock. Otherwise a
     // slower process can read old bytes, wait behind a newer publisher, and
     // then replace that newer generation with its stale snapshot.
-    const next = await snapshot(path);
+    const contentHash = await hashFile(path);
     const current = fileRecord(database, path);
-    if (current?.contentHash === next.contentHash) {
+    if (current?.contentHash === contentHash) {
       database.exec("COMMIT");
       return false;
     }
@@ -81,22 +119,16 @@ export async function indexFile(database: SqliteDatabase, path: string): Promise
         .prepare(
           "INSERT INTO dictionary_file (path, content_hash, active_generation) VALUES (?, ?, ?)",
         )
-        .run(path, next.contentHash, generation);
+        .run(path, contentHash, generation);
     }
 
-    const insert = database.prepare(
-      "INSERT INTO dictionary_entry (path, generation, ordinal, value, search_key) " +
-        "VALUES (?, ?, ?, ?, ?)",
-    );
-    for (const [ordinal, value] of next.entries.entries()) {
-      insert.run(path, generation, ordinal, value, value.toLowerCase());
-    }
+    await insertEntries(database, path, generation, contentHash);
     if (current !== undefined) {
       database
         .prepare(
           "UPDATE dictionary_file SET content_hash = ?, active_generation = ? WHERE path = ?",
         )
-        .run(next.contentHash, generation, path);
+        .run(contentHash, generation, path);
     }
     database
       .prepare("DELETE FROM dictionary_entry WHERE path = ? AND generation <> ?")
