@@ -186,7 +186,7 @@ export async function makeCompleteDictionary(
   };
 }
 
-export function completeDictionaryFactory(
+export function useDictionaryCompletion(
   options: CompleteDictionaryOptions,
 ): Promise<MethodHandler<"textDocument/completion">> {
   return makeCompleteDictionary(options);

@@ -20,12 +20,12 @@ function probeSource(): string {
   return `
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { completeDictionaryFactory } from ${JSON.stringify(entry)};
+import { useDictionaryCompletion } from ${JSON.stringify(entry)};
 
 const root = process.argv[2];
 const dictionary = join(root, "words.txt");
 writeFileSync(dictionary, "old-entry\\n");
-const complete = await completeDictionaryFactory({
+const complete = await useDictionaryCompletion({
   files: [dictionary],
   databasePath: join(root, "dictionary.sqlite3"),
   minPrefixLength: 0,

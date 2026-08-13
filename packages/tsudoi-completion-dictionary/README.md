@@ -12,10 +12,10 @@ and need another consistency boundary.
 <!-- snippet -->
 
 ```ts
-import { completeDictionaryFactory } from "@atusy/tsudoi-completion-dictionary";
+import { useDictionaryCompletion } from "@atusy/tsudoi-completion-dictionary";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 
-const completeDictionary = await completeDictionaryFactory({
+const completeDictionary = await useDictionaryCompletion({
   files: ["/usr/share/dict/words"],
 });
 
