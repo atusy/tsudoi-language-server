@@ -36,7 +36,9 @@ Tsudoi is an `optional` **peer** only because tsudoi is **unpublished**. This pa
 install it. Its JavaScript artifact can load without tsudoi because the handler imports are
 type-only, but a TypeScript consumer needs the peer to resolve the public handler types, and the
 returned handler is useful only inside a tsudoi host. The flag means the package manager must not
-fetch an unavailable peer; it does not make the host relationship optional.
+fetch an unavailable peer; it does not make the host relationship optional. Consequently, a
+missing peer is a TypeScript resolution error such as `TS2307`, not the runtime message
+`Cannot find module` that a value import would produce.
 
 ## Options
 
