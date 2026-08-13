@@ -75,6 +75,25 @@ afterAll(() => {
  * noticing when it changes by accident.
  */
 const publishedFiles: Record<string, readonly string[]> = {
+  "@atusy/tsudoi-completion-dictionary": [
+    "LICENSE",
+    "README.md",
+    "dist/dictionary.d.ts",
+    "dist/dictionary.js",
+    "dist/index.d.ts",
+    "dist/index.js",
+    "dist/sqlite-bun.d.ts",
+    "dist/sqlite-bun.js",
+    "dist/sqlite-node.d.ts",
+    "dist/sqlite-node.js",
+    "dist/sqlite.d.ts",
+    "dist/sqlite.js",
+    "dist/storage.d.ts",
+    "dist/storage.js",
+    "dist/worker.d.ts",
+    "dist/worker.js",
+    "package.json",
+  ],
   "@atusy/tsudoi-completion-path": [
     "LICENSE",
     "README.md",
@@ -178,6 +197,13 @@ for (const one of packed) {
  * of them does.
  */
 const readmeTokens: Record<string, readonly RegExp[]> = {
+  "@atusy/tsudoi-completion-dictionary": [
+    /textDocument\/completion/,
+    /peer/i,
+    /optional/,
+    /Cannot find module/,
+    /Prefix filtering happens in SQLite/i,
+  ],
   "@atusy/tsudoi-completion-path": [
     /textDocument\/completion/,
     /completionItem\/resolve/,

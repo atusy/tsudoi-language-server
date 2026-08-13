@@ -144,6 +144,13 @@
       // because that one is about a class.
       "files": ["packages/tsudoi-language-server/src/notifications.ts"],
       "rules": { "no-restricted-imports": ["error", { "patterns": ["bun", "bun:*"] }] }
+    },
+    {
+      // This package promises one artifact under Bun and Deno, whose native
+      // SQLite modules have different names. sqlite.ts loads this adapter only
+      // after identifying Bun; Deno never resolves this module.
+      "files": ["packages/tsudoi-completion-dictionary/src/sqlite-bun.ts"],
+      "rules": { "no-restricted-imports": "off" }
     }
   ]
 }

@@ -37,6 +37,7 @@ test("the derived order is the order this repository must be built in", () => {
     repoRoot,
     join(repoRoot, "packages", "tsudoi-language-server"),
     join(repoRoot, "packages", "tsudoi-adapter-efm-config"),
+    join(repoRoot, "packages", "tsudoi-completion-dictionary"),
     join(repoRoot, "packages", "tsudoi-completion-document"),
     join(repoRoot, "packages", "tsudoi-completion-path"),
     join(repoRoot, "packages", "tsudoi-hover-wordnet"),
