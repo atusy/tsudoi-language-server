@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openSqlite } from "../src/sqlite.ts";
+import type { SqliteDatabase, SqliteValue } from "../src/sqlite.ts";
 import { indexFile, initializeDatabase, queryEntries } from "../src/storage.ts";
 
 const roots: string[] = [];
@@ -144,4 +145,32 @@ test("queries deduplicate entries and include only the configured files", async 
   } finally {
     database.close();
   }
+});
+
+test("a prefix query carries an exclusive upper bound into SQLite", () => {
+  let sql = "";
+  let params: SqliteValue[] = [];
+  const database = {
+    prepare: (prepared: string) => {
+      sql = prepared;
+      return {
+        all: (...values: SqliteValue[]) => {
+          params = values;
+          return [];
+        },
+      };
+    },
+  } as unknown as SqliteDatabase;
+
+  queryEntries(database, ["/dictionary"], "Ab", 10);
+
+  expect(sql).toContain("entry.search_key < ?");
+  expect(params).toEqual([
+    "/dictionary",
+    "ab",
+    `ab${String.fromCodePoint(0x10ffff)}`,
+    "ab",
+    "ab",
+    10,
+  ]);
 });

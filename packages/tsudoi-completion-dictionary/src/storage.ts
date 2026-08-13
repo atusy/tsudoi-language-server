@@ -31,8 +31,8 @@ export function initializeDatabase(database: SqliteDatabase): void {
       PRIMARY KEY (path, generation, ordinal),
       FOREIGN KEY (path) REFERENCES dictionary_file(path) ON DELETE CASCADE
     ) STRICT;
-    CREATE INDEX IF NOT EXISTS dictionary_entry_prefix
-      ON dictionary_entry(path, generation, search_key);
+    CREATE INDEX IF NOT EXISTS dictionary_entry_prefix_v2
+      ON dictionary_entry(path, generation, search_key, value);
   `);
 }
 
@@ -128,6 +128,7 @@ export function queryEntries(
   }
   const placeholders = paths.map(() => "?").join(", ");
   const searchKey = prefix.toLowerCase();
+  const upperBound = `${searchKey}${String.fromCodePoint(0x10ffff)}`;
   const rows = database
     .prepare(
       `SELECT DISTINCT entry.value AS value, entry.search_key AS searchKey
@@ -137,11 +138,12 @@ export function queryEntries(
         AND file.active_generation = entry.generation
        WHERE entry.path IN (${placeholders})
          AND entry.search_key >= ?
+         AND entry.search_key < ?
          AND substr(entry.search_key, 1, length(?)) = ?
        ORDER BY entry.search_key, entry.value
        LIMIT ?`,
     )
-    .all(...paths, searchKey, searchKey, searchKey, maxItems);
+    .all(...paths, searchKey, upperBound, searchKey, searchKey, maxItems);
   return rows.map((row) => {
     if (typeof row.value !== "string") {
       throw new TypeError("a dictionary entry has an invalid shape");
