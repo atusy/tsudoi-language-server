@@ -157,7 +157,16 @@ export function queryEntries(
   }
   const placeholders = paths.map(() => "?").join(", ");
   const searchKey = prefix.toLowerCase();
-  const upperBound = `${searchKey}${String.fromCodePoint(0x10ffff)}`;
+  const points = Array.from(searchKey);
+  let upperBound: string | undefined;
+  for (let index = points.length - 1; index >= 0; index -= 1) {
+    const point = points[index]?.codePointAt(0);
+    if (point !== undefined && point < 0x10ffff) {
+      upperBound = `${points.slice(0, index).join("")}${String.fromCodePoint(point + 1)}`;
+      break;
+    }
+  }
+  const upperClause = upperBound === undefined ? "" : "AND entry.search_key < ?";
   const rows = database
     .prepare(
       `SELECT DISTINCT entry.value AS value, entry.search_key AS searchKey
@@ -167,12 +176,19 @@ export function queryEntries(
         AND file.active_generation = entry.generation
        WHERE entry.path IN (${placeholders})
          AND entry.search_key >= ?
-         AND entry.search_key < ?
+         ${upperClause}
          AND substr(entry.search_key, 1, length(?)) = ?
        ORDER BY entry.search_key, entry.value
        LIMIT ?`,
     )
-    .all(...paths, searchKey, upperBound, searchKey, searchKey, maxItems);
+    .all(
+      ...paths,
+      searchKey,
+      ...(upperBound === undefined ? [] : [upperBound]),
+      searchKey,
+      searchKey,
+      maxItems,
+    );
   return rows.map((row) => {
     if (typeof row.value !== "string") {
       throw new TypeError("a dictionary entry has an invalid shape");

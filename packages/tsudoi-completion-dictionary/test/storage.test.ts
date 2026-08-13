@@ -214,12 +214,19 @@ test("a prefix query carries an exclusive upper bound into SQLite", () => {
   queryEntries(database, ["/dictionary"], "Ab", 10);
 
   expect(sql).toContain("entry.search_key < ?");
-  expect(params).toEqual([
-    "/dictionary",
-    "ab",
-    `ab${String.fromCodePoint(0x10ffff)}`,
-    "ab",
-    "ab",
-    10,
-  ]);
+  expect(params).toEqual(["/dictionary", "ab", "ac", "ab", "ab", 10]);
+});
+
+test("the exclusive bound retains suffixes after the maximum Unicode scalar", async () => {
+  const maximum = String.fromCodePoint(0x10ffff);
+  const { path, databasePath } = temporaryDictionary(`a${maximum}tail\nb\n`);
+  const database = await openSqlite(databasePath);
+  try {
+    initializeDatabase(database);
+    await indexFile(database, path);
+
+    expect(queryEntries(database, [path], `a${maximum}`, 10)).toEqual([`a${maximum}tail`]);
+  } finally {
+    database.close();
+  }
 });
