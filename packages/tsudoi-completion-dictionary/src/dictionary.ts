@@ -18,10 +18,19 @@ export interface CompleteDictionaryOptions {
   readonly databasePath?: string;
   readonly filters?: readonly DictionaryFilter[];
   readonly minPrefixLength?: number;
-  readonly maxItems?: number;
   readonly refreshIntervalMs?: number;
   readonly onError?: (error: unknown) => void;
 }
+
+export interface DictionaryCompletionOptions {
+  readonly maxItems?: number;
+}
+
+export type DictionaryCompletion = (
+  context: Parameters<MethodHandler<"textDocument/completion">>[0],
+  params: Parameters<MethodHandler<"textDocument/completion">>[1],
+  options?: DictionaryCompletionOptions,
+) => ReturnType<MethodHandler<"textDocument/completion">>;
 
 export interface RefreshRuntime {
   refresh(databasePath: string, files: readonly string[]): Promise<void>;
@@ -93,11 +102,10 @@ function nonNegativeInteger(value: number, name: string): number {
 export async function makeCompleteDictionary(
   options: CompleteDictionaryOptions,
   runtime: RefreshRuntime = workerRuntime,
-): Promise<MethodHandler<"textDocument/completion">> {
+): Promise<DictionaryCompletion> {
   const files = [...new Set(options.files.map((path) => resolve(path)))];
   const databasePath = resolve(options.databasePath ?? defaultDatabasePath());
   const minPrefixLength = nonNegativeInteger(options.minPrefixLength ?? 2, "minPrefixLength");
-  const maxItems = nonNegativeInteger(options.maxItems ?? 500, "maxItems");
   const filters = options.filters ?? defaultDictionaryFilters;
   const refreshIntervalMs = finiteNonNegative(
     options.refreshIntervalMs ?? 1_000,
@@ -159,8 +167,9 @@ export async function makeCompleteDictionary(
   };
   startRefresh();
 
-  return async function* completeDictionary(context, params) {
+  return async function* completeDictionary(context, params, completionOptions = {}) {
     requestRefresh();
+    const maxItems = nonNegativeInteger(completionOptions.maxItems ?? 500, "maxItems");
     if (context.signal.aborted) {
       return;
     }
@@ -202,6 +211,6 @@ export type { DictionaryFilter } from "./filters.ts";
 
 export function useDictionaryCompletion(
   options: CompleteDictionaryOptions,
-): Promise<MethodHandler<"textDocument/completion">> {
+): Promise<DictionaryCompletion> {
   return makeCompleteDictionary(options);
 }

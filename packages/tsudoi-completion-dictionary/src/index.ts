@@ -1,5 +1,9 @@
 export { useDictionaryCompletion } from "./dictionary.ts";
-export type { CompleteDictionaryOptions } from "./dictionary.ts";
+export type {
+  CompleteDictionaryOptions,
+  DictionaryCompletion,
+  DictionaryCompletionOptions,
+} from "./dictionary.ts";
 export {
   applyDictionaryFilters,
   defaultDictionaryFilters,

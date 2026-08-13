@@ -6,6 +6,7 @@ import type { CompletionParams } from "@atusy/tsudoi-language-server/deps/protoc
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   makeCompleteDictionary,
+  type DictionaryCompletionOptions,
   type DictionaryFilter,
   type RefreshRuntime,
 } from "../src/dictionary.ts";
@@ -52,9 +53,10 @@ function request(prefix: string): { context: RequestContext; params: CompletionP
 async function labels(
   handler: Awaited<ReturnType<typeof makeCompleteDictionary>>,
   prefix: string,
+  options?: DictionaryCompletionOptions,
 ): Promise<string[]> {
   const { context, params } = request(prefix);
-  const answer = await handler(context, params).next();
+  const answer = await handler(context, params, options).next();
   return answer.done === true ? [] : answer.value.map((item) => item.label);
 }
 
@@ -97,8 +99,8 @@ test("the real worker eventually publishes the file without blocking factory cre
   expect(actual).toEqual(["alpha", "alpine"]);
 });
 
-test("custom filters run before the candidate bound", async () => {
-  const { path, databasePath } = fixture("alpha\nbeta\ngamma\n");
+test("custom filters run before the per-request candidate bound", async () => {
+  const { path, databasePath } = fixture("alpha\nbeta\ngamma\nzeta\n");
   const database = await openSqlite(databasePath);
   initializeDatabase(database);
   await indexFile(database, path);
@@ -115,19 +117,23 @@ test("custom filters run before the candidate bound", async () => {
       files: [path],
       databasePath,
       filters: [suffixFilter],
-      maxItems: 1,
       minPrefixLength: 0,
     },
     { refresh: () => new Promise<void>(() => {}) },
   );
 
-  expect(await labels(handler, "anything")).toEqual(["beta"]);
+  expect(await labels(handler, "anything", { maxItems: 1 })).toEqual(["beta"]);
 });
 
-test("candidate counts reject fractions before opening the database", async () => {
+test("per-request candidate counts reject fractions", async () => {
   const { path, databasePath } = fixture("alpha\n");
+  const handler = await makeCompleteDictionary(
+    { files: [path], databasePath },
+    { refresh: () => new Promise<void>(() => {}) },
+  );
+  const { context, params } = request("al");
 
-  expect(makeCompleteDictionary({ files: [path], databasePath, maxItems: 1.5 })).rejects.toThrow(
+  expect(handler(context, params, { maxItems: 1.5 }).next()).rejects.toThrow(
     "maxItems must be a non-negative integer",
   );
 });
