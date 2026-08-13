@@ -217,7 +217,11 @@ function readFailures(stderr: string, failed: readonly string[]): Map<string, st
     const arm = failed
       .filter((name) => label === name || label.endsWith(` > ${name}`))
       .sort((left, right) => right.length - left.length)[0];
-    if (arm !== undefined) {
+    // Bun repeats each `(fail)` label in the final summary. The first label is
+    // preceded by that arm's assertion block; the repeated label is preceded by
+    // whatever tests ran after it. Keep the first attribution so a late summary
+    // cannot replace the failure site with unrelated `(pass)` lines.
+    if (arm !== undefined && !texts.has(arm)) {
       texts.set(arm, block.join("\n"));
     }
     block = [];

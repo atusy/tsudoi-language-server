@@ -216,7 +216,7 @@ test("bun runs no test file under an ignored segment, and runs them without the 
     expect(run.code).not.toBe(0);
     // bun's own words for the state being asserted. An exit code alone does not
     // say it: a run that found the files and failed on them exits non-zero too.
-    expect(run.stderr).toContain("0 test files matching");
+    expect(run.stderr).toContain("No tests found!");
   } finally {
     ignoring.dispose();
   }
