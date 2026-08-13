@@ -58,8 +58,8 @@ case by storing a lowercase search key; the original line is returned unchanged.
 Prefix filtering happens in SQLite **rather than** loading the whole dictionary into JavaScript.
 `minPrefixLength` prevents very broad queries, `maxItems` bounds the response, and
 `refreshIntervalMs` prevents every idle keystroke from starting another hash pass. Requests that
-arrive during one refresh coalesce into one immediate follow-up, so a change observed while the
-Worker was busy is not deferred for the whole interval. Registration still reads every byte of a
+arrive during one refresh coalesce into one follow-up scheduled at that interval, so sustained
+typing cannot create an uninterrupted chain of Workers. Registration still reads every byte of a
 file whose refresh runs because the content hash, not mtime or size, is the authority for whether
 its entries changed. Changed files are streamed a second time to decode and insert their lines;
 peak JavaScript memory is bounded by stream buffers and the longest individual line rather than

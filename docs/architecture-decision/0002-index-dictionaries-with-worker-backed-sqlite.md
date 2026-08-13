@@ -35,10 +35,11 @@ synchronous database APIs would block the LSP event loop if registration ran in 
 generations", because it gives requests a persistent indexed snapshot without duplicating every
 entry in a trie or running hashing and synchronous writes on the LSP event loop.
 
-Each file has one active generation. A Worker reads the bytes once, derives both SHA-256 and lines
-from those bytes, inserts the new generation, switches the active pointer, and deletes the old
-generation in one transaction. SQLite runs in WAL mode with separate reader and writer
-connections, so readers see the old generation until commit and the new generation afterwards.
+Each file has one active generation. A Worker streams one pass to derive SHA-256, then, for changed
+bytes, streams a second pass to decode and insert lines while verifying the same hash. It switches
+the active pointer and deletes the old generation in the same transaction. SQLite runs in WAL mode
+with separate reader and writer connections, so readers see the old generation until commit and
+the new generation afterwards.
 
 The runtime-neutral adapter dynamically loads a module containing a static `bun:sqlite` import
 under Bun, or one containing a static `node:sqlite` import under Deno. Only the selected module is
@@ -71,8 +72,9 @@ on `bun:*` imports.
 Automated tests must demonstrate native parameterized queries under Bun and Deno, whole-line and
 UTF-8 indexing, hash no-op and changed-byte replacement, old-snapshot reads while refresh remains
 pending, atomic old-to-new visibility across commit, error rollback, refresh coalescing, and a
-packed-artifact Worker smoke test under both runtimes. A benchmark must show a request exceeding
-the completion latency budget before an in-memory trie is introduced.
+built-artifact Worker smoke test under both runtimes. Separate package-shape tests verify the files
+included in the packed artifact. A benchmark must show a request exceeding the completion latency
+budget before an in-memory trie is introduced.
 
 ## Pros and Cons of the Options
 
