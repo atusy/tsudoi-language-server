@@ -34,14 +34,14 @@ import would produce.
 
 ## Options
 
-| option          | default          | effect                                                        |
-| --------------- | ---------------- | ------------------------------------------------------------- |
-| `command`       | selected shell   | executable name or path                                       |
-| `cwd`           | server cwd       | working directory used for shell completion                   |
-| `env`           | server env       | variables overlaid onto the spawned process environment       |
-| `idleTimeoutMs` | `30000`          | stop an unused completion process after this duration          |
-| `maxItems`      | `500`            | maximum distinct candidates returned                          |
-| `timeoutMs`     | `2000`           | stop a process when one completion takes longer than this      |
+| option          | default        | effect                                                    |
+| --------------- | -------------- | --------------------------------------------------------- |
+| `command`       | selected shell | executable name or path                                   |
+| `cwd`           | server cwd     | working directory used for shell completion               |
+| `env`           | server env     | variables overlaid onto the spawned process environment   |
+| `idleTimeoutMs` | `30000`        | stop an unused completion process after this duration     |
+| `maxItems`      | `500`          | maximum distinct candidates returned                      |
+| `timeoutMs`     | `2000`         | stop a process when one completion takes longer than this |
 
 The text before the cursor is sent to the shell after leading indentation is removed. Candidates
 replace the final non-whitespace token. The handler does not parse a shell grammar itself; quoting,

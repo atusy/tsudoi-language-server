@@ -1,12 +1,12 @@
 # Reuse Native Shell Completion Processes
 
-|                     |                                                           |
-| ------------------- | --------------------------------------------------------- |
-| **Status**          | accepted                                                  |
-| **Date**            | 2026-08-13                                                |
-| **Decision-makers** | Project stakeholder and maintainers                       |
-| **Consulted**       | ddc-source-shell_native and tsudoi handler package APIs   |
-| **Informed**        | Config authors                                            |
+|                     |                                                         |
+| ------------------- | ------------------------------------------------------- |
+| **Status**          | accepted                                                |
+| **Date**            | 2026-08-13                                              |
+| **Decision-makers** | Project stakeholder and maintainers                     |
+| **Consulted**       | ddc-source-shell_native and tsudoi handler package APIs |
+| **Informed**        | Config authors                                          |
 
 ## Context and Problem Statement
 

@@ -49,9 +49,7 @@ for (const runtime of ["bun", "deno"] as const) {
       writeFileSync(probe, probeSource());
       const result = spawnSync(
         runtime,
-        runtime === "bun"
-          ? [probe, root, configHome]
-          : ["run", "-A", probe, root, configHome],
+        runtime === "bun" ? [probe, root, configHome] : ["run", "-A", probe, root, configHome],
         { encoding: "utf8", timeout: 10_000 },
       );
 

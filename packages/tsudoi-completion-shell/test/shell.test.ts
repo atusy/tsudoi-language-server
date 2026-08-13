@@ -121,6 +121,7 @@ test.each([
   [{ timeoutMs: Number.POSITIVE_INFINITY }, "timeoutMs"],
   [{ idleTimeoutMs: -1 }, "idleTimeoutMs"],
 ] as const)("rejects an invalid numeric option", (options, name) => {
-  expect(() => makeShellCompletion("fish", options, { complete: () => Promise.resolve([]) }))
-    .toThrow(name);
+  expect(() =>
+    makeShellCompletion("fish", options, { complete: () => Promise.resolve([]) }),
+  ).toThrow(name);
 });
