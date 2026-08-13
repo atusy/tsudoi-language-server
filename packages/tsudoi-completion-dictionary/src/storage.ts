@@ -15,6 +15,19 @@ export function initializeDatabase(database: SqliteDatabase): void {
   database.exec("PRAGMA synchronous = NORMAL");
   database.exec("PRAGMA foreign_keys = ON");
   database.exec("PRAGMA busy_timeout = 250");
+  const foreignTables = database
+    .prepare(
+      "SELECT name FROM sqlite_schema " +
+        "WHERE type = 'table' AND name NOT LIKE 'sqlite_%' " +
+        "AND name NOT IN ('dictionary_file', 'dictionary_entry')",
+    )
+    .all()
+    .map((row) => row.name);
+  if (foreignTables.length > 0) {
+    throw new Error(
+      `dictionary database must be dedicated; found unrelated tables ${foreignTables.map(String).join(", ")}`,
+    );
+  }
   const version = database.prepare("PRAGMA user_version").get()?.user_version;
   if (typeof version !== "number" || version > schemaVersion) {
     throw new Error(`unsupported dictionary database schema version ${String(version)}`);
@@ -36,9 +49,14 @@ export function initializeDatabase(database: SqliteDatabase): void {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS dictionary_entry_prefix_v2
       ON dictionary_entry(path, generation, search_key, value);
-    DROP INDEX IF EXISTS dictionary_entry_prefix;
     PRAGMA user_version = ${schemaVersion};
   `);
+  const legacyIndex = database
+    .prepare("SELECT tbl_name AS tableName FROM sqlite_schema WHERE type = 'index' AND name = ?")
+    .get("dictionary_entry_prefix");
+  if (legacyIndex?.tableName === "dictionary_entry") {
+    database.exec("DROP INDEX dictionary_entry_prefix");
+  }
 }
 
 function fileRecord(database: SqliteDatabase, path: string): FileRecord | undefined {

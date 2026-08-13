@@ -331,3 +331,26 @@ test("initialization migrates the known legacy prefix index", async () => {
     database.close();
   }
 });
+
+test("initialization refuses an unrelated database without changing its index", async () => {
+  const { databasePath } = temporaryDictionary("");
+  const database = await openSqlite(databasePath);
+  try {
+    database.exec(`
+      CREATE TABLE unrelated (value TEXT NOT NULL);
+      CREATE UNIQUE INDEX dictionary_entry_prefix ON unrelated(value);
+    `);
+
+    expect(() => initializeDatabase(database)).toThrow("dictionary database must be dedicated");
+    expect(
+      database
+        .prepare(
+          "SELECT tbl_name AS tableName FROM sqlite_schema WHERE type = 'index' AND name = ?",
+        )
+        .get("dictionary_entry_prefix"),
+    ).toEqual({ tableName: "unrelated" });
+    expect(database.prepare("PRAGMA user_version").get()?.user_version).toBe(0);
+  } finally {
+    database.close();
+  }
+});

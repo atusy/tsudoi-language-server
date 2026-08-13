@@ -43,7 +43,7 @@ fetch an unavailable peer; it does not make the host relationship optional.
 | option              | default                   | effect                                                       |
 | ------------------- | ------------------------- | ------------------------------------------------------------ |
 | `files`             | required                  | dictionary files, resolved against the factory's current cwd |
-| `databasePath`      | the user's platform cache | the persistent SQLite database                               |
+| `databasePath`      | the user's platform cache | a dedicated persistent SQLite database file                  |
 | `minPrefixLength`   | `2`                       | minimum non-whitespace text before the cursor                |
 | `maxItems`          | `500`                     | maximum distinct entries returned                            |
 | `refreshIntervalMs` | `1000`                    | throttle while no refresh is already running                 |
@@ -52,6 +52,9 @@ fetch an unavailable peer; it does not make the host relationship optional.
 Paths are deduplicated after they become absolute. Each non-empty line is one entry: CRLF loses
 its `\r`, a final line needs no newline, and surrounding spaces are preserved. Matching ignores
 case by storing a lowercase search key; the original line is returned unchanged.
+
+`databasePath` is owned as a rebuildable cache by this package. Initialization refuses a database
+that already contains unrelated application tables instead of migrating or deleting their schema.
 
 ## What bounds it
 
