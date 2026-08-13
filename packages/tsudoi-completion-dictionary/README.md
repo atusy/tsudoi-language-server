@@ -21,7 +21,10 @@ const completeDictionary = await useDictionaryCompletion({
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
-    methods: { "textDocument/completion": completeDictionary },
+    methods: {
+      "textDocument/completion": (context, params) =>
+        completeDictionary(context, params, { maxItems: 1000 }),
+    },
   });
 
 export default config;
@@ -77,10 +80,6 @@ LSP client.
 
 `maxItems` belongs to one completion call, matching `completeCorpus`, rather than to the long-lived
 dictionary factory. It defaults to `500`.
-
-```ts
-yield * completeDictionary(context, params, { maxItems: 1000 });
-```
 
 `databasePath` is owned as a rebuildable cache by this package. Initialization refuses a database
 that already contains unrelated application tables instead of migrating or deleting their schema.
