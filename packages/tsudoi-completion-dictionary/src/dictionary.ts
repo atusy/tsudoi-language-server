@@ -102,14 +102,13 @@ export async function makeCompleteDictionary(
   let refreshing = false;
   let queued = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-  let lastRefreshStarted = Number.NEGATIVE_INFINITY;
+  let lastRefreshFinished = Number.NEGATIVE_INFINITY;
   const startRefresh = (): void => {
     if (refreshing) {
       queued = true;
       return;
     }
     refreshing = true;
-    lastRefreshStarted = Date.now();
     void runtime
       .refresh(databasePath, files)
       .catch((error: unknown) => {
@@ -122,6 +121,7 @@ export async function makeCompleteDictionary(
       })
       .finally(() => {
         refreshing = false;
+        lastRefreshFinished = Date.now();
         if (queued) {
           queued = false;
           requestRefresh();
@@ -136,7 +136,7 @@ export async function makeCompleteDictionary(
     if (refreshTimer !== undefined) {
       return;
     }
-    const delayMs = Math.max(0, lastRefreshStarted + refreshIntervalMs - Date.now());
+    const delayMs = Math.max(0, lastRefreshFinished + refreshIntervalMs - Date.now());
     if (delayMs === 0) {
       startRefresh();
       return;

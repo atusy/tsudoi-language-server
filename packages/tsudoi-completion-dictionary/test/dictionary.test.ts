@@ -180,3 +180,28 @@ test("a queued follow-up respects the refresh interval", async () => {
   expect(refreshes).toHaveLength(3);
   refreshes[2]?.resolve();
 });
+
+test("a slow refresh still waits an interval after it settles", async () => {
+  const { path, databasePath } = fixture("alpha\n");
+  const refreshes: Array<ReturnType<typeof Promise.withResolvers<void>>> = [];
+  const runtime: RefreshRuntime = {
+    refresh: () => {
+      const refresh = Promise.withResolvers<void>();
+      refreshes.push(refresh);
+      return refresh.promise;
+    },
+  };
+  const handler = await makeCompleteDictionary(
+    { files: [path], databasePath, minPrefixLength: 0, refreshIntervalMs: 30 },
+    runtime,
+  );
+
+  await labels(handler, "");
+  await new Promise<void>((resolve) => setTimeout(resolve, 40));
+  refreshes[0]?.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  expect(refreshes).toHaveLength(1);
+  await new Promise<void>((resolve) => setTimeout(resolve, 30));
+  expect(refreshes).toHaveLength(2);
+  refreshes[1]?.resolve();
+});
