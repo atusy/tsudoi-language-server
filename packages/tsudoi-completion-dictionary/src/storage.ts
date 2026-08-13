@@ -110,9 +110,11 @@ async function insertEntries(
   }
 }
 
-export async function indexFile(database: SqliteDatabase, path: string): Promise<boolean> {
-  database.exec("BEGIN IMMEDIATE");
+async function indexFileOnce(database: SqliteDatabase, path: string): Promise<boolean> {
+  let transaction = false;
   try {
+    database.exec("BEGIN IMMEDIATE");
+    transaction = true;
     // Snapshot only after taking the shared database's write lock. Otherwise a
     // slower process can read old bytes, wait behind a newer publisher, and
     // then replace that newer generation with its stale snapshot.
@@ -146,14 +148,35 @@ export async function indexFile(database: SqliteDatabase, path: string): Promise
     database.exec("COMMIT");
     return true;
   } catch (error) {
-    try {
-      database.exec("ROLLBACK");
-    } catch {
-      // Preserve the operation that failed; a rollback failure only describes
-      // cleanup of that failure and the connection will not be reused blindly.
+    if (transaction) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // Preserve the operation that failed; a rollback failure only describes
+        // cleanup of that failure and the connection will not be reused blindly.
+      }
     }
     throw error;
   }
+}
+
+function isBusy(error: unknown): boolean {
+  const text = String(error);
+  return text.includes("SQLITE_BUSY") || text.includes("database is locked");
+}
+
+export async function indexFile(database: SqliteDatabase, path: string): Promise<boolean> {
+  for (const delayMs of [50, 100, 200, 400, 800]) {
+    try {
+      return await indexFileOnce(database, path);
+    } catch (error) {
+      if (!isBusy(error)) {
+        throw error;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  return indexFileOnce(database, path);
 }
 
 export function queryEntries(

@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
+import { spawn } from "node:child_process";
 import {
   mkdtempSync,
   readFileSync,
@@ -134,6 +135,40 @@ test("the write lock is acquired before the source snapshot is read", async () =
     expect(queryEntries(database, [path], "", 10)).toEqual([]);
   } finally {
     database.close();
+  }
+});
+
+test("a writer retries when another process holds the shared database lock", async () => {
+  const { path, databasePath } = temporaryDictionary("alpha\n");
+  const database = await openSqlite(databasePath);
+  initializeDatabase(database);
+  const holder = spawn(
+    "bun",
+    [
+      "-e",
+      `import { Database } from "bun:sqlite";
+       const database = new Database(process.env.TSUDOI_BUSY_TEST_DATABASE);
+       database.exec("BEGIN IMMEDIATE");
+       process.stdout.write("locked\\n");
+       setTimeout(() => { database.exec("COMMIT"); database.close(); }, 600);`,
+    ],
+    {
+      env: { ...process.env, TSUDOI_BUSY_TEST_DATABASE: databasePath },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  const holderClosed = new Promise<void>((resolve) => holder.once("close", () => resolve()));
+  try {
+    await new Promise<void>((resolve, reject) => {
+      holder.once("error", reject);
+      holder.stdout.once("data", () => resolve());
+    });
+
+    expect(await indexFile(database, path)).toBe(true);
+    expect(queryEntries(database, [path], "al", 10)).toEqual(["alpha"]);
+  } finally {
+    database.close();
+    await holderClosed;
   }
 });
 
