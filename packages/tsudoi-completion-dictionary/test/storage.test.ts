@@ -52,6 +52,19 @@ test("streams a line and UTF-8 scalar across input chunk boundaries", async () =
   }
 });
 
+test("leading whitespace is preserved in the value but excluded from its search key", async () => {
+  const { path, databasePath } = temporaryDictionary("  alpha  \n");
+  const database = await openSqlite(databasePath);
+  try {
+    initializeDatabase(database);
+    await indexFile(database, path);
+
+    expect(queryEntries(database, [path], "al", 10)).toEqual(["  alpha  "]);
+  } finally {
+    database.close();
+  }
+});
+
 test("the content hash skips unchanged bytes and replaces changed bytes", async () => {
   const { path, databasePath } = temporaryDictionary("before\n");
   const fixedTime = new Date(1_700_000_000_000);

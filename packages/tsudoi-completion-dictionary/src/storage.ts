@@ -78,7 +78,7 @@ async function insertEntries(
         value = value.slice(0, -1);
       }
       if (value !== "") {
-        insert.run(path, generation, ordinal, value, value.toLowerCase());
+        insert.run(path, generation, ordinal, value, value.trimStart().toLowerCase());
         ordinal += 1;
       }
       pending = pending.slice(newline + 1);
@@ -94,7 +94,7 @@ async function insertEntries(
   pending += decoder.decode();
   insertCompleteLines();
   if (pending !== "") {
-    insert.run(path, generation, ordinal, pending, pending.toLowerCase());
+    insert.run(path, generation, ordinal, pending, pending.trimStart().toLowerCase());
   }
   if (hash.digest("hex") !== expectedHash) {
     throw new Error(`dictionary ${JSON.stringify(path)} changed while it was being indexed`);
