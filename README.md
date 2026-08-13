@@ -654,19 +654,20 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   anywhere else either. The other shape **goes somewhere else** for its answer and has to wait
   on it, and the two packages below are where that one is worked out.
 
-- **Two handlers are packages you install rather than files you copy**, which is the trade this
+- **Handlers are packages you install rather than files you copy**, which is the trade this
   repository makes deliberately: a fix reaches you by reinstalling instead of by diffing your
   copy against an example you have already edited, and the price is that the file is not yours
   to edit. Each carries **its own README** — what it answers, that it needs tsudoi at run time
   however its manifest reads, what bounds it, and the route for getting it — and that document,
   rather than this one, is what a registry page would show:
 
-  | package                                                                              | answers                                               |
-  | ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-  | [`@atusy/tsudoi-hover-wordnet`](packages/tsudoi-hover-wordnet/README.md)             | `textDocument/hover`                                  |
-  | [`@atusy/tsudoi-completion-path`](packages/tsudoi-completion-path/README.md)         | `textDocument/completion`, `completionItem/resolve`   |
-  | [`@atusy/tsudoi-adapter-efm-config`](packages/tsudoi-adapter-efm-config/README.md)   | whatever an efm `config.yaml` describes               |
-  | [`@atusy/tsudoi-completion-document`](packages/tsudoi-completion-document/README.md) | `textDocument/completion`, from open documents' words |
+  | package                                                                                  | answers                                               |
+  | ---------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+  | [`@atusy/tsudoi-hover-wordnet`](packages/tsudoi-hover-wordnet/README.md)                 | `textDocument/hover`                                  |
+  | [`@atusy/tsudoi-completion-path`](packages/tsudoi-completion-path/README.md)             | `textDocument/completion`, `completionItem/resolve`   |
+  | [`@atusy/tsudoi-adapter-efm-config`](packages/tsudoi-adapter-efm-config/README.md)       | whatever an efm `config.yaml` describes               |
+  | [`@atusy/tsudoi-completion-dictionary`](packages/tsudoi-completion-dictionary/README.md) | `textDocument/completion`, from dictionary files      |
+  | [`@atusy/tsudoi-completion-document`](packages/tsudoi-completion-document/README.md)     | `textDocument/completion`, from open documents' words |
 
   **Neither brings tsudoi, and neither manifest will warn you.** Both declare
   `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not a
