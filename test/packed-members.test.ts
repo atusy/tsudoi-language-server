@@ -180,9 +180,10 @@ for (const one of packed) {
  *
  * THREE THINGS, AND EACH IS SOMETHING A STRANGER CANNOT GET ELSEWHERE. WHAT IT
  * ANSWERS: the method names, since the package name says one at best and this
- * repository has one member whose name says neither. THAT IT NEEDS TSUDOI AT RUN
- * TIME: the manifest says the opposite -- `peerDependenciesMeta.optional` reads
- * as `this works alone` -- and the account of why that flag is there lives in a
+ * repository has one member whose name says neither. HOW IT NEEDS TSUDOI: the
+ * manifest's `peerDependenciesMeta.optional` can read as `this works alone`,
+ * while a type-only handler can load as JavaScript but still needs tsudoi for
+ * its public types and host. The account of why that flag is there lives in a
  * test `files` keeps out of the tarball, so without this the flag reaches a
  * consumer with no correction anywhere. WHAT BOUNDS IT: every handler decides
  * something that limits which documents it serves, and a decision that lives
@@ -201,7 +202,9 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
     /textDocument\/completion/,
     /peer/i,
     /optional/,
-    /Cannot find module/,
+    /type-only/,
+    /TypeScript consumer needs the peer/,
+    /useful only inside a tsudoi host/,
     /Prefix filtering happens in SQLite/i,
   ],
   "@atusy/tsudoi-completion-path": [
