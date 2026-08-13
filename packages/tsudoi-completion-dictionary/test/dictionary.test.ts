@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { makeCompleteDictionary, type RefreshRuntime } from "../src/dictionary.ts";
+import {
+  makeCompleteDictionary,
+  type DictionaryFilter,
+  type RefreshRuntime,
+} from "../src/dictionary.ts";
 import { openSqlite } from "../src/sqlite.ts";
 import { indexFile, initializeDatabase } from "../src/storage.ts";
 
@@ -91,6 +95,33 @@ test("the real worker eventually publishes the file without blocking factory cre
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
   expect(actual).toEqual(["alpha", "alpine"]);
+});
+
+test("custom filters run before the candidate bound", async () => {
+  const { path, databasePath } = fixture("alpha\nbeta\ngamma\n");
+  const database = await openSqlite(databasePath);
+  initializeDatabase(database);
+  await indexFile(database, path);
+  database.close();
+  const suffixFilter: DictionaryFilter = function* (words) {
+    for (const word of words) {
+      if (word.endsWith("ta")) {
+        yield word;
+      }
+    }
+  };
+  const handler = await makeCompleteDictionary(
+    {
+      files: [path],
+      databasePath,
+      filters: [suffixFilter],
+      maxItems: 1,
+      minPrefixLength: 0,
+    },
+    { refresh: () => new Promise<void>(() => {}) },
+  );
+
+  expect(await labels(handler, "anything")).toEqual(["beta"]);
 });
 
 test("candidate counts reject fractions before opening the database", async () => {

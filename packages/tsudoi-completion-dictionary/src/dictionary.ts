@@ -4,12 +4,19 @@ import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/types";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
+import {
+  applyDictionaryFilters,
+  defaultDictionaryFilters,
+  dictionaryPrefixFilter,
+  type DictionaryFilter,
+} from "./filters.ts";
 import { openSqlite } from "./sqlite.ts";
 import { initializeDatabase, queryEntries } from "./storage.ts";
 
 export interface CompleteDictionaryOptions {
   readonly files: readonly string[];
   readonly databasePath?: string;
+  readonly filters?: readonly DictionaryFilter[];
   readonly minPrefixLength?: number;
   readonly maxItems?: number;
   readonly refreshIntervalMs?: number;
@@ -91,6 +98,7 @@ export async function makeCompleteDictionary(
   const databasePath = resolve(options.databasePath ?? defaultDatabasePath());
   const minPrefixLength = nonNegativeInteger(options.minPrefixLength ?? 2, "minPrefixLength");
   const maxItems = nonNegativeInteger(options.maxItems ?? 500, "maxItems");
+  const filters = options.filters ?? defaultDictionaryFilters;
   const refreshIntervalMs = finiteNonNegative(
     options.refreshIntervalMs ?? 1_000,
     "refreshIntervalMs",
@@ -168,14 +176,18 @@ export async function makeCompleteDictionary(
     if (prefix.length < minPrefixLength) {
       return;
     }
-    const entries = queryEntries(database, files, prefix, maxItems);
-    if (entries.length === 0) {
+    const prefixRunsFirst = filters[0] === dictionaryPrefixFilter;
+    const queryLimit =
+      filters.length === 0 || (prefixRunsFirst && filters.length === 1) ? maxItems : undefined;
+    const entries = queryEntries(database, files, prefixRunsFirst ? prefix : "", queryLimit);
+    const filtered = applyDictionaryFilters(entries, filters, { typed: prefix }, maxItems);
+    if (filtered.length === 0) {
       return;
     }
     // COMPLETENESS RULING: this is the complete bounded answer from the active
     // committed generations. A background generation is a future dictionary
     // snapshot, not an omitted chunk of this response.
-    yield entries.map(
+    yield filtered.map(
       (label) =>
         ({
           label,
@@ -185,6 +197,8 @@ export async function makeCompleteDictionary(
     );
   };
 }
+
+export type { DictionaryFilter } from "./filters.ts";
 
 export function useDictionaryCompletion(
   options: CompleteDictionaryOptions,

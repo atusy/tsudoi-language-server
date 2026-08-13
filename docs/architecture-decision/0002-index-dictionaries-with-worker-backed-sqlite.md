@@ -8,6 +8,10 @@
 | **Consulted**       | ddc-source-dictionary and current handler package APIs |
 | **Informed**        | Config authors                                         |
 
+The location of candidate filtering is refined by
+[ADR 0004](0004-apply-configurable-dictionary-filters-in-the-handler.md). SQLite remains the
+persistent index; arbitrary filter pipelines run in the LSP handler.
+
 ## Context and Problem Statement
 
 Dictionary completion must persist one entry per file line, replace a file when its content hash

@@ -80,6 +80,8 @@ const publishedFiles: Record<string, readonly string[]> = {
     "README.md",
     "dist/dictionary.d.ts",
     "dist/dictionary.js",
+    "dist/filters.d.ts",
+    "dist/filters.js",
     "dist/index.d.ts",
     "dist/index.js",
     "dist/sqlite-bun.d.ts",
@@ -221,7 +223,7 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
     /type-only/,
     /TypeScript consumer needs the peer/,
     /useful only inside a tsudoi host/,
-    /Prefix filtering happens in SQLite/i,
+    /default prefix filter uses SQLite's indexed prefix range/i,
   ],
   "@atusy/tsudoi-completion-path": [
     /textDocument\/completion/,

@@ -201,9 +201,9 @@ export function queryEntries(
   database: SqliteDatabase,
   paths: readonly string[],
   prefix: string,
-  maxItems: number,
+  maxItems?: number,
 ): string[] {
-  if (paths.length === 0 || maxItems <= 0) {
+  if (paths.length === 0 || (maxItems !== undefined && maxItems <= 0)) {
     return [];
   }
   const placeholders = paths.map(() => "?").join(", ");
@@ -218,6 +218,7 @@ export function queryEntries(
     }
   }
   const upperClause = upperBound === undefined ? "" : "AND entry.search_key < ?";
+  const limitClause = maxItems === undefined ? "" : "LIMIT ?";
   const rows = database
     .prepare(
       `SELECT DISTINCT entry.value AS value, entry.search_key AS searchKey
@@ -229,9 +230,14 @@ export function queryEntries(
          AND entry.search_key >= ?
          ${upperClause}
        ORDER BY entry.search_key, entry.value
-       LIMIT ?`,
+       ${limitClause}`,
     )
-    .all(...paths, searchKey, ...(upperBound === undefined ? [] : [upperBound]), maxItems);
+    .all(
+      ...paths,
+      searchKey,
+      ...(upperBound === undefined ? [] : [upperBound]),
+      ...(maxItems === undefined ? [] : [maxItems]),
+    );
   return rows.map((row) => {
     if (typeof row.value !== "string") {
       throw new TypeError("a dictionary entry has an invalid shape");
