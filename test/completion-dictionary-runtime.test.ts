@@ -27,7 +27,6 @@ const dictionary = join(root, "words.txt");
 writeFileSync(dictionary, "old-entry\\n");
 const complete = await useDictionaryCompletion({
   files: [dictionary],
-  databasePath: join(root, "dictionary.sqlite3"),
   minPrefixLength: 0,
   refreshIntervalMs: 0,
 });
@@ -72,14 +71,14 @@ const result = await new Promise((resolve, reject) => {
     event.preventDefault();
     reject(event.error ?? new Error(event.message));
   });
-  worker.postMessage({ databasePath: root, files: [] });
+  worker.postMessage({ files: [root], versions: [] });
 });
 process.stdout.write(JSON.stringify(result));
 `;
 }
 
 for (const runtime of ["bun", "deno"] as const) {
-  test(`${runtime} loads its native SQLite adapter and swaps Worker snapshots`, () => {
+  test(`${runtime} swaps in-memory Worker snapshots`, () => {
     const root = mkdtempSync(join(tmpdir(), `tsudoi-dictionary-${runtime}-`));
     try {
       const probe = join(root, "probe.mjs");
@@ -108,7 +107,7 @@ for (const runtime of ["bun", "deno"] as const) {
   });
 }
 
-test("deno reports a Worker-level SQLite failure without an unhandled child error", () => {
+test("deno reports a Worker-level file failure without an unhandled child error", () => {
   const root = mkdtempSync(join(tmpdir(), "tsudoi-dictionary-worker-failure-"));
   try {
     const probe = join(root, "probe.mjs");
@@ -123,6 +122,7 @@ test("deno reports a Worker-level SQLite failure without an unhandled child erro
     expect(result.stderr).toBe("");
     expect(JSON.parse(result.stdout)).toEqual({
       type: "done",
+      files: [],
       errors: [{ path: root, message: expect.any(String) }],
     });
   } finally {

@@ -1,13 +1,11 @@
 # `@atusy/tsudoi-completion-dictionary`
 
 Completes each line of one or more UTF-8 dictionary files through
-`textDocument/completion`. The files are indexed in a background Worker and persisted in SQLite,
-so a request reads the last committed entries rather than waiting for a changed file to be hashed
-and registered.
+`textDocument/completion`. A background Worker reads and hashes the files, then completion searches
+the last immutable in-memory snapshot rather than waiting for a changed file to be loaded.
 
-This package uses SQLite's indexed prefix range directly. It does not build a second in-memory
-trie: the database is already the persistent search index, and a trie would duplicate its entries
-and need another consistency boundary.
+The default prefix filter uses a binary search over entries sorted by their case-insensitive search
+key. No database or persistent cache is created.
 
 <!-- snippet -->
 
@@ -30,10 +28,9 @@ const config: TsudoiConfigFactory = () =>
 export default config;
 ```
 
-The factory waits for SQLite to open and for its schema to exist. It does **not** wait for any
-dictionary file to be registered. Registration begins immediately in a Worker; completion during
-that work reads the previous committed generation, or yields nothing when the database has never
-held that file.
+The factory does **not** wait for a dictionary file to be loaded. Loading begins immediately in a
+Worker; completion during that work reads the previous published snapshot, or yields nothing before
+the first snapshot has arrived.
 
 Tsudoi is an `optional` **peer** only because tsudoi is **unpublished**. This package does not
 install it. Its JavaScript artifact can load without tsudoi because the handler imports are
@@ -48,11 +45,10 @@ missing peer is a TypeScript resolution error such as `TS2307`, not the runtime 
 | option              | default                    | effect                                                       |
 | ------------------- | -------------------------- | ------------------------------------------------------------ |
 | `files`             | required                   | dictionary files, resolved against the factory's current cwd |
-| `databasePath`      | the user's platform cache  | a dedicated persistent SQLite database file                  |
 | `filters`           | `[dictionaryPrefixFilter]` | server-side candidate pipeline                               |
 | `minPrefixLength`   | `2`                        | minimum non-whitespace text before the cursor                |
 | `refreshIntervalMs` | `1000`                     | throttle while no refresh is already running                 |
-| `onError`           | no callback                | observes background file, hash, Worker, and SQLite failures  |
+| `onError`           | no callback                | observes background file, decode, hash, and Worker failures  |
 
 Paths are deduplicated after they become absolute. Each non-empty line is one entry: CRLF loses
 its `\r`, a final line needs no newline, and surrounding spaces are preserved. Matching ignores
@@ -81,46 +77,38 @@ LSP client.
 `maxItems` belongs to one completion call, matching `completeCorpus`, rather than to the long-lived
 dictionary factory. It defaults to `500`.
 
-`databasePath` is owned as a rebuildable cache by this package. Initialization refuses a database
-that already contains unrelated application tables instead of migrating or deleting their schema.
-
 ## What bounds it
 
-The default prefix filter uses SQLite's indexed prefix range to narrow candidates, then applies the
+The default prefix filter uses an in-memory binary search to narrow candidates, then applies the
 same prefix rule in the LSP handler. `minPrefixLength` prevents very broad queries, the invocation's
 `maxItems` bounds the response, and
 `refreshIntervalMs` prevents every idle keystroke from starting another hash pass. Requests that
 arrive during one refresh coalesce into one follow-up scheduled at that interval, so sustained
 typing cannot create an uninterrupted chain of Workers. Registration still reads every byte of a
 file whose refresh runs because the content hash, not mtime or size, is the authority for whether
-its entries changed. Changed files are streamed a second time to decode and insert their lines;
-peak JavaScript memory is bounded by stream buffers and the longest individual line rather than
-the whole dictionary.
+its entries changed. Only changed files are decoded and transferred back to the handler.
 
-The limits bound a request and refresh frequency, not database size, processing time, or an
-individual line's size. Old generations are removed in the transaction that publishes a new
-generation. Rows for paths no factory currently names may remain in a shared database, but queries
-include only the factory's own normalized `files`.
+These limits bound request output and refresh frequency rather than dictionary size, processing
+time, or an individual line's size. Each tsudoi process keeps its own complete snapshot in memory.
+A restart has no persisted snapshot and must load the configured files again before it can offer
+candidates.
 
-An arbitrary filter cannot be pushed into SQLite without changing its semantics. A custom pipeline
-therefore reads all active entries selected by the configured files before applying its filters and
-`maxItems`. Put `dictionaryPrefixFilter` first when possible: that preserves the indexed prefix
-range while allowing later stages to transform the matching subset. A pipeline with only the
-default prefix filter can also apply `LIMIT` in SQLite because the handler-side result is identical.
+An arbitrary filter cannot use the prefix index without changing its semantics. A custom pipeline
+therefore traverses all entries in the current snapshot before applying its filters and `maxItems`.
+Put `dictionaryPrefixFilter` first when possible: that preserves binary-search narrowing while
+allowing later stages to transform the matching subset. A pipeline containing only the default
+prefix filter also bounds the narrowed input before constructing completion items.
 
 ## Failure and concurrency semantics
 
-The reader and background writer use separate SQLite connections in WAL mode. A file update writes
-a new generation and switches the active generation in one transaction. Before commit a request
-sees the complete old generation; after commit it sees the complete new one. A read, UTF-8 decode,
-hash, or write failure rolls back and leaves the old generation active. `onError` receives the
-failure; with no callback, background failures are deliberately silent and retried by a later
-refresh.
+The Worker constructs complete per-file replacements and sends them in one result. The handler
+builds the next combined snapshot before switching its reference, so a request sees either the
+complete previous snapshot or the complete next one. A read or UTF-8 decode failure produces no
+replacement for that file and leaves its previous entries active. `onError` receives the failure;
+with no callback, background failures are deliberately silent and retried by a later refresh.
 
-Bun and Deno name their native SQLite modules differently. The built artifact selects
-`bun:sqlite` under Bun and `node:sqlite` under Deno only after detecting the runtime, so neither
-runtime resolves the other's module. CPU and synchronous SQLite work for registration stays in the
-Worker; the small indexed read remains in the completion request.
+File I/O, hashing, decoding, and initial line collection stay in the Worker under both Bun and Deno.
+Sorting a changed combined snapshot and the small indexed read run in the handler process.
 
 ## Installing it
 

@@ -1,16 +1,16 @@
 # Index Dictionaries with Worker-backed Native SQLite
 
-|                     |                                                        |
-| ------------------- | ------------------------------------------------------ |
-| **Status**          | accepted                                               |
-| **Date**            | 2026-08-13                                             |
-| **Decision-makers** | Project stakeholder and maintainers                    |
-| **Consulted**       | ddc-source-dictionary and current handler package APIs |
-| **Informed**        | Config authors                                         |
+|                     |                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------- |
+| **Status**          | superseded by [ADR 0005](0005-build-immutable-dictionary-snapshots-in-memory.md) |
+| **Date**            | 2026-08-13                                                                       |
+| **Decision-makers** | Project stakeholder and maintainers                                              |
+| **Consulted**       | ddc-source-dictionary and current handler package APIs                           |
+| **Informed**        | Config authors                                                                   |
 
-The location of candidate filtering is refined by
-[ADR 0004](0004-apply-configurable-dictionary-filters-in-the-handler.md). SQLite remains the
-persistent index; arbitrary filter pipelines run in the LSP handler.
+The location of candidate filtering was refined by
+[ADR 0004](0004-apply-configurable-dictionary-filters-in-the-handler.md). The persistent index
+decision was later replaced by [ADR 0005](0005-build-immutable-dictionary-snapshots-in-memory.md).
 
 ## Context and Problem Statement
 

@@ -1,7 +1,4 @@
-import { mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import process from "node:process";
+import { resolve } from "node:path";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/types";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 import {
@@ -10,12 +7,16 @@ import {
   dictionaryPrefixFilter,
   type DictionaryFilter,
 } from "./filters.ts";
-import { openSqlite } from "./sqlite.ts";
-import { initializeDatabase, queryEntries } from "./storage.ts";
+import {
+  mergeDictionaryFiles,
+  queryEntries,
+  type DictionaryFileSnapshot,
+  type DictionaryFileVersion,
+  type RefreshResult,
+} from "./memory.ts";
 
 export interface CompleteDictionaryOptions {
   readonly files: readonly string[];
-  readonly databasePath?: string;
   readonly filters?: readonly DictionaryFilter[];
   readonly minPrefixLength?: number;
   readonly refreshIntervalMs?: number;
@@ -34,36 +35,13 @@ export type DictionaryCompletion = (
 
 export interface RefreshRuntime {
   refresh(
-    databasePath: string,
     files: readonly string[],
-  ): Promise<RefreshResult | void>;
+    versions: readonly DictionaryFileVersion[],
+  ): Promise<RefreshResult>;
 }
 
-export interface DictionaryFileSnapshot {
-  readonly path: string;
-  readonly contentHash: string;
-  readonly entries: readonly string[];
-}
-
-export interface RefreshResult {
-  readonly files: readonly DictionaryFileSnapshot[];
-  readonly errors: ReadonlyArray<{ readonly path: string; readonly message: string }>;
-}
-
-interface DoneMessage {
+interface DoneMessage extends RefreshResult {
   readonly type: "done";
-  readonly errors: ReadonlyArray<{ readonly path: string; readonly message: string }>;
-}
-
-function defaultDatabasePath(): string {
-  const cache =
-    process.env.XDG_CACHE_HOME ??
-    (process.platform === "darwin"
-      ? join(homedir(), "Library", "Caches")
-      : process.platform === "win32"
-        ? (process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"))
-        : join(homedir(), ".cache"));
-  return join(cache, "tsudoi-language-server", "dictionary.sqlite3");
 }
 
 function workerUrl(): URL {
@@ -71,31 +49,19 @@ function workerUrl(): URL {
 }
 
 const workerRuntime: RefreshRuntime = {
-  refresh: (databasePath, files) =>
-    new Promise<void>((resolveRefresh, rejectRefresh) => {
+  refresh: (files, versions) =>
+    new Promise<RefreshResult>((resolveRefresh, rejectRefresh) => {
       const worker = new Worker(workerUrl(), { type: "module" });
       worker.addEventListener("message", (event: MessageEvent<DoneMessage>) => {
         worker.terminate();
-        if (event.data.errors.length === 0) {
-          resolveRefresh();
-          return;
-        }
-        rejectRefresh(
-          new AggregateError(
-            event.data.errors.map(
-              ({ path, message }) =>
-                new Error(`failed to index dictionary ${JSON.stringify(path)}: ${message}`),
-            ),
-            "one or more dictionaries could not be indexed",
-          ),
-        );
+        resolveRefresh(event.data);
       });
       worker.addEventListener("error", (event) => {
         event.preventDefault();
         worker.terminate();
         rejectRefresh(event.error ?? new Error(event.message));
       });
-      worker.postMessage({ databasePath, files });
+      worker.postMessage({ files, versions });
     }),
 };
 
@@ -118,34 +84,23 @@ export async function makeCompleteDictionary(
   runtime: RefreshRuntime = workerRuntime,
 ): Promise<DictionaryCompletion> {
   const files = [...new Set(options.files.map((path) => resolve(path)))];
-  const databasePath = resolve(options.databasePath ?? defaultDatabasePath());
+  const configuredFiles = new Set(files);
   const minPrefixLength = nonNegativeInteger(options.minPrefixLength ?? 2, "minPrefixLength");
   const filters = options.filters ?? defaultDictionaryFilters;
   const refreshIntervalMs = finiteNonNegative(
     options.refreshIntervalMs ?? 1_000,
     "refreshIntervalMs",
   );
-  await mkdir(dirname(databasePath), { recursive: true });
-  const database = await openSqlite(databasePath);
-  initializeDatabase(database);
-  const snapshots = new Map<string, DictionaryFileSnapshot>();
-  let snapshotEntries: readonly string[] | undefined;
+  let snapshots = new Map<string, DictionaryFileSnapshot>();
+  let snapshotEntries: readonly string[] = [];
 
   const publish = (result: RefreshResult): void => {
-    for (const file of result.files) {
-      if (files.includes(file.path)) {
-        snapshots.set(file.path, file);
-      }
+    if (result.files.length === 0) {
+      return;
     }
-    const values = [...snapshots.values()].flatMap((file) => file.entries);
-    snapshotEntries = [...new Set(values)].sort((left, right) => {
-      const leftKey = left.trimStart().toLowerCase();
-      const rightKey = right.trimStart().toLowerCase();
-      if (leftKey !== rightKey) {
-        return leftKey < rightKey ? -1 : 1;
-      }
-      return left < right ? -1 : left === right ? 0 : 1;
-    });
+    const merged = mergeDictionaryFiles(snapshots, result.files, configuredFiles);
+    snapshots = merged.snapshots;
+    snapshotEntries = merged.entries;
   };
 
   let refreshing = false;
@@ -159,10 +114,20 @@ export async function makeCompleteDictionary(
     }
     refreshing = true;
     void runtime
-      .refresh(databasePath, files)
+      .refresh(
+        files,
+        [...snapshots.values()].map(({ path, contentHash }) => ({ path, contentHash })),
+      )
       .then((result) => {
-        if (result !== undefined) {
-          publish(result);
+        publish(result);
+        if (result.errors.length > 0) {
+          throw new AggregateError(
+            result.errors.map(
+              ({ path, message }) =>
+                new Error(`failed to read dictionary ${JSON.stringify(path)}: ${message}`),
+            ),
+            "one or more dictionaries could not be read",
+          );
         }
       })
       .catch((error: unknown) => {
@@ -226,23 +191,14 @@ export async function makeCompleteDictionary(
     const prefixRunsFirst = filters[0] === dictionaryPrefixFilter;
     const queryLimit =
       filters.length === 0 || (prefixRunsFirst && filters.length === 1) ? maxItems : undefined;
-    const entries =
-      snapshotEntries === undefined
-        ? queryEntries(database, files, prefixRunsFirst ? prefix : "", queryLimit)
-        : snapshotEntries
-            .filter(
-              prefixRunsFirst
-                ? (entry) => entry.trimStart().toLowerCase().startsWith(prefix.toLowerCase())
-                : () => true,
-            )
-            .slice(0, queryLimit);
+    const entries = queryEntries(snapshotEntries, prefixRunsFirst ? prefix : "", queryLimit);
     const filtered = applyDictionaryFilters(entries, filters, { typed: prefix }, maxItems);
     if (filtered.length === 0) {
       return;
     }
     // COMPLETENESS RULING: this is the complete bounded answer from the active
-    // committed generations. A background generation is a future dictionary
-    // snapshot, not an omitted chunk of this response.
+    // immutable snapshot. A background refresh is a future dictionary snapshot,
+    // not an omitted chunk of this response.
     yield filtered.map(
       (label) =>
         ({
