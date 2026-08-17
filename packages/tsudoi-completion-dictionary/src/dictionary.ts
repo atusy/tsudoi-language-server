@@ -33,7 +33,21 @@ export type DictionaryCompletion = (
 ) => ReturnType<MethodHandler<"textDocument/completion">>;
 
 export interface RefreshRuntime {
-  refresh(databasePath: string, files: readonly string[]): Promise<void>;
+  refresh(
+    databasePath: string,
+    files: readonly string[],
+  ): Promise<RefreshResult | void>;
+}
+
+export interface DictionaryFileSnapshot {
+  readonly path: string;
+  readonly contentHash: string;
+  readonly entries: readonly string[];
+}
+
+export interface RefreshResult {
+  readonly files: readonly DictionaryFileSnapshot[];
+  readonly errors: ReadonlyArray<{ readonly path: string; readonly message: string }>;
 }
 
 interface DoneMessage {
@@ -114,6 +128,25 @@ export async function makeCompleteDictionary(
   await mkdir(dirname(databasePath), { recursive: true });
   const database = await openSqlite(databasePath);
   initializeDatabase(database);
+  const snapshots = new Map<string, DictionaryFileSnapshot>();
+  let snapshotEntries: readonly string[] | undefined;
+
+  const publish = (result: RefreshResult): void => {
+    for (const file of result.files) {
+      if (files.includes(file.path)) {
+        snapshots.set(file.path, file);
+      }
+    }
+    const values = [...snapshots.values()].flatMap((file) => file.entries);
+    snapshotEntries = [...new Set(values)].sort((left, right) => {
+      const leftKey = left.trimStart().toLowerCase();
+      const rightKey = right.trimStart().toLowerCase();
+      if (leftKey !== rightKey) {
+        return leftKey < rightKey ? -1 : 1;
+      }
+      return left < right ? -1 : left === right ? 0 : 1;
+    });
+  };
 
   let refreshing = false;
   let queued = false;
@@ -127,6 +160,11 @@ export async function makeCompleteDictionary(
     refreshing = true;
     void runtime
       .refresh(databasePath, files)
+      .then((result) => {
+        if (result !== undefined) {
+          publish(result);
+        }
+      })
       .catch((error: unknown) => {
         try {
           options.onError?.(error);
@@ -188,7 +226,16 @@ export async function makeCompleteDictionary(
     const prefixRunsFirst = filters[0] === dictionaryPrefixFilter;
     const queryLimit =
       filters.length === 0 || (prefixRunsFirst && filters.length === 1) ? maxItems : undefined;
-    const entries = queryEntries(database, files, prefixRunsFirst ? prefix : "", queryLimit);
+    const entries =
+      snapshotEntries === undefined
+        ? queryEntries(database, files, prefixRunsFirst ? prefix : "", queryLimit)
+        : snapshotEntries
+            .filter(
+              prefixRunsFirst
+                ? (entry) => entry.trimStart().toLowerCase().startsWith(prefix.toLowerCase())
+                : () => true,
+            )
+            .slice(0, queryLimit);
     const filtered = applyDictionaryFilters(entries, filters, { typed: prefix }, maxItems);
     if (filtered.length === 0) {
       return;

@@ -60,6 +60,25 @@ async function labels(
   return answer.done === true ? [] : answer.value.map((item) => item.label);
 }
 
+test("completion publishes the immutable snapshot returned by a refresh", async () => {
+  const { path, databasePath } = fixture("alpha\nbeta\n");
+  const runtime = {
+    refresh: () =>
+      Promise.resolve({
+        files: [{ path, contentHash: "hash", entries: ["alpha", "beta"] }],
+        errors: [],
+      }),
+  } as unknown as RefreshRuntime;
+  const handler = await makeCompleteDictionary(
+    { files: [path], databasePath, refreshIntervalMs: 0 },
+    runtime,
+  );
+
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  expect(await labels(handler, "al")).toEqual(["alpha"]);
+});
+
 test("completion reads the committed snapshot without waiting for refresh", async () => {
   const { path, databasePath } = fixture("old-entry\n");
   const database = await openSqlite(databasePath);
