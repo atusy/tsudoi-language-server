@@ -952,13 +952,18 @@ const records: readonly PerturbationRecord[] = [
     // directory, the projection is unchanged, and only the NESTING is dropped --
     // the reading that cannot tell a README picturing `packages/` inside the
     // checkout from one picturing it beside.
-    arm: { file: "test/readme-layout.test.ts", name: "the layout holds over README.md block 1" },
+    arm: {
+      file: "test/readme-layout.test.ts",
+      name: "the layout holds over docs/README.md block 1",
+    },
     weakening: {
       file: "test/helpers/readme.ts",
       from: '    const path = parent === undefined ? (at[2] ?? "") : `${parent}/${at[2] ?? ""}`;',
       to: '    const path = at[2] ?? "";',
     },
-    alsoReddens: ["corrupting README.md block 1 OUTSIDE the layout's subject leaves it saying yes"],
+    alsoReddens: [
+      "corrupting docs/README.md block 1 OUTSIDE the layout's subject leaves it saying yes",
+    ],
   },
   {
     // THE CONJUNCTION READ AS A DISJUNCTION, one directory being enough. It
@@ -968,7 +973,7 @@ const records: readonly PerturbationRecord[] = [
     // is worth anything for.
     arm: {
       file: "test/readme-layout.test.ts",
-      name: "corrupting README.md block 1 INSIDE the layout's subject makes it say no",
+      name: "corrupting docs/README.md block 1 INSIDE the layout's subject makes it say no",
     },
     weakening: {
       file: "test/helpers/readme.ts",

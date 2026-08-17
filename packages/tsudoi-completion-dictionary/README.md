@@ -125,7 +125,7 @@ Worker; the small indexed read remains in the completion request.
 ## Installing it
 
 Neither this package nor tsudoi is published to a registry. First follow the
-[repository quickstart](https://github.com/atusy/tsudoi-language-server#quickstart) so the checkout
+[repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart) so the checkout
 contains tsudoi's built package.
 
 Packing needs a workspace link that `bun install` does not create. In a fresh checkout,

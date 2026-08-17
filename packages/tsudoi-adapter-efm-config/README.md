@@ -79,7 +79,7 @@ this is no safer and no more dangerous than running efm itself.
 
 Neither this package nor tsudoi is published to any registry. The working route is a local
 tarball built out of a checkout, and it assumes you have already installed tsudoi itself — the
-quickstart in the [repository's README](https://github.com/atusy/tsudoi-language-server#readme) is
+quickstart in the [repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart) is
 what does that.
 
 Packing compiles the package, and its build reaches tsudoi through a link inside the checkout

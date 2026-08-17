@@ -1,9 +1,6 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
-import { markedBlocks } from "./helpers/readme.ts";
-import { repoRoot } from "./helpers/spawn.ts";
+import { markedBlocks, readReadme } from "./helpers/readme.ts";
 import { typeCheckProbe } from "./helpers/typecheck.ts";
 
 applySuiteDeadline();
@@ -38,8 +35,7 @@ applySuiteDeadline();
 const preamble = "declare const uri: string;\n";
 
 function snippetBlocks(): readonly string[] {
-  const markdown = readFileSync(join(repoRoot, "README.md"), "utf8");
-  return markedBlocks(markdown, "snippet").map((marked) => marked.block.body);
+  return markedBlocks(readReadme(), "snippet").map((marked) => marked.block.body);
 }
 
 test("the mock the README says satisfies nothing is refused, and it names the three members", async () => {

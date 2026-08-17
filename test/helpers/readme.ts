@@ -23,9 +23,9 @@ import { declaredMembers, handlerMembers, trackedReadmes } from "../../scripts/w
 import { initializeParams, LspSession } from "./lsp.ts";
 import { frameworkRoot, repoRoot, runCommand } from "./spawn.ts";
 
-/** README.md itself -- the artifact under test, read at call time. */
+/** The complete guide -- the executable documentation, read at call time. */
 export function readReadme(): string {
-  return readFileSync(fileURLToPath(new URL("../../README.md", import.meta.url)), "utf8");
+  return readFileSync(fileURLToPath(new URL("../../docs/README.md", import.meta.url)), "utf8");
 }
 
 /**
@@ -799,8 +799,13 @@ export interface Consumer {
   readonly form: ConsumingForm;
 }
 
-/** The checkout's own README -- the one document that is nobody's package. */
+/** The complete guide -- the one executable document that is nobody's package. */
 function theCheckoutsOwnReadme(): readonly string[] {
+  return ["docs/README.md"];
+}
+
+/** The concise project landing page, whose examples use indented Markdown blocks. */
+function theProjectOverview(): readonly string[] {
   return ["README.md"];
 }
 
@@ -896,6 +901,29 @@ function resolvesFrom(specifier: string, dir: string): boolean {
  */
 export const consumers: readonly Consumer[] = [
   {
+    // The landing page has one deliberately small code sample. Its import
+    // surface is held against the downloadable starter; executable and
+    // exhaustive instructions remain in docs/README.md.
+    name: "the project overview",
+    documents: theProjectOverview,
+    marker: "overview",
+    form: {
+      kind: "read",
+      reason: "the landing sample and downloadable starter use the same modules",
+      needs: "the installed tree",
+      subject: (block) =>
+        [...block.body.matchAll(/\bfrom\s+["']([^"']+)["']/g)].map((at) => at[1] ?? ""),
+      against: () => {
+        const starter = readFileSync(join(repoRoot, "examples/github/tsudoi.config.ts"), "utf8");
+        return [...starter.matchAll(/\bfrom\s+["']([^"']+)["']/g)].map((at) => at[1] ?? "");
+      },
+      holds: (subject, against) =>
+        subject.length > 0 &&
+        subject.length === against.length &&
+        subject.every((specifier, index) => specifier === against[index]),
+    },
+  },
+  {
     name: "the quickstart",
     documents: theCheckoutsOwnReadme,
     marker: "quickstart",
@@ -948,7 +976,11 @@ export const consumers: readonly Consumer[] = [
     // reach for an exemption; the move is to give the snippet the import it was
     // already implying.
     name: "the ts snippets",
-    documents: (root) => [...theCheckoutsOwnReadme(), ...everyHandlersReadme(root)],
+    documents: (root) => [
+      ...theProjectOverview(),
+      ...theCheckoutsOwnReadme(),
+      ...everyHandlersReadme(root),
+    ],
     marker: "snippet",
     form: {
       kind: "read",

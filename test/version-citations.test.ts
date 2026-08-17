@@ -64,7 +64,7 @@ const CITATION = /(bun|deno)[\s*]+(?:v|version[\s*]+)?(\d+\.\d+\.\d+)/gi;
  * how the sentence that first explained this reddened the arm.
  */
 const accounted: ReadonlyArray<readonly [path: string, runtime: string, version: string]> = [
-  ["README.md", "deno", "2.9.2"],
+  ["docs/README.md", "deno", "2.9.2"],
   ["bunfig.toml", "bun", "1.3.13"],
   ["bunfig.toml", "bun", "1.3.13"],
   ["package.json", "bun", "1.3.13"],
