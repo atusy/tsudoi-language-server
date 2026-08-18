@@ -562,14 +562,15 @@ test("the published surface is tsudoi's types beside the dependency subpaths, an
     default: `./src/${name}.ts`,
   });
 
-  // FOUR ARMS, AND THE SPLIT IS OURS-VERSUS-THEIRS. `./types` carries tsudoi's
-  // own names; the three under `./deps/` carry upstream's, one per dependency,
+  // FIVE ARMS, AND THE SPLIT IS OURS-VERSUS-THEIRS. `./types` carries tsudoi's
+  // own names; the four under `./deps/` carry upstream's,
   // because a single module re-exporting all three is TS2308 under declaration
   // emit -- ambiguous re-export, which `--noEmit` does not reproduce.
   expect(packageJson.exports).toEqual({
     "./deps/protocol": arm("deps/protocol"),
     "./deps/textdocument": arm("deps/textdocument"),
     "./deps/types": arm("deps/types"),
+    "./deps/error": arm("deps/error"),
     "./types": arm("types"),
   });
   expect(packageJson.files).toEqual(["dist"]);

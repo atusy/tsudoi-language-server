@@ -514,6 +514,12 @@ it, for the reason the section above gives. **tsudoi does not resolve code actio
 `codeAction/resolve` is not a handler key, so an action you offer has to arrive complete -- there
 is no second call in which to fill in an edit you deferred.
 
+**A method handler may answer an LSP error deliberately.** Import `ResponseError` and
+`LSPErrorCodes` from `@atusy/tsudoi-language-server/deps/error`, then throw, for example,
+`new ResponseError(LSPErrorCodes.RequestFailed, "why it failed")`. The editor receives that code
+and message as its error response. Any other thrown value is a handler failure: tsudoi names it
+on stderr and the JSON-RPC layer answers `InternalError`.
+
 ## Methods tsudoi never heard of
 
 The keys above are the ones tsudoi enumerated. `customMethods`, beside `methods` rather than inside
@@ -713,9 +719,11 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   through the same resolution a stranger takes. Neither can drift from what tsudoi does or from
   what it publishes.
 
-- **The published type surface is four subpaths**, split by ORIGIN rather than by topic:
+- **The published surface is five subpaths**, split by ORIGIN rather than by topic:
   `@atusy/tsudoi-language-server/types` is tsudoi's own names, written in `packages/tsudoi-language-server/src/types.ts`, and
-  `@atusy/tsudoi-language-server/deps/protocol`, `@atusy/tsudoi-language-server/deps/types` and `@atusy/tsudoi-language-server/deps/textdocument`
-  re-export the three packages tsudoi depends on, one subpath each. The line tsudoi draws is OURS
-  versus THEIRS; the line between the three `deps/` subpaths is upstream's own packaging, which
+  `@atusy/tsudoi-language-server/deps/protocol`, `@atusy/tsudoi-language-server/deps/types`,
+  `@atusy/tsudoi-language-server/deps/textdocument` and `@atusy/tsudoi-language-server/deps/error`
+  re-export the packages tsudoi depends on. The last one exposes the runtime `ResponseError` and
+  `LSPErrorCodes` values a method handler uses to choose an LSP error response. The line tsudoi draws is OURS
+  versus THEIRS; the line between the four `deps/` subpaths is upstream's own packaging, which
   you reach past rather than reason about.

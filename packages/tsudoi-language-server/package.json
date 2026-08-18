@@ -8,6 +8,11 @@
   ],
   "type": "module",
   "exports": {
+    "./deps/error": {
+      "types": "./dist/deps/error.d.ts",
+      "import": "./dist/deps/error.js",
+      "default": "./src/deps/error.ts"
+    },
     "./deps/protocol": {
       "types": "./dist/deps/protocol.d.ts",
       "import": "./dist/deps/protocol.js",
