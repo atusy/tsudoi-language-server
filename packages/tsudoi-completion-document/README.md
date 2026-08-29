@@ -84,6 +84,9 @@ top-down, for `completeCorpus` it is the documents in the order your client open
 | `filters`    | `defaultFilters` | yes      | yes      | which scanned words are worth sending                           |
 | `maxItems`   | unbounded        | yes      | yes      | a cap on what survives the filters                              |
 
+When provided, `maxItems` must be a non-negative safe integer. Zero returns no candidates without
+scanning documents.
+
 The first four decide what is **scanned**, so changing one makes `completeCorpus`
 re-read the documents it had remembered. The last two run afterwards on what it
 remembered, which is why the prefix can change on every keystroke for free.
