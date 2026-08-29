@@ -83,6 +83,12 @@ export const prefixFilter: Filter = function* (words, input) {
  */
 export const defaultFilters: readonly Filter[] = Object.freeze([prefixFilter]);
 
+export function validateMaxItems(maxItems: number | undefined): void {
+  if (maxItems !== undefined && (!Number.isSafeInteger(maxItems) || maxItems < 0)) {
+    throw new RangeError("maxItems must be a non-negative safe integer");
+  }
+}
+
 /**
  * Drives the pipeline, DEDUPLICATES, and applies the item bound -- in that order.
  *
@@ -120,8 +126,9 @@ export function applyFilters(
   input: FilterInput,
   maxItems?: number,
 ): string[] {
-  if (maxItems !== undefined && (!Number.isSafeInteger(maxItems) || maxItems < 0)) {
-    throw new RangeError("maxItems must be a non-negative safe integer");
+  validateMaxItems(maxItems);
+  if (maxItems === 0) {
+    return [];
   }
   let flowing: Iterable<string> = words;
   for (const filter of filters) {

@@ -15,7 +15,7 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { DocumentView, RequestContext } from "@atusy/tsudoi-language-server/types";
-import { applyFilters, defaultFilters } from "./filters.ts";
+import { applyFilters, defaultFilters, validateMaxItems } from "./filters.ts";
 import { defaultScanner, type Scanner } from "./scanners.ts";
 import { type WordOptions, typedWord, wordsIn } from "./words.ts";
 
@@ -209,6 +209,10 @@ export async function* completeCorpus(
   params: CompletionParams,
   options: CompleteCorpusOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
+  validateMaxItems(options.maxItems);
+  if (options.maxItems === 0) {
+    return;
+  }
   const scanFilters: ScanFilters = {
     scanner: options.scanner ?? defaultScanner,
     minLength: options.minLength ?? 2,

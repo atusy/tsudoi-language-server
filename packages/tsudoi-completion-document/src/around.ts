@@ -25,7 +25,7 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { applyFilters, defaultFilters } from "./filters.ts";
+import { applyFilters, defaultFilters, validateMaxItems } from "./filters.ts";
 import { defaultScanner } from "./scanners.ts";
 import { type WordOptions, typedWord, wordsIn } from "./words.ts";
 
@@ -133,6 +133,10 @@ export async function* completeAround(
   params: CompletionParams,
   options: CompleteAroundOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
+  validateMaxItems(options.maxItems);
+  if (options.maxItems === 0) {
+    return;
+  }
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
     return;

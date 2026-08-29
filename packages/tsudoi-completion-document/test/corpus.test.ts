@@ -137,6 +137,19 @@ describe("completing from every open document", () => {
 
     expect(await offered(documents, "file:///workspace/never-opened.txt")).toEqual(["otherWord"]);
   });
+
+  test("a zero item bound returns before scanning", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+    let scans = 0;
+    const scanner = () => {
+      scans += 1;
+      return ["alpha"];
+    };
+
+    expect(await offered(documents, asked, { maxItems: 0, scanner })).toEqual([]);
+    expect(scans).toBe(0);
+  });
 });
 
 describe("what the memo may and may not serve again", () => {

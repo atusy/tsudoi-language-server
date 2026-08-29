@@ -137,7 +137,16 @@ describe("the item bound", () => {
 
   /** A bound of zero is a bound rather than an absent one. */
   test("a bound of zero offers nothing", () => {
-    expect(applyFilters(["a"], [], { typed: "" }, 0)).toEqual([]);
+    let pulled = false;
+    const words = {
+      *[Symbol.iterator]() {
+        pulled = true;
+        yield "a";
+      },
+    };
+
+    expect(applyFilters(words, [], { typed: "" }, 0)).toEqual([]);
+    expect(pulled).toBe(false);
   });
 
   test("a fractional bound is rejected", () => {

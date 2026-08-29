@@ -137,6 +137,28 @@ describe("completing from around the cursor", () => {
     expect(batches).toHaveLength(1);
     expect(batches[0]).toHaveLength(4);
   });
+
+  test("a zero item bound returns before scanning", async () => {
+    let scans = 0;
+    const scanner = () => {
+      scans += 1;
+      return ["alpha"];
+    };
+
+    expect(await offered("alpha", 0, { maxItems: 0, scanner })).toEqual([]);
+    expect(scans).toBe(0);
+  });
+
+  test("an invalid item bound is rejected before scanning", async () => {
+    let scans = 0;
+    const scanner = () => {
+      scans += 1;
+      return ["alpha"];
+    };
+
+    expect(offered("alpha", 0, { maxItems: 1.5, scanner })).rejects.toThrow("maxItems");
+    expect(scans).toBe(0);
+  });
 });
 
 describe("the window a cursor sees", () => {
