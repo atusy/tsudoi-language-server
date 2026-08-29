@@ -31,6 +31,9 @@ export interface ShellCompletionRuntime {
 }
 
 function validateOptions(options: UseShellCompletionOptions): void {
+  if ("maxItems" in options) {
+    throw new TypeError("maxItems moved to the completion handler's third argument");
+  }
   for (const name of ["idleTimeoutMs", "timeoutMs"] as const) {
     const value = options[name];
     if (value !== undefined && (!Number.isFinite(value) || value < 0)) {

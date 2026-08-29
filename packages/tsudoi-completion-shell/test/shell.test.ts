@@ -147,6 +147,14 @@ test.each([
   ).toThrow(name);
 });
 
+test("rejects the legacy factory-level candidate bound with migration guidance", () => {
+  expect(() =>
+    makeShellCompletion("fish", { maxItems: 10 } as unknown as UseShellCompletionOptions, {
+      complete: () => Promise.resolve([]),
+    }),
+  ).toThrow("maxItems moved to the completion handler's third argument");
+});
+
 test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
   "rejects an invalid per-request candidate bound",
   async (maxItems) => {
