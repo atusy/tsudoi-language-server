@@ -74,7 +74,7 @@ function finiteNonNegative(value: number, name: string): number {
 
 function nonNegativeInteger(value: number, name: string): number {
   if (!Number.isSafeInteger(value) || value < 0) {
-    throw new RangeError(`${name} must be a non-negative integer`);
+    throw new RangeError(`${name} must be a non-negative safe integer`);
   }
   return value;
 }

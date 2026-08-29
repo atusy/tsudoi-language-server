@@ -161,7 +161,7 @@ test("per-request candidate counts reject fractions", async () => {
   const { context, params } = request("al");
 
   expect(handler(context, params, { maxItems: 1.5 }).next()).rejects.toThrow(
-    "maxItems must be a non-negative integer",
+    "maxItems must be a non-negative safe integer",
   );
 });
 
