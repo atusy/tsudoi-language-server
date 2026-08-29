@@ -34,10 +34,10 @@ test("uses the shell line and replaces its last token with native candidates", a
       ]);
     },
   };
-  const handler = makeShellCompletion("fish", { cwd: "/project", maxItems: 10 }, runtime);
+  const handler = makeShellCompletion("fish", { cwd: "/project" }, runtime);
   const { context, params } = request("  git che");
 
-  const answer = await handler(context, params).next();
+  const answer = await handler(context, params, { maxItems: 1 }).next();
 
   expect(invocation).toMatchObject({
     shell: "fish",
@@ -57,18 +57,6 @@ test("uses the shell line and replaces its last token with native candidates", a
           end: { line: 0, character: 9 },
         },
         newText: "checkout",
-      },
-    },
-    {
-      label: "cherry",
-      filterText: "cherry",
-      kind: 1,
-      textEdit: {
-        range: {
-          start: { line: 0, character: 6 },
-          end: { line: 0, character: 9 },
-        },
-        newText: "cherry",
       },
     },
   ]);
@@ -108,20 +96,28 @@ test("a zero candidate bound does not invoke the shell", async () => {
       return Promise.resolve(["alpha"]);
     },
   };
-  const handler = makeShellCompletion("fish", { maxItems: 0 }, runtime);
+  const handler = makeShellCompletion("fish", {}, runtime);
   const { context, params } = request("echo a");
 
-  expect(await handler(context, params).next()).toEqual({ done: true, value: undefined });
+  expect(await handler(context, params, { maxItems: 0 }).next()).toEqual({
+    done: true,
+    value: undefined,
+  });
   expect(invoked).toBe(false);
 });
 
 test.each([
-  [{ maxItems: -1 }, "maxItems"],
-  [{ maxItems: 1.5 }, "maxItems"],
   [{ timeoutMs: Number.POSITIVE_INFINITY }, "timeoutMs"],
   [{ idleTimeoutMs: -1 }, "idleTimeoutMs"],
 ] as const)("rejects an invalid numeric option", (options, name) => {
   expect(() =>
     makeShellCompletion("fish", options, { complete: () => Promise.resolve([]) }),
   ).toThrow(name);
+});
+
+test.each([-1, 1.5])("rejects an invalid per-request candidate bound", async (maxItems) => {
+  const handler = makeShellCompletion("fish", {}, { complete: () => Promise.resolve([]) });
+  const { context, params } = request("echo a");
+
+  expect(handler(context, params, { maxItems }).next()).rejects.toThrow("maxItems");
 });

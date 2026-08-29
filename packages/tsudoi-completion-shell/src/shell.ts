@@ -9,9 +9,18 @@ export interface ShellCompletionOptions {
   readonly cwd?: string;
   readonly env?: Readonly<Record<string, string>>;
   readonly idleTimeoutMs?: number;
-  readonly maxItems?: number;
   readonly timeoutMs?: number;
 }
+
+export interface ShellCompletionRequestOptions {
+  readonly maxItems?: number;
+}
+
+export type ShellCompletion = (
+  context: Parameters<MethodHandler<"textDocument/completion">>[0],
+  params: Parameters<MethodHandler<"textDocument/completion">>[1],
+  options?: ShellCompletionRequestOptions,
+) => ReturnType<MethodHandler<"textDocument/completion">>;
 
 export interface ShellCompletionRuntime {
   complete(
@@ -22,12 +31,6 @@ export interface ShellCompletionRuntime {
 }
 
 function validateOptions(options: ShellCompletionOptions): void {
-  if (
-    options.maxItems !== undefined &&
-    (!Number.isSafeInteger(options.maxItems) || options.maxItems < 0)
-  ) {
-    throw new RangeError("maxItems must be a non-negative safe integer");
-  }
   for (const name of ["idleTimeoutMs", "timeoutMs"] as const) {
     const value = options[name];
     if (value !== undefined && (!Number.isFinite(value) || value < 0)) {
@@ -40,13 +43,17 @@ export function makeShellCompletion(
   shell: NativeShell,
   options: ShellCompletionOptions = {},
   runtime: ShellCompletionRuntime = new NativeShellRuntime(shell, options),
-): MethodHandler<"textDocument/completion"> {
+): ShellCompletion {
   validateOptions(options);
-  const maxItems = options.maxItems ?? 500;
   return async function* completeShell(
     context,
     params,
+    completionOptions = {},
   ): AsyncGenerator<CompletionItem[], void, void> {
+    const maxItems = completionOptions.maxItems ?? 500;
+    if (!Number.isSafeInteger(maxItems) || maxItems < 0) {
+      throw new RangeError("maxItems must be a non-negative safe integer");
+    }
     if (context.signal.aborted || maxItems === 0) {
       return;
     }
@@ -114,6 +121,6 @@ export function makeShellCompletion(
 export function useShellCompletion(
   shell: NativeShell,
   options: ShellCompletionOptions = {},
-): MethodHandler<"textDocument/completion"> {
+): ShellCompletion {
   return makeShellCompletion(shell, options);
 }
