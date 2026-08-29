@@ -25,8 +25,9 @@ export default config;
 
 The selected shell must be installed and available on `PATH`. `useShellCompletion` also accepts
 `"zsh"` and `"xonsh"`. The process starts lazily on the first non-empty request, handles one
-request at a time, and is reused until it has been idle for `idleTimeoutMs`. Cancellation, a
-timeout, or a process failure stops it; a later request starts a fresh process.
+request at a time, and is reused until it has been idle for `idleTimeoutMs`. Cancellation of an
+active native request, a timeout, or a process failure stops it; a later request starts a fresh
+process. A request cancelled before it sends input leaves the existing process available for reuse.
 
 Tsudoi is an `optional` **peer** only because tsudoi is **unpublished**. This package does not
 install it. Its JavaScript artifact can load without tsudoi because the handler imports are

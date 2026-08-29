@@ -39,8 +39,9 @@ delegates completion semantics to the shell while amortizing startup and configu
 Process configuration belongs to that factory call; the optional third argument to the returned
 handler sets `maxItems` for one LSP response. Requests to that handler are serialized because the
 line-oriented capture protocol has one end marker and no request identifiers. The process stops
-after an idle interval. Cancellation, timeout, input error, or process failure discards the session
-so delayed output cannot be mistaken for a later answer; the next request starts a new process.
+after an idle interval. Cancellation of an active native request, timeout, input error, or process
+failure discards the session so delayed output cannot be mistaken for a later answer; the next
+request starts a new process. A request cancelled before it sends input leaves the session intact.
 
 The capture scripts are adapted from `Shougo/ddc-source-shell_native` at revision
 `86686bd68cc7d26866ee5cf8cdfc1808f20c42a8`. The package ships the scripts together with
