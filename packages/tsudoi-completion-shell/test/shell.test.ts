@@ -28,17 +28,17 @@ test("uses the shell line and replaces its last token with native candidates", a
     complete: (shell, input, options) => {
       invocation = { shell, input, options };
       return Promise.resolve([
-        "checkout\tCheckout and switch to a branch",
-        "cherry",
-        "checkout\tduplicate",
         "",
+        "checkout\tCheckout and switch to a branch",
+        "checkout\tduplicate",
+        "cherry",
       ]);
     },
   };
   const handler = makeShellCompletion("fish", { cwd: "/project" }, runtime);
   const { context, params } = request("  git che");
 
-  const answer = await handler(context, params, { maxItems: 1 }).next();
+  const answer = await handler(context, params, { maxItems: 2 }).next();
 
   expect(invocation).toMatchObject({
     shell: "fish",
@@ -58,6 +58,18 @@ test("uses the shell line and replaces its last token with native candidates", a
           end: { line: 0, character: 9 },
         },
         newText: "checkout",
+      },
+    },
+    {
+      label: "cherry",
+      filterText: "cherry",
+      kind: 1,
+      textEdit: {
+        range: {
+          start: { line: 0, character: 6 },
+          end: { line: 0, character: 9 },
+        },
+        newText: "cherry",
       },
     },
   ]);
