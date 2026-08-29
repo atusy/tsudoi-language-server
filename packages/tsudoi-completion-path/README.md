@@ -92,6 +92,17 @@ dotfiles as the bound would otherwise show you nothing else. The trade is stated
 hidden: in a directory with more ordinary entries than fit, the dotfiles are what you do not see.
 Nothing recurses here either: one listing, one level, no walk.
 
+## Completion options
+
+| option    | default      | effect                                                       |
+| --------- | ------------ | ------------------------------------------------------------ |
+| `cwd`     | server cwd   | root used to complete a bare relative path                   |
+| `flavour` | host flavour | path rules supplied by `path.win32`, `path.posix`, or a host |
+
+Options are the **third argument**, so the handler can be registered directly when the defaults
+suit you and wrapped when they do not:
+`(context, params) => completePath(context, params, { cwd: "/workspace" })`.
+
 ## What bounds it
 
 **Whitespace ends a path.** The fragment under the cursor is scanned back to the nearest

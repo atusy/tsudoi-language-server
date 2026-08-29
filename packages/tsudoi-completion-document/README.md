@@ -70,7 +70,7 @@ its handlers are meaningful nowhere else. The flag buys installability while tsu
 `Cannot find module '@atusy/tsudoi-language-server/types'`. Nothing corrects the manifest anywhere
 except this paragraph.
 
-## What it offers
+## Completion options
 
 Every distinct word, in the order each was **first seen** — for `completeAround` that is the window
 top-down, for `completeCorpus` it is the documents in the order your client opened them.

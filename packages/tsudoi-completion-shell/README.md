@@ -10,11 +10,14 @@ on every keystroke.
 import { useShellCompletion } from "@atusy/tsudoi-completion-shell";
 import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 
-const completeFish = useShellCompletion("fish");
+const completeFish = useShellCompletion("fish", { timeoutMs: 2000 });
 
 const config: TsudoiConfigFactory = () =>
   Promise.resolve({
-    methods: { "textDocument/completion": completeFish },
+    methods: {
+      "textDocument/completion": (context, params) =>
+        completeFish(context, params, { maxItems: 500 }),
+    },
   });
 
 export default config;
@@ -32,7 +35,7 @@ returned handler is useful only inside a tsudoi host. A missing peer is therefor
 resolution error such as `TS2307`, not the runtime message `Cannot find module` that a value
 import would produce.
 
-## Options
+## Factory options
 
 | option          | default        | effect                                                    |
 | --------------- | -------------- | --------------------------------------------------------- |
@@ -40,8 +43,14 @@ import would produce.
 | `cwd`           | server cwd     | working directory used for shell completion               |
 | `env`           | server env     | variables overlaid onto the spawned process environment   |
 | `idleTimeoutMs` | `30000`        | stop an unused completion process after this duration     |
-| `maxItems`      | `500`          | maximum distinct candidates returned                      |
 | `timeoutMs`     | `2000`         | stop a process when one completion takes longer than this |
+
+These options configure the native process owned by the long-lived handler.
+
+## Completion options
+
+`maxItems` belongs to one completion call rather than to the reusable shell process. It limits the
+distinct candidates in that response, defaults to `500`, and must be a non-negative safe integer.
 
 The text before the cursor is sent to the shell after leading indentation is removed. Candidates
 replace the final non-whitespace token. The handler does not parse a shell grammar itself; quoting,
@@ -50,8 +59,8 @@ selected shell's own configuration.
 
 ## What bounds it
 
-`maxItems` bounds the LSP response, `timeoutMs` bounds one native request, and `idleTimeoutMs`
-bounds how long an unused process remains alive. Requests to one handler are serialized because
+The invocation's `maxItems` bounds the LSP response, `timeoutMs` bounds one native request, and
+`idleTimeoutMs` bounds how long an unused process remains alive. Requests to one handler are serialized because
 the capture protocol has one response terminator and cannot safely multiplex answers. The shell
 computes candidates rather than this package enumerating commands itself, so it may still perform
 arbitrary work; use completion definitions and configuration you trust.

@@ -35,11 +35,12 @@ outlive cancellation indefinitely.
 **Chosen option**: "Keep one serialized native shell process per completion handler", because it
 delegates completion semantics to the shell while amortizing startup and configuration cost.
 
-`useShellCompletion(shell, options)` creates the LSP handler and owns one lazy session. Requests to
-that handler are serialized because the line-oriented capture protocol has one end marker and no
-request identifiers. The process stops after an idle interval. Cancellation, timeout, input error,
-or process failure discards the session so delayed output cannot be mistaken for a later answer;
-the next request starts a new process.
+`useShellCompletion(shell, factoryOptions)` creates the LSP handler and owns one lazy session.
+Process configuration belongs to that factory call; the optional third argument to the returned
+handler sets `maxItems` for one LSP response. Requests to that handler are serialized because the
+line-oriented capture protocol has one end marker and no request identifiers. The process stops
+after an idle interval. Cancellation, timeout, input error, or process failure discards the session
+so delayed output cannot be mistaken for a later answer; the next request starts a new process.
 
 The capture scripts are adapted from `Shougo/ddc-source-shell_native` at revision
 `86686bd68cc7d26866ee5cf8cdfc1808f20c42a8`. The package ships the scripts together with
