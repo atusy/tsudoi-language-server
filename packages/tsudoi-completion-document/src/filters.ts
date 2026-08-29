@@ -120,6 +120,9 @@ export function applyFilters(
   input: FilterInput,
   maxItems?: number,
 ): string[] {
+  if (maxItems !== undefined && (!Number.isSafeInteger(maxItems) || maxItems < 0)) {
+    throw new RangeError("maxItems must be a non-negative safe integer");
+  }
   let flowing: Iterable<string> = words;
   for (const filter of filters) {
     flowing = filter(flowing, input);

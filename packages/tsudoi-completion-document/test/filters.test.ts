@@ -140,6 +140,12 @@ describe("the item bound", () => {
     expect(applyFilters(["a"], [], { typed: "" }, 0)).toEqual([]);
   });
 
+  test("a fractional bound is rejected", () => {
+    expect(() => applyFilters(["a"], [], { typed: "" }, 1.5)).toThrow(
+      "maxItems must be a non-negative safe integer",
+    );
+  });
+
   /**
    * A FILTER OF THE AUTHOR'S OWN IS DRIVEN LIKE THE SHIPPED ONES, which is what
    * makes `filters` a list rather than a boolean: the pipeline is theirs to

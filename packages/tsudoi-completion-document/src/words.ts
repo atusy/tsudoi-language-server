@@ -74,7 +74,8 @@ export interface WordOptions {
    */
   readonly filters?: readonly Filter[];
   /**
-   * At most this many items, counted AFTER the filters. Unbounded by default.
+   * At most this many items, counted AFTER the filters. Must be a non-negative
+   * safe integer. Unbounded by default.
    *
    * A BACKSTOP AND NOT THE DESIGN: the filters are what make an answer small, and
    * this is what keeps a pathological buffer from reaching the client at all. Set
