@@ -150,6 +150,20 @@ describe("completing from every open document", () => {
     expect(await offered(documents, asked, { maxItems: 0, scanner })).toEqual([]);
     expect(scans).toBe(0);
   });
+
+  test("an invalid item bound is rejected before reading or scanning", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+    let scans = 0;
+    const scanner = () => {
+      scans += 1;
+      return ["alpha"];
+    };
+
+    expect(offered(documents, asked, { maxItems: 1.5, scanner })).rejects.toThrow("maxItems");
+    expect(documents.reads(asked)).toBe(0);
+    expect(scans).toBe(0);
+  });
 });
 
 describe("what the memo may and may not serve again", () => {
