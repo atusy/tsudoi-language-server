@@ -50,7 +50,7 @@ export function makeShellCompletion(
     params,
     completionOptions = {},
   ): AsyncGenerator<CompletionItem[], void, void> {
-    const maxItems = completionOptions.maxItems ?? 500;
+    const maxItems = completionOptions.maxItems === undefined ? 500 : completionOptions.maxItems;
     if (!Number.isSafeInteger(maxItems) || maxItems < 0) {
       throw new RangeError("maxItems must be a non-negative safe integer");
     }

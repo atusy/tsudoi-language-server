@@ -171,7 +171,10 @@ export async function makeCompleteDictionary(
   startRefresh();
 
   return async function* completeDictionary(context, params, completionOptions = {}) {
-    const maxItems = nonNegativeInteger(completionOptions.maxItems ?? 500, "maxItems");
+    const maxItems = nonNegativeInteger(
+      completionOptions.maxItems === undefined ? 500 : completionOptions.maxItems,
+      "maxItems",
+    );
     if (context.signal.aborted || maxItems === 0) {
       return;
     }

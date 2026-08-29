@@ -152,7 +152,7 @@ test("custom filters run before the per-request candidate bound", async () => {
   expect(await labels(handler, "anything", { maxItems: 1 })).toEqual(["beta"]);
 });
 
-test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
   "per-request candidate counts reject invalid bounds",
   async (maxItems) => {
     const { path } = fixture("alpha\n");
@@ -162,7 +162,7 @@ test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGE
     );
     const { context, params } = request("al");
 
-    expect(handler(context, params, { maxItems }).next()).rejects.toThrow(
+    expect(handler(context, params, { maxItems: maxItems as number }).next()).rejects.toThrow(
       "maxItems must be a non-negative safe integer",
     );
   },

@@ -149,10 +149,10 @@ describe("the item bound", () => {
     expect(pulled).toBe(false);
   });
 
-  test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+  test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
     "an invalid bound is rejected",
     (maxItems) => {
-      expect(() => applyFilters(["a"], [], { typed: "" }, maxItems)).toThrow(
+      expect(() => applyFilters(["a"], [], { typed: "" }, maxItems as number)).toThrow(
         "maxItems must be a non-negative safe integer",
       );
     },
