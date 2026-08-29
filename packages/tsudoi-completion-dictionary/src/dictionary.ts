@@ -171,11 +171,11 @@ export async function makeCompleteDictionary(
   startRefresh();
 
   return async function* completeDictionary(context, params, completionOptions = {}) {
-    requestRefresh();
     const maxItems = nonNegativeInteger(completionOptions.maxItems ?? 500, "maxItems");
-    if (context.signal.aborted) {
+    if (context.signal.aborted || maxItems === 0) {
       return;
     }
+    requestRefresh();
     const document = context.tsudoi.documents.get(params.textDocument.uri);
     if (document === undefined) {
       return;

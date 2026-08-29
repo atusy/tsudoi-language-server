@@ -165,6 +165,63 @@ test("per-request candidate counts reject fractions", async () => {
   );
 });
 
+test("a zero per-request bound does no refresh or filtering work", async () => {
+  const { path } = fixture("alpha\n");
+  let refreshes = 0;
+  let filtered = false;
+  const runtime: RefreshRuntime = {
+    refresh: () => {
+      refreshes += 1;
+      return Promise.resolve({
+        files: [{ path, contentHash: "hash", entries: ["alpha"] }],
+        errors: [],
+      });
+    },
+  };
+  const handler = await makeCompleteDictionary(
+    {
+      files: [path],
+      filters: [
+        function* (words) {
+          filtered = true;
+          yield* words;
+        },
+      ],
+      minPrefixLength: 0,
+      refreshIntervalMs: 0,
+    },
+    runtime,
+  );
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  const refreshesBeforeRequest = refreshes;
+
+  expect(await labels(handler, "", { maxItems: 0 })).toEqual([]);
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  expect(refreshes).toBe(refreshesBeforeRequest);
+  expect(filtered).toBe(false);
+});
+
+test("an invalid per-request bound does not request a refresh", async () => {
+  const { path } = fixture("alpha\n");
+  let refreshes = 0;
+  const runtime: RefreshRuntime = {
+    refresh: () => {
+      refreshes += 1;
+      return Promise.resolve(noChanges);
+    },
+  };
+  const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 0 }, runtime);
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  const refreshesBeforeRequest = refreshes;
+  const { context, params } = request("alpha");
+
+  expect(handler(context, params, { maxItems: 1.5 }).next()).rejects.toThrow("maxItems");
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  expect(refreshes).toBe(refreshesBeforeRequest);
+});
+
 test("an onError callback that throws creates no unhandled background rejection", async () => {
   const { path } = fixture("alpha\n");
   const observed = Promise.withResolvers<void>();
