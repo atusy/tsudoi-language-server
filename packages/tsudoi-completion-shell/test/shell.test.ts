@@ -3,6 +3,7 @@ import type { CompletionParams } from "@atusy/tsudoi-language-server/deps/protoc
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   makeShellCompletion,
+  type ShellCompletionOptions,
   type ShellCompletionRuntime,
   type UseShellCompletionOptions,
 } from "../src/shell.ts";
@@ -104,6 +105,25 @@ test("a zero candidate bound does not invoke the shell", async () => {
     value: undefined,
   });
   expect(invoked).toBe(false);
+});
+
+test("one handler resolves the candidate bound for every request", async () => {
+  const handler = makeShellCompletion(
+    "fish",
+    {},
+    {
+      complete: () => Promise.resolve(["alpha", "beta", "gamma"]),
+    },
+  );
+  const { context, params } = request("echo a");
+  const labels = async (options?: ShellCompletionOptions): Promise<string[]> => {
+    const answer = await handler(context, params, options).next();
+    return answer.done === true ? [] : answer.value.map((item) => item.label);
+  };
+
+  expect(await labels({ maxItems: 1 })).toEqual(["alpha"]);
+  expect(await labels({ maxItems: 2 })).toEqual(["alpha", "beta"]);
+  expect(await labels()).toEqual(["alpha", "beta", "gamma"]);
 });
 
 test.each([
