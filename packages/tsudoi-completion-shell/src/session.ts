@@ -2,7 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
-import type { NativeShell, ShellCompletionOptions, ShellCompletionRuntime } from "./shell.ts";
+import type { NativeShell, ShellCompletionRuntime, UseShellCompletionOptions } from "./shell.ts";
 
 const endOfCompletion = "\x01EOC\x01";
 
@@ -24,7 +24,7 @@ function capturePath(shell: NativeShell): string {
 
 class NativeShellSession {
   readonly #shell: NativeShell;
-  readonly #options: ShellCompletionOptions;
+  readonly #options: UseShellCompletionOptions;
   #child: ChildProcessWithoutNullStreams | undefined;
   #idleTimer: ReturnType<typeof setTimeout> | undefined;
   #pending: PendingRequest | undefined;
@@ -33,7 +33,7 @@ class NativeShellSession {
   #stdoutDecoder = new StringDecoder("utf8");
   #tail = Promise.resolve();
 
-  constructor(shell: NativeShell, options: ShellCompletionOptions) {
+  constructor(shell: NativeShell, options: UseShellCompletionOptions) {
     this.#shell = shell;
     this.#options = options;
   }
@@ -195,14 +195,14 @@ class NativeShellSession {
 export class NativeShellRuntime implements ShellCompletionRuntime {
   readonly #session: NativeShellSession;
 
-  constructor(shell: NativeShell, options: ShellCompletionOptions) {
+  constructor(shell: NativeShell, options: UseShellCompletionOptions) {
     this.#session = new NativeShellSession(shell, options);
   }
 
   complete(
     _shell: NativeShell,
     input: string,
-    options: ShellCompletionOptions & { readonly signal: AbortSignal },
+    options: UseShellCompletionOptions & { readonly signal: AbortSignal },
   ): Promise<readonly string[]> {
     return this.#session.complete(input, options.signal);
   }

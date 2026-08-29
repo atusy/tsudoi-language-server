@@ -1,8 +1,8 @@
 export { useDictionaryCompletion } from "./dictionary.ts";
 export type {
-  CompleteDictionaryOptions,
   DictionaryCompletion,
   DictionaryCompletionOptions,
+  UseDictionaryCompletionOptions,
 } from "./dictionary.ts";
 export {
   applyDictionaryFilters,

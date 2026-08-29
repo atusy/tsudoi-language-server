@@ -4,7 +4,7 @@ import { NativeShellRuntime } from "./session.ts";
 
 export type NativeShell = "fish" | "xonsh" | "zsh";
 
-export interface ShellCompletionOptions {
+export interface UseShellCompletionOptions {
   readonly command?: string;
   readonly cwd?: string;
   readonly env?: Readonly<Record<string, string>>;
@@ -12,25 +12,25 @@ export interface ShellCompletionOptions {
   readonly timeoutMs?: number;
 }
 
-export interface ShellCompletionRequestOptions {
+export interface ShellCompletionOptions {
   readonly maxItems?: number;
 }
 
 export type ShellCompletion = (
   context: Parameters<MethodHandler<"textDocument/completion">>[0],
   params: Parameters<MethodHandler<"textDocument/completion">>[1],
-  options?: ShellCompletionRequestOptions,
+  options?: ShellCompletionOptions,
 ) => ReturnType<MethodHandler<"textDocument/completion">>;
 
 export interface ShellCompletionRuntime {
   complete(
     shell: NativeShell,
     input: string,
-    options: ShellCompletionOptions & { readonly signal: AbortSignal },
+    options: UseShellCompletionOptions & { readonly signal: AbortSignal },
   ): Promise<readonly string[]>;
 }
 
-function validateOptions(options: ShellCompletionOptions): void {
+function validateOptions(options: UseShellCompletionOptions): void {
   for (const name of ["idleTimeoutMs", "timeoutMs"] as const) {
     const value = options[name];
     if (value !== undefined && (!Number.isFinite(value) || value < 0)) {
@@ -41,7 +41,7 @@ function validateOptions(options: ShellCompletionOptions): void {
 
 export function makeShellCompletion(
   shell: NativeShell,
-  options: ShellCompletionOptions = {},
+  options: UseShellCompletionOptions = {},
   runtime: ShellCompletionRuntime = new NativeShellRuntime(shell, options),
 ): ShellCompletion {
   validateOptions(options);
@@ -120,7 +120,7 @@ export function makeShellCompletion(
 
 export function useShellCompletion(
   shell: NativeShell,
-  options: ShellCompletionOptions = {},
+  options: UseShellCompletionOptions = {},
 ): ShellCompletion {
   return makeShellCompletion(shell, options);
 }

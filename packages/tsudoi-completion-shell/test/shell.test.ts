@@ -4,7 +4,7 @@ import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   makeShellCompletion,
   type ShellCompletionRuntime,
-  type ShellCompletionOptions,
+  type UseShellCompletionOptions,
 } from "../src/shell.ts";
 
 function request(line: string): { context: RequestContext; params: CompletionParams } {
@@ -22,7 +22,7 @@ function request(line: string): { context: RequestContext; params: CompletionPar
 }
 
 test("uses the shell line and replaces its last token with native candidates", async () => {
-  let invocation: { shell: string; input: string; options: ShellCompletionOptions } | undefined;
+  let invocation: { shell: string; input: string; options: UseShellCompletionOptions } | undefined;
   const runtime: ShellCompletionRuntime = {
     complete: (shell, input, options) => {
       invocation = { shell, input, options };

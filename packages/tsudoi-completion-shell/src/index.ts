@@ -3,5 +3,5 @@ export type {
   NativeShell,
   ShellCompletion,
   ShellCompletionOptions,
-  ShellCompletionRequestOptions,
+  UseShellCompletionOptions,
 } from "./shell.ts";

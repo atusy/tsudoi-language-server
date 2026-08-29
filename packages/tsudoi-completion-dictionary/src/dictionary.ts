@@ -15,7 +15,7 @@ import {
   type RefreshResult,
 } from "./memory.ts";
 
-export interface CompleteDictionaryOptions {
+export interface UseDictionaryCompletionOptions {
   readonly files: readonly string[];
   readonly filters?: readonly DictionaryFilter[];
   readonly minPrefixLength?: number;
@@ -80,7 +80,7 @@ function nonNegativeInteger(value: number, name: string): number {
 }
 
 export async function makeCompleteDictionary(
-  options: CompleteDictionaryOptions,
+  options: UseDictionaryCompletionOptions,
   runtime: RefreshRuntime = workerRuntime,
 ): Promise<DictionaryCompletion> {
   const files = [...new Set(options.files.map((path) => resolve(path)))];
@@ -213,7 +213,7 @@ export async function makeCompleteDictionary(
 export type { DictionaryFilter } from "./filters.ts";
 
 export function useDictionaryCompletion(
-  options: CompleteDictionaryOptions,
+  options: UseDictionaryCompletionOptions,
 ): Promise<DictionaryCompletion> {
   return makeCompleteDictionary(options);
 }
