@@ -147,9 +147,12 @@ test.each([
   ).toThrow(name);
 });
 
-test.each([-1, 1.5])("rejects an invalid per-request candidate bound", async (maxItems) => {
-  const handler = makeShellCompletion("fish", {}, { complete: () => Promise.resolve([]) });
-  const { context, params } = request("echo a");
+test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+  "rejects an invalid per-request candidate bound",
+  async (maxItems) => {
+    const handler = makeShellCompletion("fish", {}, { complete: () => Promise.resolve([]) });
+    const { context, params } = request("echo a");
 
-  expect(handler(context, params, { maxItems }).next()).rejects.toThrow("maxItems");
-});
+    expect(handler(context, params, { maxItems }).next()).rejects.toThrow("maxItems");
+  },
+);

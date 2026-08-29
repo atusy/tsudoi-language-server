@@ -149,11 +149,14 @@ describe("the item bound", () => {
     expect(pulled).toBe(false);
   });
 
-  test("a fractional bound is rejected", () => {
-    expect(() => applyFilters(["a"], [], { typed: "" }, 1.5)).toThrow(
-      "maxItems must be a non-negative safe integer",
-    );
-  });
+  test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+    "an invalid bound is rejected",
+    (maxItems) => {
+      expect(() => applyFilters(["a"], [], { typed: "" }, maxItems)).toThrow(
+        "maxItems must be a non-negative safe integer",
+      );
+    },
+  );
 
   /**
    * A FILTER OF THE AUTHOR'S OWN IS DRIVEN LIKE THE SHIPPED ONES, which is what

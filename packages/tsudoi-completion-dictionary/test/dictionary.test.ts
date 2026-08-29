@@ -152,18 +152,21 @@ test("custom filters run before the per-request candidate bound", async () => {
   expect(await labels(handler, "anything", { maxItems: 1 })).toEqual(["beta"]);
 });
 
-test("per-request candidate counts reject fractions", async () => {
-  const { path } = fixture("alpha\n");
-  const handler = await makeCompleteDictionary(
-    { files: [path] },
-    { refresh: () => new Promise<never>(() => {}) },
-  );
-  const { context, params } = request("al");
+test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+  "per-request candidate counts reject invalid bounds",
+  async (maxItems) => {
+    const { path } = fixture("alpha\n");
+    const handler = await makeCompleteDictionary(
+      { files: [path] },
+      { refresh: () => new Promise<never>(() => {}) },
+    );
+    const { context, params } = request("al");
 
-  expect(handler(context, params, { maxItems: 1.5 }).next()).rejects.toThrow(
-    "maxItems must be a non-negative safe integer",
-  );
-});
+    expect(handler(context, params, { maxItems }).next()).rejects.toThrow(
+      "maxItems must be a non-negative safe integer",
+    );
+  },
+);
 
 test("a zero per-request bound does no refresh or filtering work", async () => {
   const { path } = fixture("alpha\n");
