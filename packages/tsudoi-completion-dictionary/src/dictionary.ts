@@ -23,14 +23,14 @@ export interface UseDictionaryCompletionOptions {
   readonly onError?: (error: unknown) => void;
 }
 
-export interface DictionaryCompletionOptions {
+export interface CompleteDictionaryOptions {
   readonly maxItems?: number;
 }
 
 export type DictionaryCompletion = (
   context: Parameters<MethodHandler<"textDocument/completion">>[0],
   params: Parameters<MethodHandler<"textDocument/completion">>[1],
-  options?: DictionaryCompletionOptions,
+  options?: CompleteDictionaryOptions,
 ) => ReturnType<MethodHandler<"textDocument/completion">>;
 
 export interface RefreshRuntime {

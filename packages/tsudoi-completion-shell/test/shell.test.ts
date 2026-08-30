@@ -3,7 +3,7 @@ import type { CompletionParams } from "@atusy/tsudoi-language-server/deps/protoc
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   makeShellCompletion,
-  type ShellCompletionOptions,
+  type CompleteShellOptions,
   type ShellCompletionRuntime,
   type UseShellCompletionOptions,
 } from "../src/shell.ts";
@@ -128,7 +128,7 @@ test("one handler resolves the candidate bound for every request", async () => {
     },
   );
   const { context, params } = request("echo a");
-  const labels = async (options?: ShellCompletionOptions): Promise<string[]> => {
+  const labels = async (options?: CompleteShellOptions): Promise<string[]> => {
     const answer = await handler(context, params, options).next();
     return answer.done === true ? [] : answer.value.map((item) => item.label);
   };

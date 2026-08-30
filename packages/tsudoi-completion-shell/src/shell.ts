@@ -12,14 +12,14 @@ export interface UseShellCompletionOptions {
   readonly timeoutMs?: number;
 }
 
-export interface ShellCompletionOptions {
+export interface CompleteShellOptions {
   readonly maxItems?: number;
 }
 
 export type ShellCompletion = (
   context: Parameters<MethodHandler<"textDocument/completion">>[0],
   params: Parameters<MethodHandler<"textDocument/completion">>[1],
-  options?: ShellCompletionOptions,
+  options?: CompleteShellOptions,
 ) => ReturnType<MethodHandler<"textDocument/completion">>;
 
 export interface ShellCompletionRuntime {

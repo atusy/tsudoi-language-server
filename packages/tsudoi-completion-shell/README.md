@@ -50,8 +50,9 @@ These options configure the native process owned by the long-lived handler.
 
 ## Completion options
 
-`maxItems` belongs to one completion call rather than to the reusable shell process. It limits the
-distinct candidates in that response, defaults to `500`, and must be a non-negative safe integer.
+`CompleteShellOptions` configures one completion call. Its `maxItems` belongs to that call rather
+than to the reusable shell process, limits the distinct candidates in that response, defaults to
+`500`, and must be a non-negative safe integer.
 
 The text before the cursor is sent to the shell after leading indentation is removed. Candidates
 replace the final non-whitespace token. The handler does not parse a shell grammar itself; quoting,

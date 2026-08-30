@@ -74,8 +74,9 @@ LSP client.
 
 ## Completion options
 
-`maxItems` belongs to one completion call, matching `completeCorpus`, rather than to the long-lived
-dictionary factory. It defaults to `500` and must be a non-negative safe integer.
+`CompleteDictionaryOptions` configures one completion call. Its `maxItems` belongs to that call,
+matching `CompleteCorpusOptions`, rather than to the long-lived dictionary factory. It defaults to
+`500` and must be a non-negative safe integer.
 
 ## What bounds it
 

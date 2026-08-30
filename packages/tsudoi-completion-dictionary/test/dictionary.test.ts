@@ -6,7 +6,7 @@ import type { CompletionParams } from "@atusy/tsudoi-language-server/deps/protoc
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   makeCompleteDictionary,
-  type DictionaryCompletionOptions,
+  type CompleteDictionaryOptions,
   type DictionaryFilter,
   type RefreshRuntime,
 } from "../src/dictionary.ts";
@@ -53,7 +53,7 @@ function request(prefix: string): { context: RequestContext; params: CompletionP
 async function labels(
   handler: Awaited<ReturnType<typeof makeCompleteDictionary>>,
   prefix: string,
-  options?: DictionaryCompletionOptions,
+  options?: CompleteDictionaryOptions,
 ): Promise<string[]> {
   const { context, params } = request(prefix);
   const answer = await handler(context, params, options).next();

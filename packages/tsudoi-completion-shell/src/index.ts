@@ -1,7 +1,7 @@
 export { useShellCompletion } from "./shell.ts";
 export type {
   NativeShell,
+  CompleteShellOptions,
   ShellCompletion,
-  ShellCompletionOptions,
   UseShellCompletionOptions,
 } from "./shell.ts";
