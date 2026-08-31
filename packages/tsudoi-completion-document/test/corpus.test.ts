@@ -164,6 +164,29 @@ describe("completing from every open document", () => {
     expect(documents.reads(asked)).toBe(0);
     expect(scans).toBe(0);
   });
+
+  test("a short typed prefix returns before scanning the corpus", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "al alpha");
+    documents.open("file:///workspace/other.txt", "beta");
+    const scanned: string[] = [];
+    const scanner = (line: string) => {
+      scanned.push(line);
+      return line.match(/[a-z]+/gu) ?? [];
+    };
+    const batches: CompletionItem[][] = [];
+
+    for await (const batch of completeCorpus(
+      documents.context,
+      { textDocument: { uri: asked }, position: { line: 0, character: 2 } },
+      { minPrefixLength: 3, scanner },
+    )) {
+      batches.push(batch);
+    }
+
+    expect(batches).toEqual([]);
+    expect(scanned).toEqual(["al"]);
+  });
 });
 
 describe("what the memo may and may not serve again", () => {

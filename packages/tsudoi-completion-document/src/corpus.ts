@@ -210,6 +210,10 @@ export async function* completeCorpus(
   options: CompleteCorpusOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   validateMaxItems(options.maxItems);
+  const minPrefixLength = options.minPrefixLength ?? 0;
+  if (!Number.isSafeInteger(minPrefixLength) || minPrefixLength < 0) {
+    throw new RangeError("minPrefixLength must be a non-negative safe integer");
+  }
   if (options.maxItems === 0) {
     return;
   }
@@ -218,10 +222,6 @@ export async function* completeCorpus(
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
   };
-  const scanned: string[] = [];
-  for (const document of context.tsudoi.documents.values()) {
-    scanned.push(...wordsOf(document, scanFilters));
-  }
   // THE PREFIX COMES FROM THE ASKED DOCUMENT IF THE STORE HOLDS IT, and from
   // NOTHING if it does not -- which is the one place this handler's `answered even
   // for a buffer we were never sent` ruling costs something: with no line to read,
@@ -235,12 +235,19 @@ export async function* completeCorpus(
       : typedWord(
           scanFilters.scanner,
           // THE CURSOR'S LINE ALONE, AS A RANGE: reading the whole document again just
-          // to look at one line would spend exactly what the memo above just saved.
+          // to look at one line would spend what the corpus memo is meant to save.
           asked.getText({
             start: { line: params.position.line, character: 0 },
             end: params.position,
           }),
         );
+  if (typed.length < minPrefixLength) {
+    return;
+  }
+  const scanned: string[] = [];
+  for (const document of context.tsudoi.documents.values()) {
+    scanned.push(...wordsOf(document, scanFilters));
+  }
   const words = applyFilters(
     scanned,
     options.filters ?? defaultFilters,
