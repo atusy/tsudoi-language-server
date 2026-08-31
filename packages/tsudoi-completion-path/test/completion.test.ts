@@ -212,14 +212,9 @@ describe("the typed prefix selects the source class", () => {
     "rejects an invalid minimum prefix length",
     async (minPrefixLength) => {
       expect(
-        complete(
-          { ...elsewhere, line: "a" },
-          "/does/not/matter",
-          undefined,
-          true,
-          ["markdown"],
-          { minPrefixLength: minPrefixLength as number },
-        ),
+        complete({ ...elsewhere, line: "a" }, "/does/not/matter", undefined, true, ["markdown"], {
+          minPrefixLength: minPrefixLength as number,
+        }),
       ).rejects.toThrow("minPrefixLength");
     },
   );

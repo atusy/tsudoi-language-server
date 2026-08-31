@@ -675,8 +675,7 @@ export async function* completePath(
   params: CompletionParams,
   options: CompletePathOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
-  const minPrefixLength =
-    options.minPrefixLength === undefined ? 1 : options.minPrefixLength;
+  const minPrefixLength = options.minPrefixLength === undefined ? 1 : options.minPrefixLength;
   if (!Number.isSafeInteger(minPrefixLength) || minPrefixLength < 0) {
     throw new RangeError("minPrefixLength must be a non-negative safe integer");
   }
