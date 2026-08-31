@@ -25,7 +25,12 @@
  */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
-import { applyFilters, defaultFilters, validateMaxItems } from "./filters.ts";
+import {
+  applyFilters,
+  defaultFilters,
+  nonNegativeSafeInteger,
+  validateMaxItems,
+} from "./filters.ts";
 import { defaultScanner } from "./scanners.ts";
 import { type WordOptions, typedWord, wordsIn } from "./words.ts";
 
@@ -134,10 +139,10 @@ export async function* completeAround(
   options: CompleteAroundOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   validateMaxItems(options.maxItems);
-  const minPrefixLength = options.minPrefixLength ?? 0;
-  if (!Number.isSafeInteger(minPrefixLength) || minPrefixLength < 0) {
-    throw new RangeError("minPrefixLength must be a non-negative safe integer");
-  }
+  const minPrefixLength = nonNegativeSafeInteger(
+    options.minPrefixLength ?? 0,
+    "minPrefixLength",
+  );
   if (options.maxItems === 0) {
     return;
   }

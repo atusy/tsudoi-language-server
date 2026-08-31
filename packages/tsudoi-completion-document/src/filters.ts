@@ -83,9 +83,16 @@ export const prefixFilter: Filter = function* (words, input) {
  */
 export const defaultFilters: readonly Filter[] = Object.freeze([prefixFilter]);
 
+export function nonNegativeSafeInteger(value: number, name: string): number {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new RangeError(`${name} must be a non-negative safe integer`);
+  }
+  return value;
+}
+
 export function validateMaxItems(maxItems: number | undefined): void {
-  if (maxItems !== undefined && (!Number.isSafeInteger(maxItems) || maxItems < 0)) {
-    throw new RangeError("maxItems must be a non-negative safe integer");
+  if (maxItems !== undefined) {
+    nonNegativeSafeInteger(maxItems, "maxItems");
   }
 }
 
