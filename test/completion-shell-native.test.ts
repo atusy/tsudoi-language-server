@@ -61,10 +61,7 @@ test("fish returns command candidates for an empty prefix", async () => {
   const root = mkdtempSync(join(tmpdir(), "tsudoi-shell-fish-empty-"));
   const configHome = join(root, "config");
   mkdirSync(join(configHome, "fish"), { recursive: true });
-  writeFileSync(
-    join(configHome, "fish", "config.fish"),
-    "function tsudoi-empty-probe\nend\n",
-  );
+  writeFileSync(join(configHome, "fish", "config.fish"), "function tsudoi-empty-probe\nend\n");
   try {
     const handler = useShellCompletion("fish", {
       cwd: root,
