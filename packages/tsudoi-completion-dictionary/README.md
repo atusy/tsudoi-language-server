@@ -21,7 +21,7 @@ const config: TsudoiConfigFactory = () =>
   Promise.resolve({
     methods: {
       "textDocument/completion": (context, params) =>
-        completeDictionary(context, params, { maxItems: 1000, minPrefixLength: 2 }),
+        completeDictionary(context, params, { maxItems: 1000, minQueryLength: 2 }),
     },
   });
 
@@ -73,19 +73,19 @@ LSP client.
 
 ## Completion options
 
-| option            | default | effect                                                    |
-| ----------------- | ------- | --------------------------------------------------------- |
-| `maxItems`        | `500`   | maximum distinct candidates after the configured filters  |
-| `minPrefixLength` | `2`     | minimum trailing non-whitespace prefix that starts lookup |
+| option           | default | effect                                                   |
+| ---------------- | ------- | -------------------------------------------------------- |
+| `maxItems`       | `500`   | maximum distinct candidates after the configured filters |
+| `minQueryLength` | `2`     | minimum trailing non-whitespace query that starts lookup |
 
 Both options configure one completion call and must be non-negative safe integers. Set
-`minPrefixLength: 0` to allow the current dictionary snapshot to answer an empty prefix. The old
+`minQueryLength: 0` to allow the current dictionary snapshot to answer an empty query. The old
 factory-level placement is rejected with migration guidance rather than silently ignored.
 
 ## What bounds it
 
 The default prefix filter uses an in-memory binary search to narrow candidates, then applies the
-same prefix rule in the LSP handler. `minPrefixLength` prevents very broad queries, the invocation's
+same prefix rule in the LSP handler. `minQueryLength` prevents very broad queries, the invocation's
 `maxItems` bounds the response, and
 `refreshIntervalMs` prevents every idle keystroke from starting another hash pass. Requests that
 arrive during one refresh coalesce into one follow-up scheduled at that interval, so sustained

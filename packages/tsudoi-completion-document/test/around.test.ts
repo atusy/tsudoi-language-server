@@ -168,8 +168,8 @@ describe("completing from around the cursor", () => {
     };
 
     expect(
-      offered("alpha", 0, { minPrefixLength: null as unknown as number, scanner }),
-    ).rejects.toThrow("minPrefixLength");
+      offered("alpha", 0, { minQueryLength: null as unknown as number, scanner }),
+    ).rejects.toThrow("minQueryLength");
     expect(scans).toBe(0);
   });
 
@@ -184,7 +184,7 @@ describe("completing from around the cursor", () => {
     for await (const batch of completeAround(
       contextFor("al alpha"),
       { textDocument: { uri }, position: { line: 0, character: 2 } },
-      { minPrefixLength: 3, scanner },
+      { minQueryLength: 3, scanner },
     )) {
       batches.push(batch);
     }

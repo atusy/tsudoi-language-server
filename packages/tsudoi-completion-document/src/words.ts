@@ -22,8 +22,8 @@ import type { Scanner } from "./scanners.ts";
  * them costs nothing and re-reads no document.
  */
 export interface WordOptions {
-  /** The shortest typed prefix that starts completion. */
-  readonly minPrefixLength?: number;
+  /** The shortest scanner-defined query that starts completion. */
+  readonly minQueryLength?: number;
   /**
    * The shortest match worth offering.
    *

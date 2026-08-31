@@ -176,10 +176,10 @@ describe("completing from every open document", () => {
 
     expect(
       offered(documents, asked, {
-        minPrefixLength: null as unknown as number,
+        minQueryLength: null as unknown as number,
         scanner,
       }),
-    ).rejects.toThrow("minPrefixLength");
+    ).rejects.toThrow("minQueryLength");
     expect(documents.reads(asked)).toBe(0);
     expect(scans).toBe(0);
   });
@@ -198,7 +198,7 @@ describe("completing from every open document", () => {
     for await (const batch of completeCorpus(
       documents.context,
       { textDocument: { uri: asked }, position: { line: 0, character: 2 } },
-      { minPrefixLength: 3, scanner },
+      { minQueryLength: 3, scanner },
     )) {
       batches.push(batch);
     }

@@ -210,12 +210,12 @@ describe("path fragments", () => {
 describe("the typed prefix selects the source class", () => {
   test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
     "rejects an invalid minimum prefix length",
-    async (minPrefixLength) => {
+    async (minQueryLength) => {
       expect(
         complete({ ...elsewhere, line: "a" }, "/does/not/matter", undefined, true, ["markdown"], {
-          minPrefixLength: minPrefixLength as number,
+          minQueryLength: minQueryLength as number,
         }),
-      ).rejects.toThrow("minPrefixLength");
+      ).rejects.toThrow("minQueryLength");
     },
   );
 
@@ -228,7 +228,7 @@ describe("the typed prefix selects the source class", () => {
         undefined,
         true,
         ["markdown"],
-        { minPrefixLength: 0 },
+        { minQueryLength: 0 },
       );
 
       expect(inserted(items)).toEqual(["alpha.txt", "beta.txt"]);

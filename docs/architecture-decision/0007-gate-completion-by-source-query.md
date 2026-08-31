@@ -1,4 +1,4 @@
-# Gate Completion by Each Source's Prefix
+# Gate Completion by Each Source's Query
 
 |                     |                                      |
 | ------------------- | ------------------------------------ |
@@ -18,25 +18,25 @@ completion specifically needs to be configurable down to an empty input.
 
 - Start policy must be selectable per completion invocation, like `maxItems`.
 - A zero threshold must let shell completion ask the native shell for command candidates.
-- Sources must measure the prefix they actually understand rather than share a false lexer.
+- Sources must measure the query they actually understand rather than share a false lexer.
 - Existing behavior must remain the default unless a caller supplies the new option.
 - Invalid runtime JavaScript values must fail before source work begins.
 
 ## Considered Options
 
-1. Add request-scoped `minPrefixLength` with source-specific prefix extraction.
-2. Define one shared lexical prefix rule for every completion package.
+1. Add request-scoped `minQueryLength` with source-specific query extraction.
+2. Define one shared lexical query rule for every completion package.
 3. Keep start policy in factories or leave it entirely to the LSP client.
 
 ## Decision Outcome
 
-**Chosen option**: "Add request-scoped `minPrefixLength` with source-specific prefix extraction",
+**Chosen option**: "Add request-scoped `minQueryLength` with source-specific query extraction",
 because invocation policy can vary without duplicating long-lived state, while each source keeps the
 grammar required to answer correctly.
 
-The source-specific prefixes and compatibility defaults are:
+The source-specific queries and compatibility defaults are:
 
-| source     | measured prefix                                       | default |
+| source     | measured query                                        | default |
 | ---------- | ----------------------------------------------------- | ------- |
 | shell      | leading-trimmed command line sent to the native shell | `1`     |
 | dictionary | trailing non-whitespace run before the cursor         | `2`     |
@@ -57,9 +57,9 @@ fragment at the cursor, and a zero shell threshold sends empty input to the nati
 
 **Negative:**
 
-- The same option name measures a source-specific prefix rather than one universal token.
+- The same option name measures a source-specific query rather than one universal token.
 - A zero threshold can produce broad answers and initiate comparatively expensive work.
-- Moving dictionary `minPrefixLength` from its factory is a breaking API change.
+- Moving dictionary `minQueryLength` from its factory is a breaking API change.
 
 **Neutral:**
 
@@ -77,9 +77,9 @@ configured command candidate. Package documentation must state what each source 
 
 - Good, because policy varies without rebuilding stateful handlers.
 - Good, because shell, document scanners, and path fragments retain their real grammars.
-- Bad, because config authors must read what each source calls its prefix.
+- Bad, because config authors must read what each source treats as its query.
 
-### One shared lexical prefix
+### One shared lexical query
 
 - Good, because the option would have one literal measurement everywhere.
 - Bad, because a final empty shell argument and a path ending in a separator are valid queries that

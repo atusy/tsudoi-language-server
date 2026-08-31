@@ -215,9 +215,9 @@ export async function* completeCorpus(
   options: CompleteCorpusOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   validateMaxItems(options.maxItems);
-  const minPrefixLength = nonNegativeSafeInteger(
-    options.minPrefixLength === undefined ? 0 : options.minPrefixLength,
-    "minPrefixLength",
+  const minQueryLength = nonNegativeSafeInteger(
+    options.minQueryLength === undefined ? 0 : options.minQueryLength,
+    "minQueryLength",
   );
   if (options.maxItems === 0) {
     return;
@@ -246,7 +246,7 @@ export async function* completeCorpus(
             end: params.position,
           }),
         );
-  if (typed.length < minPrefixLength) {
+  if (typed.length < minQueryLength) {
     return;
   }
   const scanned: string[] = [];

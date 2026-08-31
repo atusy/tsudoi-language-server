@@ -37,7 +37,7 @@ delegates completion semantics to the shell while amortizing startup and configu
 
 `useShellCompletion(shell, factoryOptions)` creates the LSP handler and owns one lazy session.
 Process configuration belongs to that factory call; the optional third argument to the returned
-handler sets `maxItems` and `minPrefixLength` for one LSP response. A zero minimum allows an empty
+handler sets `maxItems` and `minQueryLength` for one LSP response. A zero minimum allows an empty
 line to request native command candidates. Requests to that handler are serialized because the
 line-oriented capture protocol has one end marker and no request identifiers. The process stops
 after an idle interval. Cancellation of an active native request, timeout, input error, or process

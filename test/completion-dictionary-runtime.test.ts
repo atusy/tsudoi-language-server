@@ -38,7 +38,7 @@ const params = {
   position: { line: 0, character: 0 },
 };
 async function labels() {
-  const answer = await complete(context, params, { minPrefixLength: 0 }).next();
+  const answer = await complete(context, params, { minQueryLength: 0 }).next();
   return answer.done ? [] : answer.value.map((item) => item.label);
 }
 async function waitFor(expected) {

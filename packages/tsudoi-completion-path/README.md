@@ -94,16 +94,16 @@ Nothing recurses here either: one listing, one level, no walk.
 
 ## Completion options
 
-| option            | default      | effect                                                       |
-| ----------------- | ------------ | ------------------------------------------------------------ |
-| `minPrefixLength` | `1`          | minimum path-token length that starts directory lookup       |
-| `cwd`             | server cwd   | root used to complete a bare relative path                   |
-| `flavour`         | host flavour | path rules supplied by `path.win32`, `path.posix`, or a host |
+| option           | default      | effect                                                       |
+| ---------------- | ------------ | ------------------------------------------------------------ |
+| `minQueryLength` | `1`          | minimum path-token length that starts directory lookup       |
+| `cwd`            | server cwd   | root used to complete a bare relative path                   |
+| `flavour`        | host flavour | path rules supplied by `path.win32`, `path.posix`, or a host |
 
 Options are the **third argument**, so the handler can be registered directly when the defaults
 suit you and wrapped when they do not:
 `(context, params) => completePath(context, params, { cwd: "/workspace" })`.
-`minPrefixLength` must be a non-negative safe integer. Zero creates an empty fragment at the cursor
+`minQueryLength` must be a non-negative safe integer. Zero creates an empty fragment at the cursor
 and lists the document, cwd, and workspace-relative roots before any path character is typed.
 
 ## What bounds it

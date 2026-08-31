@@ -35,7 +35,7 @@ or rewrite candidates while keeping prefix matching as the default.
 semantics-preserving narrowing". A filter receives `Iterable<string>` and `{ typed }`, then returns
 an iterable. Pipelines run in author order, followed by unconditional deduplication and
 `maxItems`. Files, refresh policy, and filters configure the long-lived factory; `maxItems` and
-`minPrefixLength` configure one completion invocation through its optional third argument. Their
+`minQueryLength` configure one completion invocation through its optional third argument. Their
 defaults are 500 and 2, respectively.
 
 The default is `dictionaryPrefixFilter`. When it is the first stage, the in-memory index may use the

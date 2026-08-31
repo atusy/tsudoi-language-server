@@ -139,9 +139,9 @@ export async function* completeAround(
   options: CompleteAroundOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   validateMaxItems(options.maxItems);
-  const minPrefixLength = nonNegativeSafeInteger(
-    options.minPrefixLength === undefined ? 0 : options.minPrefixLength,
-    "minPrefixLength",
+  const minQueryLength = nonNegativeSafeInteger(
+    options.minQueryLength === undefined ? 0 : options.minQueryLength,
+    "minQueryLength",
   );
   if (options.maxItems === 0) {
     return;
@@ -164,7 +164,7 @@ export async function* completeAround(
     scanner,
     (lines[params.position.line] ?? "").slice(0, params.position.character),
   );
-  if (typed.length < minPrefixLength) {
+  if (typed.length < minQueryLength) {
     return;
   }
   const { from, to } = windowAround(params.position.line, lines.length, options.maxLines ?? 200);

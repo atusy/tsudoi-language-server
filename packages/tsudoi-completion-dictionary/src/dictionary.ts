@@ -24,7 +24,7 @@ export interface UseDictionaryCompletionOptions {
 
 export interface CompleteDictionaryOptions {
   readonly maxItems?: number;
-  readonly minPrefixLength?: number;
+  readonly minQueryLength?: number;
 }
 
 export type DictionaryCompletion = (
@@ -83,8 +83,8 @@ export async function makeCompleteDictionary(
   options: UseDictionaryCompletionOptions,
   runtime: RefreshRuntime = workerRuntime,
 ): Promise<DictionaryCompletion> {
-  if ("minPrefixLength" in options) {
-    throw new TypeError("minPrefixLength moved to the completion handler's third argument");
+  if ("minQueryLength" in options) {
+    throw new TypeError("minQueryLength moved to the completion handler's third argument");
   }
   const files = [...new Set(options.files.map((path) => resolve(path)))];
   const configuredFiles = new Set(files);
@@ -177,9 +177,9 @@ export async function makeCompleteDictionary(
       completionOptions.maxItems === undefined ? 500 : completionOptions.maxItems,
       "maxItems",
     );
-    const minPrefixLength = nonNegativeInteger(
-      completionOptions.minPrefixLength === undefined ? 2 : completionOptions.minPrefixLength,
-      "minPrefixLength",
+    const minQueryLength = nonNegativeInteger(
+      completionOptions.minQueryLength === undefined ? 2 : completionOptions.minQueryLength,
+      "minQueryLength",
     );
     if (context.signal.aborted || maxItems === 0) {
       return;
@@ -193,15 +193,15 @@ export async function makeCompleteDictionary(
       start: { line: params.position.line, character: 0 },
       end: params.position,
     });
-    const prefix = /\S+$/u.exec(before)?.[0] ?? "";
-    if (prefix.length < minPrefixLength) {
+    const query = /\S+$/u.exec(before)?.[0] ?? "";
+    if (query.length < minQueryLength) {
       return;
     }
     const prefixRunsFirst = filters[0] === dictionaryPrefixFilter;
     const queryLimit =
       filters.length === 0 || (prefixRunsFirst && filters.length === 1) ? maxItems : undefined;
-    const entries = queryEntries(snapshotEntries, prefixRunsFirst ? prefix : "", queryLimit);
-    const filtered = applyDictionaryFilters(entries, filters, { typed: prefix }, maxItems);
+    const entries = queryEntries(snapshotEntries, prefixRunsFirst ? query : "", queryLimit);
+    const filtered = applyDictionaryFilters(entries, filters, { typed: query }, maxItems);
     if (filtered.length === 0) {
       return;
     }

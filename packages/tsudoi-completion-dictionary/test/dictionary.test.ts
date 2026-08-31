@@ -89,7 +89,7 @@ test("one dictionary resolves the minimum prefix length for every request", asyn
   const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 0 }, runtime);
   await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-  expect(await labels(handler, "", { minPrefixLength: 0 })).toEqual(["alpha", "beta"]);
+  expect(await labels(handler, "", { minQueryLength: 0 })).toEqual(["alpha", "beta"]);
 });
 
 test("rejects the legacy factory-level minimum prefix length with migration guidance", async () => {
@@ -98,9 +98,9 @@ test("rejects the legacy factory-level minimum prefix length with migration guid
   expect(
     makeCompleteDictionary({
       files: [path],
-      minPrefixLength: 0,
+      minQueryLength: 0,
     } as unknown as UseDictionaryCompletionOptions),
-  ).rejects.toThrow("minPrefixLength moved to the completion handler's third argument");
+  ).rejects.toThrow("minQueryLength moved to the completion handler's third argument");
 });
 
 test("completion reads the published snapshot without waiting for refresh", async () => {
@@ -121,7 +121,7 @@ test("completion reads the published snapshot without waiting for refresh", asyn
   const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 0 }, runtime);
 
   await new Promise<void>((resolve) => setTimeout(resolve, 0));
-  expect(await labels(handler, "", { minPrefixLength: 0 })).toEqual(["old-entry"]);
+  expect(await labels(handler, "", { minQueryLength: 0 })).toEqual(["old-entry"]);
   pending.resolve(noChanges);
 });
 
@@ -193,7 +193,7 @@ test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGE
 
 test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
   "per-request minimum prefix lengths reject invalid bounds",
-  async (minPrefixLength) => {
+  async (minQueryLength) => {
     const { path } = fixture("alpha\n");
     const handler = await makeCompleteDictionary(
       { files: [path] },
@@ -202,8 +202,8 @@ test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGE
     const { context, params } = request("al");
 
     expect(
-      handler(context, params, { minPrefixLength: minPrefixLength as number }).next(),
-    ).rejects.toThrow("minPrefixLength must be a non-negative safe integer");
+      handler(context, params, { minQueryLength: minQueryLength as number }).next(),
+    ).rejects.toThrow("minQueryLength must be a non-negative safe integer");
   },
 );
 
@@ -297,9 +297,9 @@ test("requests during one refresh coalesce into one follow-up refresh", async ()
   const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 0 }, runtime);
   expect(refreshes).toHaveLength(1);
 
-  await labels(handler, "", { minPrefixLength: 0 });
-  await labels(handler, "", { minPrefixLength: 0 });
-  await labels(handler, "", { minPrefixLength: 0 });
+  await labels(handler, "", { minQueryLength: 0 });
+  await labels(handler, "", { minQueryLength: 0 });
+  await labels(handler, "", { minQueryLength: 0 });
   expect(refreshes).toHaveLength(1);
 
   refreshes[0]?.resolve(noChanges);
@@ -320,14 +320,14 @@ test("a queued follow-up respects the refresh interval", async () => {
   };
   const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 50 }, runtime);
 
-  await labels(handler, "", { minPrefixLength: 0 });
+  await labels(handler, "", { minQueryLength: 0 });
   refreshes[0]?.resolve(noChanges);
   await new Promise<void>((resolve) => setTimeout(resolve, 10));
   expect(refreshes).toHaveLength(1);
 
   await new Promise<void>((resolve) => setTimeout(resolve, 60));
   expect(refreshes).toHaveLength(2);
-  await labels(handler, "", { minPrefixLength: 0 });
+  await labels(handler, "", { minQueryLength: 0 });
   refreshes[1]?.resolve(noChanges);
   await new Promise<void>((resolve) => setTimeout(resolve, 10));
   expect(refreshes).toHaveLength(2);
@@ -348,7 +348,7 @@ test("a slow refresh still waits an interval after it settles", async () => {
   };
   const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 30 }, runtime);
 
-  await labels(handler, "", { minPrefixLength: 0 });
+  await labels(handler, "", { minQueryLength: 0 });
   await new Promise<void>((resolve) => setTimeout(resolve, 40));
   refreshes[0]?.resolve(noChanges);
   await new Promise<void>((resolve) => setTimeout(resolve, 10));

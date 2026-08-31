@@ -72,7 +72,7 @@ test("fish returns command candidates for an empty prefix", async () => {
 
     const answer = await handler(context, params, {
       maxItems: 10_000,
-      minPrefixLength: 0,
+      minQueryLength: 0,
     }).next();
 
     expect(answer.done).toBe(false);
