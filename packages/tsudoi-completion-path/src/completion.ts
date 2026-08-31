@@ -197,6 +197,8 @@ export interface PathSource {
 
 /** What the caller may override; everything else is read from the request. */
 export interface CompletePathOptions {
+  /** The shortest path token that starts completion. Defaults to one code unit. */
+  readonly minPrefixLength?: number;
   /**
    * The directory a bare relative path is read against. Defaults to the server's
    * own, read LAZILY inside the handler: reading it at import time would turn a
@@ -673,6 +675,10 @@ export async function* completePath(
   params: CompletionParams,
   options: CompletePathOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
+  const minPrefixLength = options.minPrefixLength ?? 1;
+  if (!Number.isSafeInteger(minPrefixLength) || minPrefixLength < 0) {
+    throw new RangeError("minPrefixLength must be a non-negative safe integer");
+  }
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
     return;
@@ -699,8 +705,21 @@ export async function* completePath(
     context.tsudoi.clientCapabilities.textDocument?.completion?.completionItem?.documentationFormat,
   );
   const seen = new Set<string>();
+  const fragments = pathFragments(line, params.position.character, flavour);
+  if (fragments.length === 0 && minPrefixLength === 0) {
+    fragments.push({
+      text: "",
+      start: params.position.character,
+      end: params.position.character,
+      directory: "",
+      name: "",
+    });
+  }
   try {
-    for (const fragment of pathFragments(line, params.position.character, flavour)) {
+    for (const fragment of fragments) {
+      if (fragment.text.length < minPrefixLength) {
+        continue;
+      }
       let named = false;
       for (const source of sourcesFor(fragment, params.textDocument.uri, cwd, folders, flavour)) {
         for await (const batch of itemsFrom(

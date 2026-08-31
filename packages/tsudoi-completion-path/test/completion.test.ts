@@ -29,6 +29,7 @@ import {
   itemsFrom,
   listingDirectory,
   completePath,
+  type CompletePathOptions,
   pathFragments,
   sourcesFor,
   type PathFragment,
@@ -83,6 +84,7 @@ async function complete(
    * against itself.
    */
   documentationFormat: MarkupKind[] | typeof undeclared = ["markdown"],
+  options: Omit<CompletePathOptions, "cwd"> = {},
 ): Promise<CompletionItem[]> {
   // BUILT BY UPSTREAM'S CONSTRUCTOR, NOT BY HAND: a hand-written four-member
   // object literal does NOT satisfy the real TextDocument, and `create` is the
@@ -133,7 +135,7 @@ async function complete(
       textDocument: { uri: buffer.uri },
       position: { line: 0, character: character ?? buffer.line.length },
     },
-    { cwd },
+    { cwd, ...options },
   )) {
     items.push(...batch);
   }
@@ -206,6 +208,24 @@ describe("path fragments", () => {
 });
 
 describe("the typed prefix selects the source class", () => {
+  test("a zero minimum prefix length lists relative roots from an empty line", async () => {
+    const fixture = tree(["alpha.txt", "beta.txt"]);
+    try {
+      const items = await complete(
+        { ...elsewhere, line: "" },
+        fixture.root,
+        undefined,
+        true,
+        ["markdown"],
+        { minPrefixLength: 0 },
+      );
+
+      expect(inserted(items)).toEqual(["alpha.txt", "beta.txt"]);
+    } finally {
+      fixture.dispose();
+    }
+  });
+
   test("a relative fragment is answered by the relative sources", async () => {
     const fixture = tree(["src/foo.ts", "src/bar.ts", "notes/"]);
     try {
