@@ -159,6 +159,26 @@ describe("completing from around the cursor", () => {
     expect(offered("alpha", 0, { maxItems: 1.5, scanner })).rejects.toThrow("maxItems");
     expect(scans).toBe(0);
   });
+
+  test("a short typed prefix returns before scanning the window", async () => {
+    const scanned: string[] = [];
+    const scanner = (line: string) => {
+      scanned.push(line);
+      return line.match(/[a-z]+/gu) ?? [];
+    };
+    const batches: CompletionItem[][] = [];
+
+    for await (const batch of completeAround(
+      contextFor("al alpha"),
+      { textDocument: { uri }, position: { line: 0, character: 2 } },
+      { minPrefixLength: 3, scanner },
+    )) {
+      batches.push(batch);
+    }
+
+    expect(batches).toEqual([]);
+    expect(scanned).toEqual(["al"]);
+  });
 });
 
 describe("the window a cursor sees", () => {

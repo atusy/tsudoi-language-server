@@ -134,6 +134,10 @@ export async function* completeAround(
   options: CompleteAroundOptions = {},
 ): AsyncGenerator<CompletionItem[], void, void> {
   validateMaxItems(options.maxItems);
+  const minPrefixLength = options.minPrefixLength ?? 0;
+  if (!Number.isSafeInteger(minPrefixLength) || minPrefixLength < 0) {
+    throw new RangeError("minPrefixLength must be a non-negative safe integer");
+  }
   if (options.maxItems === 0) {
     return;
   }
@@ -151,6 +155,13 @@ export async function* completeAround(
   // word pattern does not match but which counts toward the column bound.
   const lines = document.getText().split(/\r?\n/);
   const scanner = options.scanner ?? defaultScanner;
+  const typed = typedWord(
+    scanner,
+    (lines[params.position.line] ?? "").slice(0, params.position.character),
+  );
+  if (typed.length < minPrefixLength) {
+    return;
+  }
   const { from, to } = windowAround(params.position.line, lines.length, options.maxLines ?? 200);
   const scanned = wordsIn(lines.slice(from, to), {
     scanner,
@@ -160,10 +171,6 @@ export async function* completeAround(
   // THE CURSOR'S OWN LINE OUT OF THE STRING TAKEN ABOVE, and not a second
   // `getText`: the liveness rule means a second read could be of a later buffer,
   // and then the prefix would be from one buffer and the candidates from another.
-  const typed = typedWord(
-    scanner,
-    (lines[params.position.line] ?? "").slice(0, params.position.character),
-  );
   const words = applyFilters(
     scanned,
     options.filters ?? defaultFilters,
