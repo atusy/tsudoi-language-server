@@ -119,6 +119,36 @@ test("a zero candidate bound does not invoke the shell", async () => {
   expect(invoked).toBe(false);
 });
 
+test("a zero minimum prefix length completes an empty shell line", async () => {
+  let input: string | undefined;
+  const runtime: ShellCompletionRuntime = {
+    complete: (_shell, value) => {
+      input = value;
+      return Promise.resolve(["echo"]);
+    },
+  };
+  const handler = makeShellCompletion("fish", {}, runtime);
+  const { context, params } = request("");
+
+  const answer = await handler(context, params, { minPrefixLength: 0 }).next();
+
+  expect(input).toBe("");
+  expect(answer.value).toEqual([
+    {
+      label: "echo",
+      filterText: "echo",
+      kind: 1,
+      textEdit: {
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: 0, character: 0 },
+        },
+        newText: "echo",
+      },
+    },
+  ]);
+});
+
 test("one handler resolves the candidate bound for every request", async () => {
   const handler = makeShellCompletion(
     "fish",

@@ -14,6 +14,7 @@ export interface UseShellCompletionOptions {
 
 export interface CompleteShellOptions {
   readonly maxItems?: number;
+  readonly minPrefixLength?: number;
 }
 
 export type ShellCompletion = (
@@ -57,6 +58,11 @@ export function makeShellCompletion(
     if (!Number.isSafeInteger(maxItems) || maxItems < 0) {
       throw new RangeError("maxItems must be a non-negative safe integer");
     }
+    const minPrefixLength =
+      completionOptions.minPrefixLength === undefined ? 1 : completionOptions.minPrefixLength;
+    if (!Number.isSafeInteger(minPrefixLength) || minPrefixLength < 0) {
+      throw new RangeError("minPrefixLength must be a non-negative safe integer");
+    }
     if (context.signal.aborted || maxItems === 0) {
       return;
     }
@@ -69,7 +75,7 @@ export function makeShellCompletion(
       end: params.position,
     });
     const input = line.trimStart();
-    if (input === "") {
+    if (input.length < minPrefixLength) {
       return;
     }
     const target = /\S*$/u.exec(line)?.[0] ?? "";
