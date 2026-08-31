@@ -37,7 +37,8 @@ delegates completion semantics to the shell while amortizing startup and configu
 
 `useShellCompletion(shell, factoryOptions)` creates the LSP handler and owns one lazy session.
 Process configuration belongs to that factory call; the optional third argument to the returned
-handler sets `maxItems` for one LSP response. Requests to that handler are serialized because the
+handler sets `maxItems` and `minPrefixLength` for one LSP response. A zero minimum allows an empty
+line to request native command candidates. Requests to that handler are serialized because the
 line-oriented capture protocol has one end marker and no request identifiers. The process stops
 after an idle interval. Cancellation of an active native request, timeout, input error, or process
 failure discards the session so delayed output cannot be mistaken for a later answer; the next
@@ -73,10 +74,10 @@ that project.
 ### Confirmation
 
 Unit tests must cover candidate mapping, deduplication, replacement ranges, cancellation, response
-bounds, and invalid numeric options. Native integration tests must cover serialized requests with
-fish and real command completion with zsh. A built-artifact smoke test must load the package and
-its fish capture script under both Bun and Deno. Packed-artifact tests must enumerate all capture
-scripts and `THIRD_PARTY_NOTICES.md`.
+bounds, start thresholds, and invalid numeric options. Native integration tests must cover
+serialized requests, empty-prefix command completion with fish, and real command completion with
+zsh. A built-artifact smoke test must load the package and its fish capture script under both Bun
+and Deno. Packed-artifact tests must enumerate all capture scripts and `THIRD_PARTY_NOTICES.md`.
 
 ## Pros and Cons of the Options
 

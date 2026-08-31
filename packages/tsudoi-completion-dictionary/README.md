@@ -21,7 +21,7 @@ const config: TsudoiConfigFactory = () =>
   Promise.resolve({
     methods: {
       "textDocument/completion": (context, params) =>
-        completeDictionary(context, params, { maxItems: 1000 }),
+        completeDictionary(context, params, { maxItems: 1000, minPrefixLength: 2 }),
     },
   });
 
@@ -46,7 +46,6 @@ missing peer is a TypeScript resolution error such as `TS2307`, not the runtime 
 | ------------------- | -------------------------- | ------------------------------------------------------------ |
 | `files`             | required                   | dictionary files, resolved against the factory's current cwd |
 | `filters`           | `[dictionaryPrefixFilter]` | server-side candidate pipeline                               |
-| `minPrefixLength`   | `2`                        | minimum non-whitespace text before the cursor                |
 | `refreshIntervalMs` | `1000`                     | throttle while no refresh is already running                 |
 | `onError`           | no callback                | observes background file, decode, hash, and Worker failures  |
 
@@ -74,9 +73,14 @@ LSP client.
 
 ## Completion options
 
-`CompleteDictionaryOptions` configures one completion call. Its `maxItems` belongs to that call,
-matching `CompleteCorpusOptions`, rather than to the long-lived dictionary factory. It defaults to
-`500` and must be a non-negative safe integer.
+| option            | default | effect                                                    |
+| ----------------- | ------- | --------------------------------------------------------- |
+| `maxItems`        | `500`   | maximum distinct candidates after the configured filters  |
+| `minPrefixLength` | `2`     | minimum trailing non-whitespace prefix that starts lookup |
+
+Both options configure one completion call and must be non-negative safe integers. Set
+`minPrefixLength: 0` to allow the current dictionary snapshot to answer an empty prefix. The old
+factory-level placement is rejected with migration guidance rather than silently ignored.
 
 ## What bounds it
 

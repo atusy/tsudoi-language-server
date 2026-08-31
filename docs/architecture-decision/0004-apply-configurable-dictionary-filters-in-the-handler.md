@@ -34,8 +34,9 @@ or rewrite candidates while keeping prefix matching as the default.
 **Chosen option**: "Apply iterable filter functions in the handler, using the index only for
 semantics-preserving narrowing". A filter receives `Iterable<string>` and `{ typed }`, then returns
 an iterable. Pipelines run in author order, followed by unconditional deduplication and
-`maxItems`. Files, refresh policy, and filters configure the long-lived factory; `maxItems`
-configures one completion invocation through its optional third argument. Its default is 500.
+`maxItems`. Files, refresh policy, and filters configure the long-lived factory; `maxItems` and
+`minPrefixLength` configure one completion invocation through its optional third argument. Their
+defaults are 500 and 2, respectively.
 
 The default is `dictionaryPrefixFilter`. When it is the first stage, the in-memory index may use the
 same prefix range to avoid traversing entries that the stage must reject. Candidate retrieval may
@@ -49,7 +50,8 @@ Otherwise all entries in the current snapshot are passed to the handler pipeline
 - Config authors can implement fuzzy, suffix, ranking, and rewriting pipelines.
 - The default keeps indexed prefix lookup and a bounded response.
 - `maxItems` counts only distinct candidates that survived every filter.
-- One initialized dictionary can serve callers with different response budgets.
+- One initialized dictionary can serve callers with different response budgets and start
+  thresholds.
 
 **Negative:**
 
@@ -64,9 +66,10 @@ Otherwise all entries in the current snapshot are passed to the handler pipeline
 ### Confirmation
 
 Tests must prove that a candidate beyond the response bound is still returned when an earlier
-candidate is rejected, that the third argument selects the response bound for one request, that
-default prefix matching remains case-insensitive and preserves entry values, and that packed
-declarations export the filter API. Binary-search tests protect the indexed default path.
+candidate is rejected, that the third argument selects the response bound and start threshold for
+one request, that default prefix matching remains case-insensitive and preserves entry values, and
+that packed declarations export the filter API. Binary-search tests protect the indexed default
+path.
 
 ## More Information
 

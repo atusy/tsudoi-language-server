@@ -75,21 +75,25 @@ except this paragraph.
 Every distinct word, in the order each was **first seen** — for `completeAround` that is the window
 top-down, for `completeCorpus` it is the documents in the order your client opened them.
 
-| option       | default          | `around` | `corpus` | what it decides                                                 |
-| ------------ | ---------------- | -------- | -------- | --------------------------------------------------------------- |
-| `maxLines`   | `200`            | yes      | —        | lines read **either side** of the cursor, clamped to the buffer |
-| `minLength`  | `2`              | yes      | yes      | the shortest match worth offering                               |
-| `maxColumns` | `200`            | yes      | yes      | a line at or over this length is skipped **whole**              |
-| `scanner`    | `defaultScanner` | yes      | yes      | where one line's words come from                                |
-| `filters`    | `defaultFilters` | yes      | yes      | which scanned words are worth sending                           |
-| `maxItems`   | unbounded        | yes      | yes      | a cap on what survives the filters                              |
+| option            | default          | `around` | `corpus` | what it decides                                                 |
+| ----------------- | ---------------- | -------- | -------- | --------------------------------------------------------------- |
+| `minPrefixLength` | `0`              | yes      | yes      | shortest scanner-defined typed word that starts scanning        |
+| `maxLines`        | `200`            | yes      | —        | lines read **either side** of the cursor, clamped to the buffer |
+| `minLength`       | `2`              | yes      | yes      | the shortest candidate match worth offering                     |
+| `maxColumns`      | `200`            | yes      | yes      | a line at or over this length is skipped **whole**              |
+| `scanner`         | `defaultScanner` | yes      | yes      | where one line's words come from                                |
+| `filters`         | `defaultFilters` | yes      | yes      | which scanned words are worth sending                           |
+| `maxItems`        | unbounded        | yes      | yes      | a cap on what survives the filters                              |
 
-When provided, `maxItems` must be a non-negative safe integer. Zero returns no candidates without
-scanning documents.
+When provided, `minPrefixLength` and `maxItems` must be non-negative safe integers. A zero
+`maxItems` returns no candidates without scanning documents. A positive `minPrefixLength` extracts
+the typed word with the selected `scanner` and returns before scanning the window or corpus when it
+is too short. Its zero default preserves completion outside a word.
 
-The first four decide what is **scanned**, so changing one makes `completeCorpus`
-re-read the documents it had remembered. The last two run afterwards on what it
-remembered, which is why the prefix can change on every keystroke for free.
+`minPrefixLength` decides whether scanning starts. `maxLines`, `minLength`, `maxColumns`, and
+`scanner` decide what is **scanned**, so changing the latter three shared scan options makes
+`completeCorpus` re-read the documents it had remembered. `filters` and `maxItems` run afterwards
+on what it remembered, which is why the prefix can change on every keystroke for free.
 
 Options are the **third argument**, so a handler goes in as it stands when the defaults suit you
 and behind one arrow when they do not:
