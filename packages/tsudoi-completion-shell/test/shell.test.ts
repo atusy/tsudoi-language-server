@@ -149,6 +149,45 @@ test("a zero minimum prefix length completes an empty shell line", async () => {
   ]);
 });
 
+test("the minimum prefix length ignores leading shell indentation", async () => {
+  let invoked = false;
+  const handler = makeShellCompletion(
+    "fish",
+    {},
+    {
+      complete: () => {
+        invoked = true;
+        return Promise.resolve(["git"]);
+      },
+    },
+  );
+  const { context, params } = request("  gi");
+
+  expect(await handler(context, params, { minPrefixLength: 3 }).next()).toEqual({
+    done: true,
+    value: undefined,
+  });
+  expect(invoked).toBe(false);
+});
+
+test("the default minimum prefix length does not complete an empty shell line", async () => {
+  let invoked = false;
+  const handler = makeShellCompletion(
+    "fish",
+    {},
+    {
+      complete: () => {
+        invoked = true;
+        return Promise.resolve(["echo"]);
+      },
+    },
+  );
+  const { context, params } = request("");
+
+  expect(await handler(context, params).next()).toEqual({ done: true, value: undefined });
+  expect(invoked).toBe(false);
+});
+
 test("one handler resolves the candidate bound for every request", async () => {
   const handler = makeShellCompletion(
     "fish",
@@ -194,5 +233,17 @@ test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGE
     expect(handler(context, params, { maxItems: maxItems as number }).next()).rejects.toThrow(
       "maxItems",
     );
+  },
+);
+
+test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
+  "rejects an invalid minimum prefix length",
+  async (minPrefixLength) => {
+    const handler = makeShellCompletion("fish", {}, { complete: () => Promise.resolve([]) });
+    const { context, params } = request("echo a");
+
+    expect(
+      handler(context, params, { minPrefixLength: minPrefixLength as number }).next(),
+    ).rejects.toThrow("minPrefixLength");
   },
 );

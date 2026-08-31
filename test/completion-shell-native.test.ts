@@ -57,6 +57,34 @@ test("fish returns its configured native candidates", async () => {
   }
 });
 
+test("fish returns command candidates for an empty prefix", async () => {
+  const root = mkdtempSync(join(tmpdir(), "tsudoi-shell-fish-empty-"));
+  const configHome = join(root, "config");
+  mkdirSync(join(configHome, "fish"), { recursive: true });
+  writeFileSync(
+    join(configHome, "fish", "config.fish"),
+    "function tsudoi-empty-probe\nend\n",
+  );
+  try {
+    const handler = useShellCompletion("fish", {
+      cwd: root,
+      env: { XDG_CONFIG_HOME: configHome },
+      idleTimeoutMs: 20,
+    });
+    const { context, params } = request("");
+
+    const answer = await handler(context, params, {
+      maxItems: 10_000,
+      minPrefixLength: 0,
+    }).next();
+
+    expect(answer.done).toBe(false);
+    expect(answer.value?.map(({ label }) => label)).toContain("tsudoi-empty-probe");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("zsh returns native command candidates", async () => {
   const root = mkdtempSync(join(tmpdir(), "tsudoi-shell-zsh-"));
   try {
