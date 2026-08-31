@@ -27,7 +27,6 @@ const dictionary = join(root, "words.txt");
 writeFileSync(dictionary, "old-entry\\n");
 const complete = await useDictionaryCompletion({
   files: [dictionary],
-  minPrefixLength: 0,
   refreshIntervalMs: 0,
 });
 const context = {
@@ -39,7 +38,7 @@ const params = {
   position: { line: 0, character: 0 },
 };
 async function labels() {
-  const answer = await complete(context, params).next();
+  const answer = await complete(context, params, { minPrefixLength: 0 }).next();
   return answer.done ? [] : answer.value.map((item) => item.label);
 }
 async function waitFor(expected) {

@@ -76,6 +76,21 @@ test("completion publishes the immutable snapshot returned by a refresh", async 
   expect(await labels(handler, "al")).toEqual(["alpha"]);
 });
 
+test("one dictionary resolves the minimum prefix length for every request", async () => {
+  const { path } = fixture("alpha\nbeta\n");
+  const runtime = {
+    refresh: () =>
+      Promise.resolve({
+        files: [{ path, contentHash: "hash", entries: ["alpha", "beta"] }],
+        errors: [],
+      }),
+  } satisfies RefreshRuntime;
+  const handler = await makeCompleteDictionary({ files: [path], refreshIntervalMs: 0 }, runtime);
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  expect(await labels(handler, "", { minPrefixLength: 0 })).toEqual(["alpha", "beta"]);
+});
+
 test("completion reads the published snapshot without waiting for refresh", async () => {
   const { path } = fixture("old-entry\n");
   const pending = Promise.withResolvers<typeof noChanges>();
@@ -92,12 +107,12 @@ test("completion reads the published snapshot without waiting for refresh", asyn
     },
   };
   const handler = await makeCompleteDictionary(
-    { files: [path], minPrefixLength: 0, refreshIntervalMs: 0 },
+    { files: [path], refreshIntervalMs: 0 },
     runtime,
   );
 
   await new Promise<void>((resolve) => setTimeout(resolve, 0));
-  expect(await labels(handler, "")).toEqual(["old-entry"]);
+  expect(await labels(handler, "", { minPrefixLength: 0 })).toEqual(["old-entry"]);
   pending.resolve(noChanges);
 });
 
@@ -131,7 +146,6 @@ test("custom filters run before the per-request candidate bound", async () => {
     {
       files: [path],
       filters: [suffixFilter],
-      minPrefixLength: 0,
     },
     {
       refresh: () =>
@@ -190,7 +204,6 @@ test("a zero per-request bound does no refresh or filtering work", async () => {
           yield* words;
         },
       ],
-      minPrefixLength: 0,
       refreshIntervalMs: 0,
     },
     runtime,
@@ -257,14 +270,14 @@ test("requests during one refresh coalesce into one follow-up refresh", async ()
     },
   };
   const handler = await makeCompleteDictionary(
-    { files: [path], minPrefixLength: 0, refreshIntervalMs: 0 },
+    { files: [path], refreshIntervalMs: 0 },
     runtime,
   );
   expect(refreshes).toHaveLength(1);
 
-  await labels(handler, "");
-  await labels(handler, "");
-  await labels(handler, "");
+  await labels(handler, "", { minPrefixLength: 0 });
+  await labels(handler, "", { minPrefixLength: 0 });
+  await labels(handler, "", { minPrefixLength: 0 });
   expect(refreshes).toHaveLength(1);
 
   refreshes[0]?.resolve(noChanges);
@@ -284,18 +297,18 @@ test("a queued follow-up respects the refresh interval", async () => {
     },
   };
   const handler = await makeCompleteDictionary(
-    { files: [path], minPrefixLength: 0, refreshIntervalMs: 50 },
+    { files: [path], refreshIntervalMs: 50 },
     runtime,
   );
 
-  await labels(handler, "");
+  await labels(handler, "", { minPrefixLength: 0 });
   refreshes[0]?.resolve(noChanges);
   await new Promise<void>((resolve) => setTimeout(resolve, 10));
   expect(refreshes).toHaveLength(1);
 
   await new Promise<void>((resolve) => setTimeout(resolve, 60));
   expect(refreshes).toHaveLength(2);
-  await labels(handler, "");
+  await labels(handler, "", { minPrefixLength: 0 });
   refreshes[1]?.resolve(noChanges);
   await new Promise<void>((resolve) => setTimeout(resolve, 10));
   expect(refreshes).toHaveLength(2);
@@ -315,11 +328,11 @@ test("a slow refresh still waits an interval after it settles", async () => {
     },
   };
   const handler = await makeCompleteDictionary(
-    { files: [path], minPrefixLength: 0, refreshIntervalMs: 30 },
+    { files: [path], refreshIntervalMs: 30 },
     runtime,
   );
 
-  await labels(handler, "");
+  await labels(handler, "", { minPrefixLength: 0 });
   await new Promise<void>((resolve) => setTimeout(resolve, 40));
   refreshes[0]?.resolve(noChanges);
   await new Promise<void>((resolve) => setTimeout(resolve, 10));

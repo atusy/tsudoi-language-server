@@ -18,13 +18,13 @@ import {
 export interface UseDictionaryCompletionOptions {
   readonly files: readonly string[];
   readonly filters?: readonly DictionaryFilter[];
-  readonly minPrefixLength?: number;
   readonly refreshIntervalMs?: number;
   readonly onError?: (error: unknown) => void;
 }
 
 export interface CompleteDictionaryOptions {
   readonly maxItems?: number;
+  readonly minPrefixLength?: number;
 }
 
 export type DictionaryCompletion = (
@@ -83,9 +83,11 @@ export async function makeCompleteDictionary(
   options: UseDictionaryCompletionOptions,
   runtime: RefreshRuntime = workerRuntime,
 ): Promise<DictionaryCompletion> {
+  if ("minPrefixLength" in options) {
+    throw new TypeError("minPrefixLength moved to the completion handler's third argument");
+  }
   const files = [...new Set(options.files.map((path) => resolve(path)))];
   const configuredFiles = new Set(files);
-  const minPrefixLength = nonNegativeInteger(options.minPrefixLength ?? 2, "minPrefixLength");
   const filters = options.filters ?? defaultDictionaryFilters;
   const refreshIntervalMs = finiteNonNegative(
     options.refreshIntervalMs ?? 1_000,
@@ -174,6 +176,10 @@ export async function makeCompleteDictionary(
     const maxItems = nonNegativeInteger(
       completionOptions.maxItems === undefined ? 500 : completionOptions.maxItems,
       "maxItems",
+    );
+    const minPrefixLength = nonNegativeInteger(
+      completionOptions.minPrefixLength === undefined ? 2 : completionOptions.minPrefixLength,
+      "minPrefixLength",
     );
     if (context.signal.aborted || maxItems === 0) {
       return;
