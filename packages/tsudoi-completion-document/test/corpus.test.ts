@@ -165,6 +165,25 @@ describe("completing from every open document", () => {
     expect(scans).toBe(0);
   });
 
+  test("a null minimum prefix length is rejected before reading or scanning", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "alpha");
+    let scans = 0;
+    const scanner = () => {
+      scans += 1;
+      return ["alpha"];
+    };
+
+    expect(
+      offered(documents, asked, {
+        minPrefixLength: null as unknown as number,
+        scanner,
+      }),
+    ).rejects.toThrow("minPrefixLength");
+    expect(documents.reads(asked)).toBe(0);
+    expect(scans).toBe(0);
+  });
+
   test("a short typed prefix returns before scanning the corpus", async () => {
     const documents = fakeDocuments();
     documents.open(asked, "al alpha");

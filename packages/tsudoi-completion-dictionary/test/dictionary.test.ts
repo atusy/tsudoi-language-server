@@ -9,6 +9,7 @@ import {
   type CompleteDictionaryOptions,
   type DictionaryFilter,
   type RefreshRuntime,
+  type UseDictionaryCompletionOptions,
 } from "../src/dictionary.ts";
 
 const noChanges = { files: [], errors: [] } as const;
@@ -89,6 +90,17 @@ test("one dictionary resolves the minimum prefix length for every request", asyn
   await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
   expect(await labels(handler, "", { minPrefixLength: 0 })).toEqual(["alpha", "beta"]);
+});
+
+test("rejects the legacy factory-level minimum prefix length with migration guidance", async () => {
+  const { path } = fixture("alpha\n");
+
+  expect(
+    makeCompleteDictionary({
+      files: [path],
+      minPrefixLength: 0,
+    } as unknown as UseDictionaryCompletionOptions),
+  ).rejects.toThrow("minPrefixLength moved to the completion handler's third argument");
 });
 
 test("completion reads the published snapshot without waiting for refresh", async () => {
@@ -179,6 +191,22 @@ test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGE
     expect(handler(context, params, { maxItems: maxItems as number }).next()).rejects.toThrow(
       "maxItems must be a non-negative safe integer",
     );
+  },
+);
+
+test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
+  "per-request minimum prefix lengths reject invalid bounds",
+  async (minPrefixLength) => {
+    const { path } = fixture("alpha\n");
+    const handler = await makeCompleteDictionary(
+      { files: [path] },
+      { refresh: () => new Promise<never>(() => {}) },
+    );
+    const { context, params } = request("al");
+
+    expect(
+      handler(context, params, { minPrefixLength: minPrefixLength as number }).next(),
+    ).rejects.toThrow("minPrefixLength must be a non-negative safe integer");
   },
 );
 

@@ -208,6 +208,22 @@ describe("path fragments", () => {
 });
 
 describe("the typed prefix selects the source class", () => {
+  test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
+    "rejects an invalid minimum prefix length",
+    async (minPrefixLength) => {
+      expect(
+        complete(
+          { ...elsewhere, line: "a" },
+          "/does/not/matter",
+          undefined,
+          true,
+          ["markdown"],
+          { minPrefixLength: minPrefixLength as number },
+        ),
+      ).rejects.toThrow("minPrefixLength");
+    },
+  );
+
   test("a zero minimum prefix length lists relative roots from an empty line", async () => {
     const fixture = tree(["alpha.txt", "beta.txt"]);
     try {

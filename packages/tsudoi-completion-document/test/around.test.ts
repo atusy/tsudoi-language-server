@@ -160,6 +160,19 @@ describe("completing from around the cursor", () => {
     expect(scans).toBe(0);
   });
 
+  test("a null minimum prefix length is rejected before scanning", async () => {
+    let scans = 0;
+    const scanner = () => {
+      scans += 1;
+      return ["alpha"];
+    };
+
+    expect(
+      offered("alpha", 0, { minPrefixLength: null as unknown as number, scanner }),
+    ).rejects.toThrow("minPrefixLength");
+    expect(scans).toBe(0);
+  });
+
   test("a short typed prefix returns before scanning the window", async () => {
     const scanned: string[] = [];
     const scanner = (line: string) => {

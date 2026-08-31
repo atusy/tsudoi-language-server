@@ -1,5 +1,19 @@
 import { describe, expect, test } from "bun:test";
-import { applyFilters, defaultFilters, prefixFilter } from "../src/filters.ts";
+import {
+  applyFilters,
+  defaultFilters,
+  nonNegativeSafeInteger,
+  prefixFilter,
+} from "../src/filters.ts";
+
+test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, null])(
+  "numeric completion options reject an invalid bound",
+  (value) => {
+    expect(() => nonNegativeSafeInteger(value as number, "minPrefixLength")).toThrow(
+      "minPrefixLength",
+    );
+  },
+);
 
 describe("the prefix filter", () => {
   /**

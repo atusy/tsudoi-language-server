@@ -140,7 +140,7 @@ export async function* completeAround(
 ): AsyncGenerator<CompletionItem[], void, void> {
   validateMaxItems(options.maxItems);
   const minPrefixLength = nonNegativeSafeInteger(
-    options.minPrefixLength ?? 0,
+    options.minPrefixLength === undefined ? 0 : options.minPrefixLength,
     "minPrefixLength",
   );
   if (options.maxItems === 0) {
