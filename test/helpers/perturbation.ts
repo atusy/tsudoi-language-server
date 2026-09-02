@@ -57,6 +57,14 @@ export interface PerturbationRecord {
   /** Arms other than `arm.name`, in the SAME file, measured to redden with it. */
   readonly alsoReddens: readonly string[];
   /**
+   * Arms allowed, but not required, to redden beside the named arm.
+   *
+   * This is for collateral governed by an external ordering the arm deliberately
+   * leaves real, such as filesystem directory enumeration. Reds outside the
+   * required and optional sets still disarm the record.
+   */
+  readonly mayAlsoRedden?: readonly string[];
+  /**
    * A fragment of the ASSERTION the red was measured falling at, or absent when
    * the record says nothing about where in its arm the red lands.
    *
@@ -430,12 +438,16 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
     };
   }
   const required = [record.arm.name, ...record.alsoReddens].sort();
+  const allowed = new Set([...required, ...(record.mayAlsoRedden ?? [])]);
   const observed = [...reddened].sort();
-  if (required.join("\n") !== observed.join("\n")) {
+  const observedSet = new Set(observed);
+  const missing = required.filter((name) => !observedSet.has(name));
+  const unexpected = observed.filter((name) => !allowed.has(name));
+  if (missing.length > 0 || unexpected.length > 0) {
     return {
       ...base,
       verdict: "disarmed",
-      detail: `the weakening reddens ${observed.join(", ")} where this record measured ${required.join(", ")}, so the red beside the named arm belongs to something else`,
+      detail: `the weakening reddens ${observed.join(", ")} where this record requires ${required.join(", ")} and optionally allows ${[...(record.mayAlsoRedden ?? [])].sort().join(", ") || "nothing"}, so the red beside the named arm belongs to something else`,
     };
   }
   // REFUSED AND NOT DISARMED, and the two are told apart by what the reader is

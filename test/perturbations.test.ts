@@ -1,15 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  opendirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -230,6 +221,22 @@ test("a recorded collateral name that STOPPED reddening is disarmed, never held"
   expect(stale.verdict).toBe("disarmed");
   expect(stale.detail).toContain(probeArms.beta);
   expect(read(recordOver("alpha", weakenToOne), before, after).verdict).toBe("held");
+});
+
+test("an order-dependent collateral red may appear or not, but no unlisted red may", async () => {
+  const root = stageProbe(["alpha", "beta"]);
+  const withCollateral = await bothRuns(root, weakenToZero);
+  const optional = {
+    ...recordOver("alpha", weakenToZero),
+    mayAlsoRedden: [probeArms.beta],
+  };
+  expect(withCollateral.after.arms?.get(probeArms.beta)).toBe("failed");
+  expect(read(optional, withCollateral.before, withCollateral.after).verdict).toBe("held");
+
+  const otherRoot = stageProbe(["alpha", "beta"]);
+  const withoutCollateral = await bothRuns(otherRoot, weakenToOne);
+  expect(withoutCollateral.after.arms?.get(probeArms.beta)).toBe("passed");
+  expect(read(optional, withoutCollateral.before, withoutCollateral.after).verdict).toBe("held");
 });
 
 test("a red that fell at another assertion of the named arm is refused, never held", async () => {
@@ -532,45 +539,6 @@ test("the report names the arm each record weakened, and no other", async () => 
 });
 
 /**
- * Whether the real mixed-directory fixture makes the flat-order weakening
- * reject an ordinary entry after its retained list is full.
- *
- * The filesystem decides directory arrival order, not the operating-system
- * name. Recreate the handler arm's five ordinary entries followed by its
- * twenty-five dotfiles and observe that order on this filesystem. The handler
- * keeps twenty entries; any ordinary entry arriving later is rejected by the
- * weakened flat comparison and becomes a measured collateral failure.
- */
-function mixedDirectoryHasLateOrdinaryEntry(): boolean {
-  const root = mkdtempSync(join(tmpdir(), "tsudoi-directory-order-"));
-  const mixed = join(root, "mixed");
-  mkdirSync(mixed);
-  try {
-    for (const prefix of ["o", ".d"] as const) {
-      const count = prefix === "o" ? 5 : 25;
-      for (let index = 0; index < count; index += 1) {
-        const name = `${prefix}${String(index).padStart(3, "0")}.txt`;
-        writeFileSync(join(mixed, name), "");
-      }
-    }
-    const directory = opendirSync(mixed);
-    const arrivals: string[] = [];
-    try {
-      for (let entry = directory.readSync(); entry !== null; entry = directory.readSync()) {
-        arrivals.push(entry.name);
-      }
-    } finally {
-      directory.closeSync();
-    }
-    return arrivals.slice(20).some((name) => !name.startsWith("."));
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-}
-
-const mixedDirectoryCollateral = mixedDirectoryHasLateOrdinaryEntry();
-
-/**
  * THE REGISTRY: perturbations this repository has already run once and written
  * up as prose, recorded here as something the suite RE-RUNS.
  *
@@ -709,11 +677,12 @@ const records: readonly PerturbationRecord[] = [
       to: "  if (worstKept !== undefined && (name < worstKept ? -1 : 1) >= 0) {",
     },
     // The handler arm reaches the same disagreement only when directory order
-    // leaves an ordinary entry until after the retained list is full. Record
-    // the observed collateral without weakening the exact-red-set check.
-    alsoReddens: mixedDirectoryCollateral
-      ? ["a directory whose dotfiles outnumber the bound still renders its ordinary entries"]
-      : [],
+    // leaves an ordinary entry until after the retained list is full. Permit
+    // that named collateral in either state while rejecting every unlisted red.
+    alsoReddens: [],
+    mayAlsoRedden: [
+      "a directory whose dotfiles outnumber the bound still renders its ordinary entries",
+    ],
   },
   {
     // THE ONE FACT A DIRECTORY'S STAT HAS AND MUST NOT REPORT: its own directory
