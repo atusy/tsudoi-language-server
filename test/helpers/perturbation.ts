@@ -59,6 +59,8 @@ export interface PerturbationRecord {
   /**
    * Arms allowed, but not required, to redden beside the named arm.
    *
+   * Like `alsoReddens`, every name is an arm in the SAME file as `arm`.
+   *
    * This is for collateral governed by an external ordering the arm deliberately
    * leaves real, such as filesystem directory enumeration. Reds outside the
    * required and optional sets still disarm the record.
