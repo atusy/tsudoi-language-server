@@ -385,7 +385,8 @@ const scrum: ScrumDashboard = {
       },
       {
         name: "Lint passes",
-        run: "oxlint --deny-warnings --report-unused-disable-directives-severity error",
+        run:
+          "oxlint --format default --deny-warnings --report-unused-disable-directives-severity error",
       },
       {
         name: "Format check passes",
