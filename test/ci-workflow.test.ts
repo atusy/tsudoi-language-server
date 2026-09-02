@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { parse } from "yaml";
+import { declaredMembers } from "../scripts/workspaces.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 
@@ -31,6 +32,12 @@ interface Workflow {
 }
 
 const workflowPath = join(repoRoot, ".github", "workflows", "ci.yml");
+const dependencyFields = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+] as const;
 
 function readWorkflow(): string {
   return readFileSync(workflowPath, "utf8");
@@ -82,11 +89,22 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
     commands.filter((command) => command === "bun run scripts/definition-of-done.ts"),
   ).toHaveLength(1);
 
-  const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
-    devDependencies: Record<string, string>;
-  };
-  expect(manifest.devDependencies).not.toHaveProperty("oxlint");
-  expect(manifest.devDependencies).not.toHaveProperty("oxfmt");
+  const pinnedOxDeclarations = [repoRoot, ...declaredMembers(repoRoot)].flatMap((dir) => {
+    const manifestPath = join(dir, "package.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+    return dependencyFields.flatMap((field) => {
+      const dependencies = manifest[field];
+      if (typeof dependencies !== "object" || dependencies === null) {
+        return [];
+      }
+      return ["oxlint", "oxfmt"].flatMap((tool) =>
+        Object.hasOwn(dependencies, tool)
+          ? [`${join(relative(repoRoot, dir), "package.json")}:${field}.${tool}`]
+          : [],
+      );
+    });
+  });
+  expect(pinnedOxDeclarations).toEqual([]);
 });
 
 test("a commented Definition of Done command does not satisfy the workflow contract", () => {
