@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import {
   applyWeakening,
@@ -659,7 +660,14 @@ const records: readonly PerturbationRecord[] = [
       from: "  if (worstKept !== undefined && byGroupThenName(name, worstKept) >= 0) {",
       to: "  if (worstKept !== undefined && (name < worstKept ? -1 : 1) >= 0) {",
     },
-    alsoReddens: [],
+    // The handler arm reaches the same disagreement only when opendir hands it
+    // hidden entries first. GitHub's Linux runner does; macOS hands this fixture
+    // the ordinary entries first. Record the measured collateral without
+    // weakening the reader's exact-red-set check on either platform.
+    alsoReddens:
+      process.platform === "linux"
+        ? ["a directory whose dotfiles outnumber the bound still renders its ordinary entries"]
+        : [],
   },
   {
     // THE ONE FACT A DIRECTORY'S STAT HAS AND MUST NOT REPORT: its own directory
