@@ -237,6 +237,13 @@ test("an order-dependent collateral red may appear or not, but no unlisted red m
   const withoutCollateral = await bothRuns(otherRoot, weakenToOne);
   expect(withoutCollateral.after.arms?.get(probeArms.beta)).toBe("passed");
   expect(read(optional, withoutCollateral.before, withoutCollateral.after).verdict).toBe("held");
+
+  const unlistedRoot = stageProbe(["alpha", "beta", "entities"]);
+  const withUnlisted = await bothRuns(unlistedRoot, weakenToZero);
+  const disarmed = read(optional, withUnlisted.before, withUnlisted.after);
+  expect(withUnlisted.after.arms?.get(probeArms.entities)).toBe("failed");
+  expect(disarmed.verdict).toBe("disarmed");
+  expect(disarmed.detail).toContain(probeArms.entities);
 });
 
 test("a red that fell at another assertion of the named arm is refused, never held", async () => {
