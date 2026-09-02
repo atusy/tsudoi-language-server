@@ -26,6 +26,11 @@ jobs:
         with:
           deno-version: v2.9.4
 
+      - name: Install shell test prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fish zsh
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 

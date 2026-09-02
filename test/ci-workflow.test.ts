@@ -25,6 +25,7 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   expect(workflow).toContain("bun-version: 1.3.13");
   expect(workflow).toContain("deno-version: v2.9.4");
 
+  expect(workflow).toContain("sudo apt-get install --yes fish zsh");
   expect(workflow).toContain("bun install --frozen-lockfile");
   expect(workflow).toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(workflow).toContain("oxlint --version");
