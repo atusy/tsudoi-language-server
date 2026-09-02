@@ -1,5 +1,6 @@
 import process from "node:process";
-import { writeFileSync } from "node:fs";
+import { Buffer } from "node:buffer";
+import { writeSync } from "node:fs";
 // Relative with .ts, and Bun-free: deno executes this file too.
 import type { Tsudoi, TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
 
@@ -37,10 +38,22 @@ let captured: Tsudoi | undefined;
  */
 const unprimedMarker = "TSUDOI_SNAPSHOT_UNPRIMED";
 
+function writeStderr(message: string): void {
+  const bytes = Buffer.from(message, "utf8");
+  let offset = 0;
+  while (offset < bytes.length) {
+    const written = writeSync(2, bytes, offset, bytes.length - offset);
+    if (written === 0) {
+      throw new Error("failed to make progress writing the snapshot");
+    }
+    offset += written;
+  }
+}
+
 export default (): Promise<TsudoiConfig> => {
   process.on("exit", () => {
     if (captured === undefined) {
-      writeFileSync(2, `${unprimedMarker}\n`);
+      writeStderr(`${unprimedMarker}\n`);
       return;
     }
     const documents = [...captured.documents.values()].map((document) => ({
@@ -52,7 +65,7 @@ export default (): Promise<TsudoiConfig> => {
     // An exit handler gets no later event-loop turn in which an asynchronous
     // pipe write can finish. The large-document arm crosses the pipe capacity,
     // so write the complete observation synchronously before the process ends.
-    writeFileSync(2, `TSUDOI_SNAPSHOT ${JSON.stringify(documents)}\n`);
+    writeStderr(`TSUDOI_SNAPSHOT ${JSON.stringify(documents)}\n`);
   });
 
   return Promise.resolve({
