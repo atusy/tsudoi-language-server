@@ -70,7 +70,7 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
   const commands = commandLinesOf(steps);
   const definitionOfDoneSteps = steps.filter(
-    (step) => step.run?.trim() === "GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts",
+    (step) => step.run?.trim() === "bun run scripts/definition-of-done.ts",
   );
 
   expect(workflow.on).toHaveProperty("pull_request");
@@ -134,7 +134,7 @@ test("the release lint command rejects warnings and stale suppressions", () => {
   expect(lintChecks).toEqual([
     {
       name: "Lint passes",
-      run: "oxlint --format default --deny-warnings --report-unused-disable-directives-severity error",
+      run: "oxlint --format unix --deny-warnings --report-unused-disable-directives-severity error",
     },
   ]);
 });
@@ -142,11 +142,11 @@ test("the release lint command rejects warnings and stale suppressions", () => {
 test("a commented Definition of Done command does not satisfy the workflow contract", () => {
   const source = readWorkflow();
   const commented = source.replace(
-    "        run: GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts",
-    "        # run: GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts",
+    "        run: bun run scripts/definition-of-done.ts",
+    "        # run: bun run scripts/definition-of-done.ts",
   );
   expect(commented).not.toBe(source);
 
   const commands = commandLinesOf(parseWorkflow(commented).jobs?.checks?.steps ?? []);
-  expect(commands).not.toContain("GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts");
+  expect(commands).not.toContain("bun run scripts/definition-of-done.ts");
 });

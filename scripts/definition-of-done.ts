@@ -181,14 +181,14 @@ function readCommand(run: string): Command {
 /**
  * A diagnostic line the linter marked as a warning.
  *
- * MEASURED on oxlint 0.61.0, in a pipe and under a terminal alike: one line per
- * diagnostic, `path:line:col: <severity> <plugin>(<rule>): ...`, and no summary
- * line -- so the count comes from lines. The SHAPE is matched rather than the
+ * The lint check requests oxlint's `unix` format: one line per diagnostic,
+ * ending in `[<severity>/<plugin>(<rule>)]`, and one summary line. The count
+ * comes from diagnostic lines. The SHAPE is matched rather than the
  * bare word `warning`, which agreed with it over this repository and can be
  * tripped by a test that merely prints the word. RE-MEASURING ON A VERSION BUMP
  * IS THE MAINTENANCE THIS BUYS, and it is the price of the count being a parse.
  */
-const warningLine = /^.+:\d+:\d+: warning\b/;
+const warningLine = /^.+:\d+:\d+: .+ \[Warning\/[\w-]+\([\w-]+\)\]$/;
 
 /**
  * Reads the checks by RUNNING the dashboard, refusing anything it cannot use.

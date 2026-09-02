@@ -147,7 +147,7 @@ for (const { path } of pathShapes) {
 /** The Bun-global diagnostic, at one path and one line, anchored to a line start. */
 function bunGlobalAt(path: string, line: number): RegExp {
   return new RegExp(
-    `^${path.replaceAll(".", "\\.")}:${line}:\\d+: error eslint\\(no-restricted-globals\\)`,
+    `^${path.replaceAll(".", "\\.")}:${line}:\\d+: .+ \\[Error/eslint\\(no-restricted-globals\\)\\]$`,
     "m",
   );
 }
@@ -251,8 +251,10 @@ function importsProtocolExport(name: string): string {
  */
 function factoryBanAt(path: string): RegExp {
   return new RegExp(
-    `${path.replaceAll(".", "\\.")}:\\d+:\\d+: error eslint\\(no-restricted-imports\\): ` +
-      `'createProtocolConnection' import from 'vscode-languageserver-protocol/node' is restricted`,
+    `^${path.replaceAll(".", "\\.")}:\\d+:\\d+: ` +
+      `'createProtocolConnection' import from 'vscode-languageserver-protocol/node' is restricted\\. ` +
+      `\\[Error/eslint\\(no-restricted-imports\\)\\]$`,
+    "m",
   );
 }
 
