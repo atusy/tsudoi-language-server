@@ -787,7 +787,9 @@ export type CustomNotificationHandler = (
  * incremental changes for one document cannot overtake each other.
  */
 export type CustomMethodMap = {
-  [M in ConfigMethod]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethods`;
+  [
+    M in ConfigMethod
+  ]?: `${M} is a method tsudoi serves itself; declare its handler under methods, not customMethods`;
 } & {
   shutdown?: "shutdown is a lifecycle request owned by tsudoi and cannot be declared under customMethods";
   exit?: "exit is a terminal notification whose built-in handler never returns to a custom hook";
