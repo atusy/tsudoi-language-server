@@ -9,12 +9,16 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 interface WorkflowStep {
+  if?: unknown;
+  "continue-on-error"?: unknown;
   uses?: string;
   run?: string;
   with?: Record<string, string>;
 }
 
 interface WorkflowJob {
+  if?: unknown;
+  "continue-on-error"?: unknown;
   "runs-on"?: string;
   "timeout-minutes"?: number;
   steps?: WorkflowStep[];
@@ -64,6 +68,9 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   const steps = checks?.steps ?? [];
   const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
   const commands = commandLinesOf(steps);
+  const definitionOfDoneSteps = steps.filter((step) =>
+    commandLinesOf([step]).includes("bun run scripts/definition-of-done.ts"),
+  );
 
   expect(workflow.on).toHaveProperty("pull_request");
   expect(workflow.on?.push?.branches).toEqual(["main"]);
@@ -72,6 +79,8 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   expect(workflow.concurrency?.["cancel-in-progress"]).toBeTrue();
   expect(checks?.["runs-on"]).toBe("ubuntu-latest");
   expect(checks?.["timeout-minutes"]).toBe(45);
+  expect(checks?.if).toBeUndefined();
+  expect(checks?.["continue-on-error"]).toBeUndefined();
 
   expect(uses.length).toBeGreaterThan(0);
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
@@ -85,9 +94,9 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   expect(commands).toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(commands).toContain("oxlint --version");
   expect(commands).toContain("oxfmt --version");
-  expect(
-    commands.filter((command) => command === "bun run scripts/definition-of-done.ts"),
-  ).toHaveLength(1);
+  expect(definitionOfDoneSteps).toHaveLength(1);
+  expect(definitionOfDoneSteps[0]?.if).toBeUndefined();
+  expect(definitionOfDoneSteps[0]?.["continue-on-error"]).toBeUndefined();
 
   const pinnedOxDeclarations = [repoRoot, ...declaredMembers(repoRoot)].flatMap((dir) => {
     const manifestPath = join(dir, "package.json");
