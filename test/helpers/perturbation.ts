@@ -437,8 +437,17 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
       detail: `${record.arm.name} is already red WITHOUT the weakening, so its red belongs to something else`,
     };
   }
+  const optional = record.mayAlsoRedden ?? [];
+  const staleOptional = optional.filter((name) => !before.arms.has(name) || !after.arms.has(name));
+  if (staleOptional.length > 0) {
+    return {
+      ...base,
+      verdict: "refused",
+      detail: `the optional collateral ${staleOptional.sort().join(", ")} did not run in both arm reports, so this record cannot show that it still names an arm`,
+    };
+  }
   const required = [record.arm.name, ...record.alsoReddens].sort();
-  const allowed = new Set([...required, ...(record.mayAlsoRedden ?? [])]);
+  const allowed = new Set([...required, ...optional]);
   const observed = [...reddened].sort();
   const observedSet = new Set(observed);
   const missing = required.filter((name) => !observedSet.has(name));
@@ -447,7 +456,7 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
     return {
       ...base,
       verdict: "disarmed",
-      detail: `the weakening reddens ${observed.join(", ")} where this record requires ${required.join(", ")} and optionally allows ${[...(record.mayAlsoRedden ?? [])].sort().join(", ") || "nothing"}, so the red beside the named arm belongs to something else`,
+      detail: `the weakening reddens ${observed.join(", ")} where this record requires ${required.join(", ")} and optionally allows ${[...optional].sort().join(", ") || "nothing"}, so the red beside the named arm belongs to something else`,
     };
   }
   // REFUSED AND NOT DISARMED, and the two are told apart by what the reader is

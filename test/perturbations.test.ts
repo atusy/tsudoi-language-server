@@ -246,6 +246,26 @@ test("an order-dependent collateral red may appear or not, but no unlisted red m
   expect(disarmed.detail).toContain(probeArms.entities);
 });
 
+test("an optional collateral name must still name an arm in both runs", async () => {
+  const root = stageProbe(["alpha", "beta"]);
+  const { before, after } = await bothRuns(root, weakenToOne);
+  const optional = {
+    ...recordOver("alpha", weakenToOne),
+    mayAlsoRedden: [probeArms.beta],
+  };
+  const beforeWithoutOptional = new Map(before.arms ?? []);
+  const afterWithoutOptional = new Map(after.arms ?? []);
+  beforeWithoutOptional.delete(probeArms.beta);
+  afterWithoutOptional.delete(probeArms.beta);
+
+  const missingBefore = read(optional, { ...before, arms: beforeWithoutOptional }, after);
+  const missingAfter = read(optional, before, { ...after, arms: afterWithoutOptional });
+  expect(missingBefore.verdict).toBe("refused");
+  expect(missingBefore.detail).toContain(probeArms.beta);
+  expect(missingAfter.verdict).toBe("refused");
+  expect(missingAfter.detail).toContain(probeArms.beta);
+});
+
 test("a red that fell at another assertion of the named arm is refused, never held", async () => {
   const root = stageProbe(["pair", "beta"]);
   const { before, after } = await bothRuns(root, weakenToOne);
