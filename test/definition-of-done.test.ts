@@ -497,11 +497,9 @@ const errors = 'import { thing } from "./other";\nexport const used = thing;\n';
 test("a warning is counted and reported, and does NOT gate the run", async () => {
   const tree = stageLinted(warns);
   const result = await tree.run();
-  // GREEN BESIDE A COUNT, WHICH IS THE RULING AND NOT AN OVERSIGHT: this
-  // repository carries one deliberate warning whose fixture records a refusal to
-  // silence it, so a runner failing on warnings would overturn a decision by way
-  // of a tooling change -- and an instrument red on every green tree retires
-  // itself.
+  // GREEN BESIDE A COUNT, WHICH IS THE RUNNER'S BOUNDARY: this planted linter
+  // exits 0, so the runner reports its warning without inventing a second
+  // severity policy after the check has finished.
   expect(result.code).toBe(0);
   expect(report(result)).toContain("warnings: 1");
   expect(report(result)).toContain("Definition of Done: PASSED");
@@ -584,7 +582,7 @@ test("a filtered run runs ONLY the matching checks and still reports WHOLE", asy
   expect(report(result)).toContain(": PASSED\n");
   expect(report(result)).toContain(`--- Lint passes -- $ ${tree.logged("lint", 0)}`);
   expect(report(result)).toContain(`[PASSED] Lint passes -- exit 0 -- $ ${tree.logged("lint", 0)}`);
-  expect(report(result)).toContain("warnings: 0 (reported, not gating)");
+  expect(report(result)).toContain("warnings: 0 (reported; check exit codes decide the verdict)");
   // AND THE CHECKS IT LEFT OUT ARE NOT REPORTED AS ANYTHING. A runner printing
   // a line for every declared check and running only the matching ones would
   // hand its reader four greens over one run.

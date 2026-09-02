@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { parse } from "yaml";
@@ -114,6 +115,27 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
     });
   });
   expect(pinnedOxDeclarations).toEqual([]);
+});
+
+test("the release lint command rejects warnings and stale suppressions", () => {
+  const result = spawnSync("bun", ["run", "scrum.ts"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  expect(`${String(result.status)} ${result.stderr}`).toBe("0 ");
+
+  const dashboard = JSON.parse(result.stdout) as {
+    definition_of_done?: { checks?: Array<{ name?: unknown; run?: unknown }> };
+  };
+  const lintChecks = (dashboard.definition_of_done?.checks ?? []).filter(
+    (check) => check.name === "Lint passes",
+  );
+  expect(lintChecks).toEqual([
+    {
+      name: "Lint passes",
+      run: "oxlint --deny-warnings --report-unused-disable-directives-severity error",
+    },
+  ]);
 });
 
 test("a commented Definition of Done command does not satisfy the workflow contract", () => {

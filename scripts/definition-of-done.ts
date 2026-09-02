@@ -443,12 +443,10 @@ process.stdout.write(
 for (const result of results) {
   process.stdout.write(`${line(result)}\n`);
 }
-// REPORTED AND NOT GATING, RULED: this tree carries one deliberate warning whose
-// fixture records a refusal to silence it, so failing on warnings would overturn
-// a decision by way of a tooling change -- and an instrument red on every green
-// tree retires itself. It is printed because the linter's exit code does not
-// move on warnings, so five exit codes is not the whole reading.
-process.stdout.write(`warnings: ${warnings} (reported, not gating)\n`);
+// REPORTED WITHOUT A SECOND POLICY: each check decides whether its warnings
+// change its own exit code. The runner gates on that outcome and keeps the count
+// as evidence rather than reinterpreting a tool's severity after it ran.
+process.stdout.write(`warnings: ${warnings} (reported; check exit codes decide the verdict)\n`);
 /**
  * THE TREE THIS READING WAS TAKEN ON, PRINTED SO A RECORD OF IT CANNOT BE
  * WRITTEN FROM MEMORY. This project requires a sprint's closing reading to name
