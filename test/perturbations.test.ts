@@ -255,6 +255,8 @@ test("an optional collateral name must still name an arm in both runs", async ()
   };
   const beforeWithoutOptional = new Map(before.arms ?? []);
   const afterWithoutOptional = new Map(after.arms ?? []);
+  expect(beforeWithoutOptional.has(probeArms.beta)).toBe(true);
+  expect(afterWithoutOptional.has(probeArms.beta)).toBe(true);
   beforeWithoutOptional.delete(probeArms.beta);
   afterWithoutOptional.delete(probeArms.beta);
 
