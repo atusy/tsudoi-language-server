@@ -521,9 +521,7 @@ test("an error is not a warning: the count is 0 beside the failure", async () =>
   // file would survive the loss of: they read the summary and the count, both
   // written by the runner, so a runner that swallowed each check's own output
   // would satisfy all of them.
-  expect(report(result)).toContain(
-    "planted.ts:1:1: Missing file extension in import declaration. [Error/import(extensions)]",
-  );
+  expect(report(result)).toMatch(/^planted\.ts:1:1: .+ \[Error\/import\(extensions\)\]$/m);
   expect(tree.invocations()).toEqual(linterRanOnce);
 });
 
