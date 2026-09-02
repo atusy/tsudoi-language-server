@@ -37,12 +37,17 @@ let captured: Tsudoi | undefined;
  * this word in the failure message.
  */
 const unprimedMarker = "TSUDOI_SNAPSHOT_UNPRIMED";
+const maxWriteBytes = 16 * 1024;
 
 function writeStderr(message: string): void {
   const bytes = Buffer.from(message, "utf8");
   let offset = 0;
   while (offset < bytes.length) {
-    const written = writeSync(2, bytes, offset, bytes.length - offset);
+    // Bun on Linux can report a large pipe write as complete after only the
+    // pipe-sized prefix reaches the parent. Keep each syscall well below that
+    // boundary, while retaining the partial-write loop for every chunk.
+    const length = Math.min(maxWriteBytes, bytes.length - offset);
+    const written = writeSync(2, bytes, offset, length);
     if (written === 0) {
       throw new Error("failed to make progress writing the snapshot");
     }
