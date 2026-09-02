@@ -10,6 +10,7 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 interface WorkflowStep {
+  env?: Record<string, string>;
   if?: unknown;
   "continue-on-error"?: unknown;
   uses?: string;
@@ -97,6 +98,7 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   expect(commands).toContain("oxlint --version");
   expect(commands).toContain("oxfmt --version");
   expect(definitionOfDoneSteps).toHaveLength(1);
+  expect(definitionOfDoneSteps[0]?.env).toEqual({ GITHUB_ACTIONS: "false" });
   expect(definitionOfDoneSteps[0]?.if).toBeUndefined();
   expect(definitionOfDoneSteps[0]?.["continue-on-error"]).toBeUndefined();
 
