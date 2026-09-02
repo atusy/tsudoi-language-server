@@ -14,6 +14,7 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
 
   expect(workflow).toContain("pull_request:");
   expect(workflow).toMatch(/push:\n\s+branches:\n\s+- main/);
+  expect(workflow).toMatch(/schedule:\n\s+- cron: ["']17 2 \* \* \*["']/);
   expect(workflow).toMatch(/permissions:\n\s+contents: read/);
   expect(workflow).toContain("cancel-in-progress: true");
   expect(workflow).toContain("timeout-minutes: 45");
