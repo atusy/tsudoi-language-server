@@ -69,8 +69,8 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   const steps = checks?.steps ?? [];
   const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
   const commands = commandLinesOf(steps);
-  const definitionOfDoneSteps = steps.filter((step) =>
-    commandLinesOf([step]).includes("bun run scripts/definition-of-done.ts"),
+  const definitionOfDoneSteps = steps.filter(
+    (step) => step.run?.trim() === "bun run scripts/definition-of-done.ts",
   );
 
   expect(workflow.on).toHaveProperty("pull_request");
