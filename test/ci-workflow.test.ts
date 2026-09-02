@@ -28,7 +28,7 @@ interface WorkflowJob {
 interface Workflow {
   on?: {
     pull_request?: unknown;
-    push?: { branches?: string[] };
+    push?: { branches?: string[]; tags?: string[] };
     schedule?: Array<{ cron?: string }>;
   };
   permissions?: { contents?: string };
@@ -75,6 +75,7 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
 
   expect(workflow.on).toHaveProperty("pull_request");
   expect(workflow.on?.push?.branches).toEqual(["main"]);
+  expect(workflow.on?.push?.tags).toEqual(["v*-alpha*"]);
   expect(workflow.on?.schedule).toEqual([{ cron: "17 2 * * *" }]);
   expect(workflow.permissions).toEqual({ contents: "read" });
   expect(workflow.concurrency?.["cancel-in-progress"]).toBeTrue();
