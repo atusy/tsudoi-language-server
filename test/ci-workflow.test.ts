@@ -134,8 +134,7 @@ test("the release lint command rejects warnings and stale suppressions", () => {
   expect(lintChecks).toEqual([
     {
       name: "Lint passes",
-      run:
-        "oxlint --format default --deny-warnings --report-unused-disable-directives-severity error",
+      run: "oxlint --format default --deny-warnings --report-unused-disable-directives-severity error",
     },
   ]);
 });
