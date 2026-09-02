@@ -1,6 +1,15 @@
 import { afterEach, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  opendirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
@@ -523,6 +532,45 @@ test("the report names the arm each record weakened, and no other", async () => 
 });
 
 /**
+ * Whether the real mixed-directory fixture makes the flat-order weakening
+ * reject an ordinary entry after its retained list is full.
+ *
+ * The filesystem decides directory arrival order, not the operating-system
+ * name. Recreate the handler arm's five ordinary entries followed by its
+ * twenty-five dotfiles and observe that order on this filesystem. The handler
+ * keeps twenty entries; any ordinary entry arriving later is rejected by the
+ * weakened flat comparison and becomes a measured collateral failure.
+ */
+function mixedDirectoryHasLateOrdinaryEntry(): boolean {
+  const root = mkdtempSync(join(tmpdir(), "tsudoi-directory-order-"));
+  const mixed = join(root, "mixed");
+  mkdirSync(mixed);
+  try {
+    for (const prefix of ["o", ".d"] as const) {
+      const count = prefix === "o" ? 5 : 25;
+      for (let index = 0; index < count; index += 1) {
+        const name = `${prefix}${String(index).padStart(3, "0")}.txt`;
+        writeFileSync(join(mixed, name), "");
+      }
+    }
+    const directory = opendirSync(mixed);
+    const arrivals: string[] = [];
+    try {
+      for (let entry = directory.readSync(); entry !== null; entry = directory.readSync()) {
+        arrivals.push(entry.name);
+      }
+    } finally {
+      directory.closeSync();
+    }
+    return arrivals.slice(20).some((name) => !name.startsWith("."));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+const mixedDirectoryCollateral = mixedDirectoryHasLateOrdinaryEntry();
+
+/**
  * THE REGISTRY: perturbations this repository has already run once and written
  * up as prose, recorded here as something the suite RE-RUNS.
  *
@@ -660,14 +708,12 @@ const records: readonly PerturbationRecord[] = [
       from: "  if (worstKept !== undefined && byGroupThenName(name, worstKept) >= 0) {",
       to: "  if (worstKept !== undefined && (name < worstKept ? -1 : 1) >= 0) {",
     },
-    // The handler arm reaches the same disagreement only when opendir hands it
-    // hidden entries first. GitHub's Linux runner does; macOS hands this fixture
-    // the ordinary entries first. Record the measured collateral without
-    // weakening the reader's exact-red-set check on either platform.
-    alsoReddens:
-      process.platform === "linux"
-        ? ["a directory whose dotfiles outnumber the bound still renders its ordinary entries"]
-        : [],
+    // The handler arm reaches the same disagreement only when directory order
+    // leaves an ordinary entry until after the retained list is full. Record
+    // the observed collateral without weakening the exact-red-set check.
+    alsoReddens: mixedDirectoryCollateral
+      ? ["a directory whose dotfiles outnumber the bound still renders its ordinary entries"]
+      : [],
   },
   {
     // THE ONE FACT A DIRECTORY'S STAT HAS AND MUST NOT REPORT: its own directory
