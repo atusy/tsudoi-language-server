@@ -6,13 +6,16 @@ import { repoRoot } from "./spawn.ts";
 
 export interface LintResult {
   code: number | null;
-  /** stdout and stderr merged; oxlint prints diagnostics as `path:line:col: error rule(name): ...`. */
+  /** stdout and stderr merged in oxlint's stable, one-diagnostic-per-line Unix format. */
   output: string;
 }
 
 function runOxlint(cwd: string): Promise<LintResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn("oxlint", ["."], { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("oxlint", ["--format", "unix", "."], {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
     let output = "";
     child.stdout.on("data", (chunk: Buffer) => {
       output += chunk.toString("utf8");

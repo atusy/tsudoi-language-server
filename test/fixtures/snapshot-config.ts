@@ -1,6 +1,12 @@
 import process from "node:process";
+import { Buffer } from "node:buffer";
+import { writeSync } from "node:fs";
 // Relative with .ts, and Bun-free: deno executes this file too.
-import type { Tsudoi, TsudoiConfig } from "../../packages/tsudoi-language-server/src/types.ts";
+import type {
+  RequestContext,
+  Tsudoi,
+  TsudoiConfig,
+} from "../../packages/tsudoi-language-server/src/types.ts";
 
 /**
  * Reports, at process exit, what the CONFIG AUTHOR's `tsudoi.documents` holds.
@@ -35,20 +41,48 @@ let captured: Tsudoi | undefined;
  * this word in the failure message.
  */
 const unprimedMarker = "TSUDOI_SNAPSHOT_UNPRIMED";
+const maxWriteBytes = 16 * 1024;
+export const snapshotRequest = "test/snapshotDocuments";
+let reportedBeforeExit = false;
+
+function snapshotLine(): string {
+  if (captured === undefined) {
+    return `${unprimedMarker}\n`;
+  }
+  const documents = [...captured.documents.values()].map((document) => ({
+    uri: document.uri,
+    languageId: document.languageId,
+    version: document.version,
+    text: document.getText(),
+  }));
+  return `TSUDOI_SNAPSHOT ${JSON.stringify(documents)}\n`;
+}
+
+function writeStderr(message: string): void {
+  const bytes = Buffer.from(message, "utf8");
+  let offset = 0;
+  while (offset < bytes.length) {
+    // Bun on Linux can report a large pipe write as complete after only the
+    // pipe-sized prefix reaches the parent. Keep each syscall well below that
+    // boundary, while retaining the partial-write loop for every chunk.
+    const length = Math.min(maxWriteBytes, bytes.length - offset);
+    const written = writeSync(2, bytes, offset, length);
+    if (written === 0) {
+      throw new Error("failed to make progress writing the snapshot");
+    }
+    offset += written;
+  }
+}
 
 export default (): Promise<TsudoiConfig> => {
   process.on("exit", () => {
-    if (captured === undefined) {
-      process.stderr.write(`${unprimedMarker}\n`);
+    if (reportedBeforeExit) {
       return;
     }
-    const documents = [...captured.documents.values()].map((document) => ({
-      uri: document.uri,
-      languageId: document.languageId,
-      version: document.version,
-      text: document.getText(),
-    }));
-    process.stderr.write(`TSUDOI_SNAPSHOT ${JSON.stringify(documents)}\n`);
+    // An exit handler gets no later event-loop turn in which an asynchronous
+    // pipe write can finish. The large-document arm crosses the pipe capacity,
+    // so write the complete observation synchronously before the process ends.
+    writeStderr(snapshotLine());
   });
 
   return Promise.resolve({
@@ -61,6 +95,22 @@ export default (): Promise<TsudoiConfig> => {
       "textDocument/hover": (context) => {
         captured = context.tsudoi;
         return Promise.resolve(null);
+      },
+    },
+    customMethods: {
+      [snapshotRequest]: async (context: RequestContext, _params: unknown) => {
+        captured = context.tsudoi;
+        await new Promise<void>((resolve, reject) => {
+          process.stderr.write(snapshotLine(), (error) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            resolve();
+          });
+        });
+        reportedBeforeExit = true;
+        return { result: null };
       },
     },
   });

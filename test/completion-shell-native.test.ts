@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import type { CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import { useShellCompletion } from "../packages/tsudoi-completion-shell/src/index.ts";
@@ -77,6 +77,29 @@ test("fish returns command candidates for an empty prefix", async () => {
 
     expect(answer.done).toBe(false);
     expect(answer.value?.map(({ label }) => label)).toContain("tsudoi-empty-probe");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("xonsh returns native command candidates", async () => {
+  const root = mkdtempSync(join(tmpdir(), "tsudoi-shell-xonsh-"));
+  const bin = join(root, "bin");
+  mkdirSync(bin);
+  writeFileSync(join(bin, "tsudoi-xonsh-probe"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+  try {
+    const handler = useShellCompletion("xonsh", {
+      cwd: root,
+      env: { PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` },
+      idleTimeoutMs: 20,
+      timeoutMs: 5_000,
+    });
+    const { context, params } = request("tsudoi-xonsh-pr");
+
+    const answer = await handler(context, params).next();
+
+    expect(answer.done).toBe(false);
+    expect(answer.value?.map((item) => item.label.trimEnd())).toContain("tsudoi-xonsh-probe");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

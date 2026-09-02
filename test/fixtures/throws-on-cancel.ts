@@ -46,11 +46,11 @@ export default (): Promise<TsudoiConfig> => {
       // ruling is recorded so the enumeration covers every completion handler
       // rather than only the ones that answer.
       //
-      // IT DRAWS `eslint(require-yield)` AND THAT IS THE FIXTURE WORKING, said
-      // here so the warning is not read as an oversight and silenced. A
-      // generator that never yields is exactly what this file is for. IT IS THE
-      // SUITE'S ONLY `require-yield` WARNING, so a lint run reporting more than
-      // one has grown a second such generator somewhere else, not here.
+      // IT WOULD DRAW `eslint(require-yield)` AND THAT IS THE FIXTURE WORKING.
+      // The exception is silenced AT THIS LINE so `--deny-warnings` can make
+      // every other warning gate the run. Reporting unused directives makes
+      // this exception gate the run too if the rule ever stops applying.
+      // oxlint-disable-next-line require-yield
       "textDocument/completion": async function* (
         context: RequestContext,
         _params: CompletionParams,

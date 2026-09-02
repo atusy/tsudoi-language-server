@@ -482,6 +482,8 @@ const handWrittenSuperset = [
   "  getText(range?: Range): string;",
   "  positionAt(offset: number): Position;",
   "  offsetAt(position: Position): number;",
+  "  getLineRange(line: number): Range;",
+  "  getEOLCharacters(line: number): string;",
   "  readonly lineCount: number;",
   "}",
 ].join("\n");
@@ -492,14 +494,11 @@ const handWrittenSuperset = [
  * `vscode-languageserver-protocol` re-exports `vscode-languageserver-types`
  * WHOLE, and that package still carries a `TextDocument` whose own doc comment
  * reads `@deprecated Use the text document from the new
- * vscode-languageserver-textdocument package` -- with the same seven members
- * and no `update`. packages/tsudoi-language-server/src/types.ts already imports
- * from that specifier, so this is the edit a future tidy-up would make while
- * believing it removed a dependency.
+ * vscode-languageserver-textdocument package`. The two declarations have since
+ * diverged, but packages/tsudoi-language-server/src/types.ts already imports
+ * from that specifier, so this remains an easy edit to make while believing it
+ * removed a dependency.
  */
-const deprecatedProtocolTwin =
-  'export type { TextDocument } from "vscode-languageserver-protocol";';
-
 /**
  * WHAT IT CATCHES THAT THE READINGS BESIDE IT DO NOT: with
  * packages/tsudoi-language-server/src/types.ts re-exporting
@@ -519,17 +518,17 @@ test("the TextDocument the published subpath exports is upstream's own declarati
 /**
  * WHAT MAKES THE TEST ABOVE WORTH RUNNING, and it FAILS FIRST if the instrument
  * is ever weakened to a shape check -- which is the whole hazard, since a shape
- * check reads exactly like coverage and sees none of this. Both subjects satisfy
- * every structural promise the interface makes: both pass a `getText(range) is
- * callable` test, an `assignable to upstream` test and a strict-superset
- * comparison, while one is code this project would own forever and the other a
- * type its own authors deprecated.
+ * check reads exactly like coverage and sees none of this. The handwritten
+ * subject satisfies every structural promise the interface makes: it passes a
+ * `getText(range) is callable` test, an `assignable to upstream` test and a
+ * strict-superset comparison, while remaining code this project would own
+ * forever.
  *
  * Its own test rather than assertions appended to the one above, because `tsudoi
  * adopted upstream` and `this probe can tell adoption from resemblance` are
  * different hazards and must not share a first failure.
  */
-test("the identity probe reddens on both near-misses where mutual assignability sees nothing", async () => {
+test("the identity probe reddens on a near-miss where mutual assignability sees nothing", async () => {
   const clonedIdentity = await consumer.typeCheck({
     "clone.ts": handWrittenSuperset,
     "clone-identity.ts": identityProbe("./clone.ts"),
@@ -543,20 +542,6 @@ test("the identity probe reddens on both near-misses where mutual assignability 
   });
   expect(clonedAssignability.output).toBe("");
   expect(clonedAssignability.code).toBe(0);
-
-  const deprecatedIdentity = await consumer.typeCheck({
-    "deprecated.ts": deprecatedProtocolTwin,
-    "deprecated-identity.ts": identityProbe("./deprecated.ts"),
-  });
-  expect(deprecatedIdentity.code).not.toBe(0);
-  expect(deprecatedIdentity.output).toContain("__tsudoiUpstreamMarker");
-
-  const deprecatedAssignability = await consumer.typeCheck({
-    "deprecated.ts": deprecatedProtocolTwin,
-    "deprecated-assignability.ts": assignabilityProbe("./deprecated.ts"),
-  });
-  expect(deprecatedAssignability.output).toBe("");
-  expect(deprecatedAssignability.code).toBe(0);
 });
 
 /*

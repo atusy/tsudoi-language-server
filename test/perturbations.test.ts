@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import {
   applyWeakening,
@@ -220,6 +221,51 @@ test("a recorded collateral name that STOPPED reddening is disarmed, never held"
   expect(stale.verdict).toBe("disarmed");
   expect(stale.detail).toContain(probeArms.beta);
   expect(read(recordOver("alpha", weakenToOne), before, after).verdict).toBe("held");
+});
+
+test("an order-dependent collateral red may appear or not, but no unlisted red may", async () => {
+  const root = stageProbe(["alpha", "beta"]);
+  const withCollateral = await bothRuns(root, weakenToZero);
+  const optional = {
+    ...recordOver("alpha", weakenToZero),
+    mayAlsoRedden: [probeArms.beta],
+  };
+  expect(withCollateral.after.arms?.get(probeArms.beta)).toBe("failed");
+  expect(read(optional, withCollateral.before, withCollateral.after).verdict).toBe("held");
+
+  const otherRoot = stageProbe(["alpha", "beta"]);
+  const withoutCollateral = await bothRuns(otherRoot, weakenToOne);
+  expect(withoutCollateral.after.arms?.get(probeArms.beta)).toBe("passed");
+  expect(read(optional, withoutCollateral.before, withoutCollateral.after).verdict).toBe("held");
+
+  const unlistedRoot = stageProbe(["alpha", "beta", "entities"]);
+  const withUnlisted = await bothRuns(unlistedRoot, weakenToZero);
+  const disarmed = read(optional, withUnlisted.before, withUnlisted.after);
+  expect(withUnlisted.after.arms?.get(probeArms.entities)).toBe("failed");
+  expect(disarmed.verdict).toBe("disarmed");
+  expect(disarmed.detail).toContain(probeArms.entities);
+});
+
+test("an optional collateral name must still name an arm in both runs", async () => {
+  const root = stageProbe(["alpha", "beta"]);
+  const { before, after } = await bothRuns(root, weakenToOne);
+  const optional = {
+    ...recordOver("alpha", weakenToOne),
+    mayAlsoRedden: [probeArms.beta],
+  };
+  const beforeWithoutOptional = new Map(before.arms ?? []);
+  const afterWithoutOptional = new Map(after.arms ?? []);
+  expect(beforeWithoutOptional.has(probeArms.beta)).toBe(true);
+  expect(afterWithoutOptional.has(probeArms.beta)).toBe(true);
+  beforeWithoutOptional.delete(probeArms.beta);
+  afterWithoutOptional.delete(probeArms.beta);
+
+  const missingBefore = read(optional, { ...before, arms: beforeWithoutOptional }, after);
+  const missingAfter = read(optional, before, { ...after, arms: afterWithoutOptional });
+  expect(missingBefore.verdict).toBe("refused");
+  expect(missingBefore.detail).toContain(probeArms.beta);
+  expect(missingAfter.verdict).toBe("refused");
+  expect(missingAfter.detail).toContain(probeArms.beta);
 });
 
 test("a red that fell at another assertion of the named arm is refused, never held", async () => {
@@ -659,7 +705,13 @@ const records: readonly PerturbationRecord[] = [
       from: "  if (worstKept !== undefined && byGroupThenName(name, worstKept) >= 0) {",
       to: "  if (worstKept !== undefined && (name < worstKept ? -1 : 1) >= 0) {",
     },
+    // The handler arm reaches the same disagreement only when directory order
+    // leaves an ordinary entry until after the retained list is full. Permit
+    // that named collateral in either state while rejecting every unlisted red.
     alsoReddens: [],
+    mayAlsoRedden: [
+      "a directory whose dotfiles outnumber the bound still renders its ordinary entries",
+    ],
   },
   {
     // THE ONE FACT A DIRECTORY'S STAT HAS AND MUST NOT REPORT: its own directory

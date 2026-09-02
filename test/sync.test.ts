@@ -5,6 +5,7 @@ import { requireRuntime } from "./helpers/preflight.ts";
 import { readSnapshot, snapshotMarker, unprimedSnapshotMarker } from "./helpers/snapshot.ts";
 import { fixture } from "./helpers/spawn.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
+import { snapshotRequest } from "./fixtures/snapshot-config.ts";
 
 applySuiteDeadline();
 
@@ -166,6 +167,12 @@ for (const runtime of runtimes) {
         await session.request<InitializeResult>("initialize", initializeParams);
         await prime(session);
         session.notify("textDocument/didOpen", didOpen(uri, largeText));
+
+        // Keep the process alive until Bun has flushed this pipe-capacity-sized
+        // observation. Its exit handler remains the observation point for the
+        // ordinary arms, but Bun/Linux can acknowledge synchronous writes there
+        // before every byte reaches the parent.
+        await session.request<null>(snapshotRequest, noParams);
 
         await session.request<null>("shutdown", noParams);
         session.notify("exit", null);
