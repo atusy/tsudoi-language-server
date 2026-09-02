@@ -437,8 +437,10 @@ export function read(record: PerturbationRecord, before: ArmFileRun, after: ArmF
       detail: `${record.arm.name} is already red WITHOUT the weakening, so its red belongs to something else`,
     };
   }
+  const beforeArms = before.arms;
+  const afterArms = after.arms;
   const optional = record.mayAlsoRedden ?? [];
-  const staleOptional = optional.filter((name) => !before.arms.has(name) || !after.arms.has(name));
+  const staleOptional = optional.filter((name) => !beforeArms.has(name) || !afterArms.has(name));
   if (staleOptional.length > 0) {
     return {
       ...base,
