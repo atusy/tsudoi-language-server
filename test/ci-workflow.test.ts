@@ -10,7 +10,6 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 interface WorkflowStep {
-  env?: Record<string, string>;
   if?: unknown;
   "continue-on-error"?: unknown;
   uses?: string;
@@ -71,7 +70,7 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
   const commands = commandLinesOf(steps);
   const definitionOfDoneSteps = steps.filter(
-    (step) => step.run?.trim() === "bun run scripts/definition-of-done.ts",
+    (step) => step.run?.trim() === "GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts",
   );
 
   expect(workflow.on).toHaveProperty("pull_request");
@@ -98,7 +97,6 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   expect(commands).toContain("oxlint --version");
   expect(commands).toContain("oxfmt --version");
   expect(definitionOfDoneSteps).toHaveLength(1);
-  expect(definitionOfDoneSteps[0]?.env).toEqual({ GITHUB_ACTIONS: "false" });
   expect(definitionOfDoneSteps[0]?.if).toBeUndefined();
   expect(definitionOfDoneSteps[0]?.["continue-on-error"]).toBeUndefined();
 
@@ -144,11 +142,11 @@ test("the release lint command rejects warnings and stale suppressions", () => {
 test("a commented Definition of Done command does not satisfy the workflow contract", () => {
   const source = readWorkflow();
   const commented = source.replace(
-    "        run: bun run scripts/definition-of-done.ts",
-    "        # run: bun run scripts/definition-of-done.ts",
+    "        run: GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts",
+    "        # run: GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts",
   );
   expect(commented).not.toBe(source);
 
   const commands = commandLinesOf(parseWorkflow(commented).jobs?.checks?.steps ?? []);
-  expect(commands).not.toContain("bun run scripts/definition-of-done.ts");
+  expect(commands).not.toContain("GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts");
 });

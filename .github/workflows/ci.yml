@@ -47,6 +47,4 @@ jobs:
           oxfmt --version
 
       - name: Run the Definition of Done
-        env:
-          GITHUB_ACTIONS: "false"
-        run: bun run scripts/definition-of-done.ts
+        run: GITHUB_ACTIONS=false bun run scripts/definition-of-done.ts
