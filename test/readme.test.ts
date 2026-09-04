@@ -600,8 +600,8 @@ const facts: readonly ReadmeFact[] = [
     // exists to refuse.
     name: "the registry route is intended and unverified",
     tokens: [
-      /bun add @atusy\/tsudoi-language-server(?![A-Za-z0-9._-])/,
-      /deno add npm:@atusy\/tsudoi-language-server(?![A-Za-z0-9._-])/,
+      /bun add @atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+      /deno add npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
       /unverified/i,
     ],
   },
@@ -806,6 +806,15 @@ for (const fact of facts) {
     expect(statesFact(reword(readme), fact)).toBe(true);
   });
 }
+
+test("removing the opt-in tag from install commands loses the alpha release fact", () => {
+  const untagged = readme.replaceAll(
+    "@atusy/tsudoi-language-server@alpha",
+    "@atusy/tsudoi-language-server",
+  );
+
+  expect(statesFact(untagged, ALPHA_RELEASE)).toBe(false);
+});
 
 /**
  * THE SUBJECT IS THE MANIFEST CARRYING THE PUBLISHED SURFACE, WHICH IS NOT THE

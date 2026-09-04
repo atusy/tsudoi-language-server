@@ -578,7 +578,10 @@ export function statesFact(markdown: string, fact: ReadmeFact): boolean {
 /** The release channel a reader must opt into while the package is pre-stable. */
 export const ALPHA_RELEASE: ReadmeFact = {
   name: "the package is published under npm's alpha tag",
-  tokens: [/@atusy\/tsudoi-language-server/, /npm/i, /alpha/i],
+  tokens: [
+    /bun add @atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+    /deno add npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+  ],
 };
 
 /**
