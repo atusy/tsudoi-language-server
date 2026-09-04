@@ -1,9 +1,10 @@
 import { expect, test } from "bun:test";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { basename, delimiter, dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
+import { initializeParams } from "./helpers/lsp.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 import { buildOrder } from "../scripts/workspaces.ts";
 
@@ -169,57 +170,100 @@ test("the registry smoke exercises fresh Bun and Deno consumers through a clean 
     );
     const calls = callsOf(fake);
     expect(calls.filter((call) => call.lsp !== undefined)).toEqual(
-      ["bun", "deno"].flatMap((runtime) =>
-        [
-          "initialize",
-          "initialized",
-          "textDocument/didOpen",
-          "textDocument/completion",
-          "shutdown",
-          "exit",
-        ].map((lsp) => ({ runtime, lsp })),
-      ),
+      ["bun", "deno"].flatMap((runtime) => [
+        { runtime, lsp: "initialize", params: initializeParams },
+        { runtime, lsp: "initialized", params: {} },
+        {
+          runtime,
+          lsp: "textDocument/didOpen",
+          params: {
+            textDocument: {
+              uri: "file:///registry-smoke.txt",
+              languageId: "plaintext",
+              version: 1,
+              text: "registry reg",
+            },
+          },
+        },
+        {
+          runtime,
+          lsp: "textDocument/completion",
+          params: {
+            textDocument: { uri: "file:///registry-smoke.txt" },
+            position: { line: 0, character: 12 },
+          },
+        },
+        { runtime, lsp: "shutdown" },
+        { runtime, lsp: "exit" },
+      ]),
     );
-    expect(calls.filter((call) => call.runtime === "bun" && call.args !== undefined)).toEqual([
-      {
-        runtime: "bun",
-        args: ["add", "--exact", ...releasePackages().map(({ name }) => `${name}@alpha`)],
-      },
-      {
-        runtime: "bun",
-        args: [
-          "run",
-          "node_modules/@atusy/tsudoi-language-server/dist/cli.js",
-          "--config",
-          "./tsudoi.config.ts",
-        ],
-      },
+    const bunCalls = calls.filter((call) => call.runtime === "bun" && call.args !== undefined);
+    expect(bunCalls.map((call) => call.args)).toEqual([
+      ["add", "--exact", ...releasePackages().map(({ name }) => `${name}@alpha`)],
+      [
+        "run",
+        "node_modules/@atusy/tsudoi-language-server/dist/cli.js",
+        "--config",
+        "./tsudoi.config.ts",
+      ],
     ]);
-    expect(calls.filter((call) => call.runtime === "deno" && call.args !== undefined)).toEqual([
-      {
-        runtime: "deno",
-        args: ["add", "--save-exact", ...releasePackages().map(({ name }) => `npm:${name}@alpha`)],
-      },
-      ...releasePackages().map(({ name }) => ({
-        runtime: "deno",
-        args: ["info", "--json", "--frozen", "--node-modules-dir=none", name],
-      })),
-      {
-        runtime: "deno",
-        args: ["check", "--frozen", "--node-modules-dir=none", "tsudoi.config.ts"],
-      },
-      {
-        runtime: "deno",
-        args: [
-          "run",
-          "-A",
-          "--frozen",
-          "--node-modules-dir=none",
-          "@atusy/tsudoi-language-server/cli",
-          "--config",
-          "./tsudoi.config.ts",
-        ],
-      },
+    const bunInstall = bunCalls[0];
+    if (typeof bunInstall?.cwd !== "string" || typeof bunInstall.cache !== "string") {
+      throw new Error("the fake Bun install did not record its cwd and cache");
+    }
+    expect(bunInstall.registry).toBe("https://registry.npmjs.org/");
+    expect(basename(bunInstall.cwd)).toBe("bun-consumer");
+    expect(basename(bunInstall.cache)).toBe("bun-cache");
+    expect(basename(dirname(bunInstall.cwd))).toBe(basename(dirname(bunInstall.cache)));
+    const denoCalls = calls.filter((call) => call.runtime === "deno" && call.args !== undefined);
+    expect(denoCalls.map((call) => call.args)).toEqual([
+      ["add", "--save-exact", ...releasePackages().map(({ name }) => `npm:${name}@alpha`)],
+      ...releasePackages().map(({ name }) => [
+        "info",
+        "--json",
+        "--frozen",
+        "--node-modules-dir=none",
+        name,
+      ]),
+      ["check", "--frozen", "--node-modules-dir=none", "tsudoi.config.ts"],
+      [
+        "run",
+        "-A",
+        "--frozen",
+        "--node-modules-dir=none",
+        "@atusy/tsudoi-language-server/cli",
+        "--config",
+        "./tsudoi.config.ts",
+      ],
+    ]);
+    const denoInstall = denoCalls[0];
+    if (typeof denoInstall?.cwd !== "string" || typeof denoInstall.cache !== "string") {
+      throw new Error("the fake Deno install did not record its cwd and cache");
+    }
+    expect(denoCalls.every((call) => call.cwd === denoInstall.cwd)).toBeTrue();
+    expect(denoCalls.every((call) => call.registry === "https://registry.npmjs.org/")).toBeTrue();
+    expect(denoCalls.every((call) => call.cache === denoInstall.cache)).toBeTrue();
+    expect(basename(denoInstall.cwd)).toBe("deno-consumer");
+    expect(basename(denoInstall.cache)).toBe("deno-cache");
+    expect(basename(dirname(denoInstall.cwd))).toBe(basename(dirname(denoInstall.cache)));
+    expect(denoInstall.cache).not.toBe(bunInstall.cache);
+    const expectedConfig = [
+      'import { completeAround } from "@atusy/tsudoi-completion-document";',
+      'import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";',
+      "const config: TsudoiConfigFactory = () => Promise.resolve({",
+      '  methods: { "textDocument/completion": completeAround },',
+      "});",
+      "export default config;",
+      "",
+    ].join("\n");
+    expect(
+      calls
+        .filter((call) => call.config !== undefined)
+        .map(({ runtime, phase, config }) => ({ runtime, phase, config })),
+    ).toEqual([
+      { runtime: "bun", phase: "run", config: expectedConfig },
+      { runtime: "deno", phase: "check", config: expectedConfig },
+      { runtime: "deno", phase: "run", config: expectedConfig },
     ]);
   } finally {
     rmSync(fake.directory, { recursive: true, force: true });
