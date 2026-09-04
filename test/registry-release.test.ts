@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import process from "node:process";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 
@@ -54,8 +55,14 @@ if (args[0] === "view") {
     repository: manifest.repository,
     ...(process.env.ADD_ATTESTATIONS === "1" ? {
       "dist.attestations": {
-        url: "https://registry.npmjs.org/-/npm/v1/attestations/" + name + "@" + version,
-        provenance: { predicateType: "https://slsa.dev/provenance/v1" },
+        url: process.env.BAD_ATTESTATION_URL === "1"
+          ? "https://example.invalid/attestations/" + name + "@" + version
+          : "https://registry.npmjs.org/-/npm/v1/attestations/" + name + "@" + version,
+        provenance: {
+          predicateType: process.env.BAD_PREDICATE === "1"
+            ? "https://example.invalid/provenance"
+            : "https://slsa.dev/provenance/v1",
+        },
       },
     } : {}),
     ...(manifest.peerDependencies === undefined ? {} : { peerDependencies: manifest.peerDependencies }),
@@ -86,6 +93,9 @@ process.exit(2);
       RELEASE_DIR: release,
       REPO_ROOT: repoRoot,
       NPM_LOG: join(parent, "npm.log"),
+      NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "test/helpers/fake-attestation-fetch.ts")).href}`,
+      GITHUB_REF: "refs/tags/v0.1.0-alpha.0",
+      GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
     };
     const verified = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
@@ -118,6 +128,29 @@ process.exit(2);
     expect(missingProvenance.status).not.toBe(0);
     expect(missingProvenance.stderr).toContain("registry attestations");
 
+    for (const invalid of [
+      { BAD_ATTESTATION_URL: "1", error: "does not expose npmjs SLSA provenance" },
+      { BAD_PREDICATE: "1", error: "does not expose npmjs SLSA provenance" },
+    ]) {
+      const result = spawnSync(
+        "node",
+        ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+          timeout: SPAWN_TIMEOUT_MS,
+          env: { ...env, ADD_ATTESTATIONS: "1", ...invalid },
+        },
+      );
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(invalid.error);
+    }
+    const preflightCalls = readFileSync(join(parent, "npm.log"), "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as string[]);
+    expect(preflightCalls.some((args) => args[0] === "install" || args[0] === "audit")).toBeFalse();
+
     const provenance = spawnSync(
       "node",
       ["scripts/verify-registry-release.ts", release, "--require-provenance"],
@@ -140,6 +173,19 @@ process.exit(2);
     expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
     expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.0"))).toHaveLength(7);
     expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
+
+    const wrongSource = spawnSync(
+      "node",
+      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: { ...env, ADD_ATTESTATIONS: "1", BAD_SOURCE_REF: "1" },
+      },
+    );
+    expect(wrongSource.status).not.toBe(0);
+    expect(wrongSource.stderr).toContain("provenance workflow does not match");
 
     const failedAudit = spawnSync(
       "node",

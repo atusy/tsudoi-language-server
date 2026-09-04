@@ -123,8 +123,10 @@ executable runs on the filesystem that produces the release bundle. The OIDC job
 that immutable bundle with provenance. Re-running the job is safe only for registry artifacts whose
 integrity matches the freshly packed tarballs; any other existing artifact is refused. A separate
 unprivileged job then verifies registry metadata, requires each package's SLSA provenance,
-cryptographically checks the exact installed release with `npm audit signatures`, and runs the same
-fresh Bun and Deno consumer smoke test; it has neither the `npm` environment nor OIDC permission.
+cryptographically checks the exact installed release with `npm audit signatures`, and policy-checks
+the signed subject, repository, workflow path, tag ref, and commit before running the same fresh Bun
+and Deno consumer smoke test. The verification job has neither the `npm` environment nor OIDC
+permission.
 
 If a publish run fails after changing some packages, rerun that same tag immediately and verify the
 registry before preparing another version. The fixed workflow concurrency group prevents two

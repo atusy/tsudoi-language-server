@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { verifyProvenance } from "./verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
@@ -12,6 +13,7 @@ const NPM_TIMEOUT_MS = 30_000;
 const NPM_INSTALL_TIMEOUT_MS = 120_000;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
+const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
 
 interface PackageManifest {
   readonly name?: unknown;
@@ -121,6 +123,24 @@ const expected = buildOrder(repoRoot).flatMap((dir) => {
   return [{ dir, manifest: manifest as PackageManifest & { name: string; version: string } }];
 });
 
+const expectedRef = process.env.GITHUB_REF;
+const expectedCommit = process.env.GITHUB_SHA;
+if (
+  requireProvenance &&
+  (expectedRef !== `refs/tags/v${release.releaseVersion}` ||
+    expectedCommit === undefined ||
+    !/^[0-9a-f]{40}$/.test(expectedCommit))
+) {
+  fail("GITHUB_REF and GITHUB_SHA do not identify the exact release tag and commit");
+}
+const framework = expected.find(({ manifest }) => manifest.name === FRAMEWORK)?.manifest;
+const repository = object(framework?.repository, `${FRAMEWORK} repository`);
+if (typeof repository.url !== "string") fail(`${FRAMEWORK} repository has no URL`);
+const repositoryUrl = repository.url.replace(/^git\+/, "").replace(/\.git$/, "");
+if (!repositoryUrl.startsWith("https://github.com/")) {
+  fail(`${FRAMEWORK} repository is not a public GitHub URL`);
+}
+
 const entries = release.packages.map((candidate) => {
   const entry = object(candidate, `${manifestPath} package entry`) as ReleaseEntry;
   if (
@@ -144,11 +164,19 @@ if (
   fail("release manifest packages do not match the workspace release order");
 }
 
+const provenancePolicies: Array<{
+  readonly packageName: string;
+  readonly version: string;
+  readonly sha512: string;
+  readonly attestationUrl: string;
+}> = [];
+
 for (const [index, entry] of entries.entries()) {
   const local = expected[index]?.manifest;
   if (local === undefined) fail(`no local manifest for ${entry.name}`);
   const tarball = readFileSync(join(directory, entry.filename));
-  const integrity = `sha512-${createHash("sha512").update(tarball).digest("base64")}`;
+  const sha512 = createHash("sha512").update(tarball).digest("hex");
+  const integrity = `sha512-${Buffer.from(sha512, "hex").toString("base64")}`;
   const packageSpec = `${entry.name}@${entry.version}`;
   const metadata = object(
     npmJson(
@@ -189,6 +217,12 @@ for (const [index, entry] of entries.entries()) {
     ) {
       fail(`${packageSpec} does not expose npmjs SLSA provenance`);
     }
+    provenancePolicies.push({
+      packageName: entry.name,
+      version: entry.version,
+      sha512,
+      attestationUrl: attestations.url,
+    });
   }
   if (tags.alpha !== entry.version || Object.hasOwn(tags, "latest")) {
     fail(`${entry.name} must expose only the intended alpha channel, not latest`);
@@ -238,6 +272,21 @@ if (requireProvenance) {
       env,
     );
     npmRun(["audit", "signatures"], "the exact installed release set", consumer, env);
+    try {
+      await Promise.all(
+        provenancePolicies.map((policy) =>
+          verifyProvenance({
+            ...policy,
+            repository: repositoryUrl,
+            workflowPath: RELEASE_WORKFLOW,
+            gitRef: expectedRef as string,
+            gitCommit: expectedCommit as string,
+          }),
+        ),
+      );
+    } catch (cause) {
+      fail(`provenance policy verification failed: ${String(cause)}`);
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

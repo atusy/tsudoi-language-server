@@ -115,7 +115,7 @@ jobs:
           mkdir -p "$bundle/release" "$bundle/repository/scripts" "$bundle/repository/packages" "$bundle/repository/test/helpers"
           cp -R "$RUNNER_TEMP/npm-release/." "$bundle/release/"
           cp package.json "$bundle/repository/package.json"
-          cp scripts/publish-release.ts scripts/smoke-registry-release.ts scripts/verify-registry-release.ts scripts/workspaces.ts "$bundle/repository/scripts/"
+          cp scripts/publish-release.ts scripts/smoke-registry-release.ts scripts/verify-provenance.ts scripts/verify-registry-release.ts scripts/workspaces.ts "$bundle/repository/scripts/"
           cp test/helpers/lsp.ts test/helpers/spawn.ts "$bundle/repository/test/helpers/"
           for member in packages/*; do
             mkdir -p "$bundle/repository/$member"

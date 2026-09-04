@@ -380,6 +380,7 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(bundleIndex).toBeGreaterThan(packStepIndex);
   expect(bundle).toContain("scripts/smoke-registry-release.ts");
   expect(bundle).toContain("scripts/verify-registry-release.ts");
+  expect(bundle).toContain("scripts/verify-provenance.ts");
   expect(bundle).toContain("scripts/workspaces.ts");
   expect(bundle).toContain("test/helpers/lsp.ts");
   expect(bundle).toContain("test/helpers/spawn.ts");
