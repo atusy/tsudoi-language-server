@@ -12,6 +12,7 @@ applySuiteDeadline();
 interface WorkflowStep {
   if?: unknown;
   "continue-on-error"?: unknown;
+  name?: string;
   uses?: string;
   run?: string;
   with?: Record<string, string>;
@@ -187,10 +188,19 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(prepare?.permissions?.["id-token"]).toBeUndefined();
   expect(prepare?.environment).toBeUndefined();
   expect(prepare?.["runs-on"]).toBe("ubuntu-latest");
+  expect(prepare?.if).toBeUndefined();
+  expect(prepare?.["continue-on-error"]).toBeUndefined();
   expect(publish?.environment).toBe("npm");
   expect(publish?.needs).toBe("prepare");
   expect(publish?.permissions).toEqual({ contents: "read", "id-token": "write" });
   expect(publish?.["runs-on"]).toBe("ubuntu-latest");
+  expect(publish?.if).toBeUndefined();
+  expect(publish?.["continue-on-error"]).toBeUndefined();
+  expect(
+    [...prepareSteps, ...publishSteps].every(
+      (step) => step.if === undefined && step["continue-on-error"] === undefined,
+    ),
+  ).toBeTrue();
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
     "${{ inputs.release-tag }}",
@@ -245,6 +255,18 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   const packIndex = prepareCommands.indexOf(
     'bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"',
   );
+  const validationIndex = prepareSteps.findIndex(
+    (step) => step.name === "Validate the release tag",
+  );
+  const definitionStepIndex = prepareSteps.findIndex(
+    (step) => step.run?.trim() === "bun run scripts/definition-of-done.ts",
+  );
+  const packStepIndex = prepareSteps.findIndex(
+    (step) => step.run?.trim() === 'bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"',
+  );
+  expect(validationIndex).toBeGreaterThanOrEqual(0);
+  expect(definitionStepIndex).toBeGreaterThan(validationIndex);
+  expect(packStepIndex).toBeGreaterThan(definitionStepIndex);
   expect(definitionIndex).toBeGreaterThanOrEqual(0);
   expect(packIndex).toBeGreaterThan(definitionIndex);
 });
