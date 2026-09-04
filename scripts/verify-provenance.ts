@@ -1,7 +1,10 @@
+import { type Bundle, type VerifyOptions, verify as verifyBundle } from "sigstore";
+
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const GITHUB_ACTIONS_BUILD =
   "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1";
 const IN_TOTO_PAYLOAD = "application/vnd.in-toto+json";
+const GITHUB_ACTIONS_OIDC_ISSUER = "https://token.actions.githubusercontent.com";
 
 export interface ProvenancePolicy {
   readonly packageName: string;
@@ -29,7 +32,7 @@ function array(value: unknown, subject: string): readonly unknown[] {
 export async function verifyProvenance(
   policy: ProvenancePolicy,
   fetcher: typeof fetch = fetch,
-  bundleVerifier: (bundle: Bundle) => Promise<unknown> = verifyBundle,
+  bundleVerifier: (bundle: Bundle, options: VerifyOptions) => Promise<unknown> = verifyBundle,
 ): Promise<void> {
   const response = await fetcher(policy.attestationUrl, {
     headers: { accept: "application/json" },
@@ -45,7 +48,10 @@ export async function verifyProvenance(
   );
   if (candidate === undefined) throw new Error("attestation response has no SLSA v1 provenance");
   const bundle = object(object(candidate, "SLSA attestation").bundle, "SLSA attestation.bundle");
-  await bundleVerifier(bundle as Bundle);
+  await bundleVerifier(bundle as Bundle, {
+    certificateIssuer: GITHUB_ACTIONS_OIDC_ISSUER,
+    certificateIdentityURI: `${policy.repository}/${policy.workflowPath}@${policy.gitRef}`,
+  });
   const envelope = object(bundle.dsseEnvelope, "SLSA attestation.bundle.dsseEnvelope");
   if (envelope.payloadType !== IN_TOTO_PAYLOAD || typeof envelope.payload !== "string") {
     throw new Error("SLSA attestation does not contain an in-toto payload");
@@ -98,4 +104,3 @@ export async function verifyProvenance(
   });
   if (!dependencyMatches) throw new Error("provenance commit does not match the release policy");
 }
-import { type Bundle, verify as verifyBundle } from "sigstore";

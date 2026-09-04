@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Bundle } from "sigstore";
+import type { Bundle, VerifyOptions } from "sigstore";
 import { verifyProvenance, type ProvenancePolicy } from "../scripts/verify-provenance.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 
@@ -78,14 +78,39 @@ function fixture(
 test("the exact cryptographically accepted bundle is checked against the release source", async () => {
   const { response, bundle } = fixture();
   let verified: Bundle | undefined;
+  let verificationOptions: VerifyOptions | undefined;
   await verifyProvenance(
     policy,
     (async () => response) as unknown as typeof fetch,
-    async (candidate) => {
+    async (candidate, options) => {
       verified = candidate;
+      verificationOptions = options;
     },
   );
   expect(verified).toBe(bundle);
+  expect(verificationOptions).toEqual({
+    certificateIssuer: "https://token.actions.githubusercontent.com",
+    certificateIdentityURI:
+      "https://github.com/atusy/tsudoi-language-server/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.0",
+  });
+});
+
+test("a bundle signed by another identity is rejected", async () => {
+  const { response } = fixture();
+  await expect(
+    verifyProvenance(
+      policy,
+      (async () => response) as unknown as typeof fetch,
+      async (_bundle, options) => {
+        if (
+          options.certificateIdentityURI !==
+          "https://github.com/atusy/other/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.0"
+        ) {
+          throw new Error("certificate identity mismatch");
+        }
+      },
+    ),
+  ).rejects.toThrow("certificate identity mismatch");
 });
 
 test("source and subject mismatches fail after cryptographic verification", async () => {
