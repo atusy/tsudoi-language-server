@@ -3,7 +3,9 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { initializeParams, LspSession } from "../test/helpers/lsp.ts";
+import { buildOrder } from "./workspaces.ts";
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
 const INSTALL_TIMEOUT_MS = 120_000;
@@ -90,12 +92,18 @@ function releaseEntries(directory: string): {
     }
     return { name: entry.name, version: entry.version };
   });
-  if (
-    entries.length === 0 ||
-    !entries.some(({ name }) => name === FRAMEWORK) ||
-    !entries.some(({ name }) => name === COMPLETION)
-  ) {
-    fail(`${path} does not contain the framework and completion smoke packages`);
+  const repoRoot = fileURLToPath(new URL("../", import.meta.url));
+  const expected = buildOrder(repoRoot).flatMap((packageDirectory) => {
+    const packagePath = join(packageDirectory, "package.json");
+    const packageManifest = object(readJson(packagePath), packagePath);
+    if (packageManifest.private === true) return [];
+    if (typeof packageManifest.name !== "string" || typeof packageManifest.version !== "string") {
+      fail(`${packagePath} must declare string name and version fields`);
+    }
+    return [{ name: packageManifest.name, version: packageManifest.version }];
+  });
+  if (JSON.stringify(entries) !== JSON.stringify(expected)) {
+    fail("release manifest packages do not match the workspace release order");
   }
   return { version: manifest.releaseVersion, entries };
 }
