@@ -80,11 +80,14 @@ Publisher** with these exact values:
 - Environment: `npm`
 - Allowed actions: `npm publish`
 
-In the GitHub repository, create or review the `npm` environment and require an appropriate
-reviewer before deployment. Add a repository ruleset that restricts creation and update of
-`v*-alpha.*` tags to release maintainers. Do not add an npm token to repository or environment
-secrets. The workflow requests `id-token: write` and uses npm Trusted Publishing's short-lived OIDC
-credential. See npm's
+In the GitHub repository, create or review the `npm` environment, require an appropriate reviewer,
+and set **Deployment branches and tags** to **Selected branches and tags** with only the
+`v*-alpha.*` tag pattern and no branch pattern. Add a repository ruleset that restricts creation and
+update of those tags to release maintainers. These controls are separate: the ruleset protects the
+tag, while the environment policy prevents a workflow dispatched from an ordinary branch from
+requesting npm deployment approval and OIDC credentials. Do not add an npm token to repository or
+environment secrets. The workflow requests `id-token: write` and uses npm Trusted Publishing's
+short-lived OIDC credential. See npm's
 [Trusted Publishing documentation](https://docs.npmjs.com/trusted-publishers/) and GitHub's
 [deployment environment documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
@@ -113,15 +116,15 @@ gh workflow run publish.yml --ref v0.1.0-alpha.1 -f mode=publish -f release-tag=
 Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is
 dispatched from that tag so npm's provenance names the release ref and commit. The job checks that
 the event ref, event commit, checked-out commit, tag, and package version agree. An unprivileged
-runner installs the latest `oxlint` and `oxfmt` and runs the complete Definition of Done under Bun
-and Deno. After that succeeds, a fresh runner with locked dependencies packs a checksummed release;
-no floating Ox executable runs on the filesystem that produces the release bundle. The OIDC job
-publishes only that immutable bundle with provenance. Re-running the job is safe only for registry
-artifacts whose integrity matches the freshly packed tarballs; any other existing artifact is
-refused. A separate unprivileged job then verifies registry metadata, requires each package's SLSA
-provenance, cryptographically checks the exact installed release with `npm audit signatures`, and
-runs the same fresh Bun and Deno consumer smoke test; it has neither the `npm` environment nor OIDC
-permission.
+runner checks out the immutable dispatch commit, installs the latest `oxlint` and `oxfmt`, and runs
+the complete Definition of Done under Bun and Deno. After that succeeds, a fresh runner checks out
+the same commit and uses locked dependencies to pack a checksummed release; no floating Ox
+executable runs on the filesystem that produces the release bundle. The OIDC job publishes only
+that immutable bundle with provenance. Re-running the job is safe only for registry artifacts whose
+integrity matches the freshly packed tarballs; any other existing artifact is refused. A separate
+unprivileged job then verifies registry metadata, requires each package's SLSA provenance,
+cryptographically checks the exact installed release with `npm audit signatures`, and runs the same
+fresh Bun and Deno consumer smoke test; it has neither the `npm` environment nor OIDC permission.
 
 If a publish run fails after changing some packages, rerun that same tag immediately and verify the
 registry before preparing another version. The fixed workflow concurrency group prevents two

@@ -268,10 +268,10 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     'node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
   );
   expect(qualitySteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
-    "${{ inputs.release-tag }}",
+    "${{ github.sha }}",
   );
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
-    "${{ inputs.release-tag }}",
+    "${{ github.sha }}",
   );
   expect(qualitySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
     "node-version": "24.10.0",
