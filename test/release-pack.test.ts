@@ -20,6 +20,8 @@ import { repoRoot } from "./helpers/spawn.ts";
 
 applySuiteDeadline();
 
+const SPAWN_TIMEOUT_MS = 30_000;
+
 interface ReleaseEntry {
   readonly name?: unknown;
   readonly version?: unknown;
@@ -47,6 +49,7 @@ test("the release packer writes ordered, checksummed tarballs for every public p
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).toBe(0);
 
@@ -85,6 +88,7 @@ test("the release packer refuses a non-empty destination", () => {
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).not.toBe(0);
     expect(packed.stderr).toContain("destination must be empty");
@@ -103,6 +107,7 @@ test("the publisher resumes only past a registry artifact with the same integrit
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).toBe(0);
     const manifest = JSON.parse(
@@ -144,6 +149,7 @@ process.exit(2);
     const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
       env: {
         ...process.env,
         PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
@@ -184,6 +190,7 @@ test("the publisher refuses a checksummed tarball carrying another package ident
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).toBe(0);
     const manifestPath = join(destination, "release-manifest.json");
@@ -210,6 +217,7 @@ test("the publisher refuses a checksummed tarball carrying another package ident
     const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
       env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` },
     });
     expect(published.status).not.toBe(0);
@@ -228,6 +236,7 @@ test("the publisher checks every local tarball before contacting npm", () => {
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).toBe(0);
     const manifest = JSON.parse(
@@ -251,6 +260,7 @@ process.exit(2);
     const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
       env: {
         ...process.env,
         PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
@@ -274,6 +284,7 @@ test("the publisher completes registry preflight before publishing anything", ()
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).toBe(0);
     const manifest = JSON.parse(
@@ -305,6 +316,7 @@ process.exit(args[0] === "publish" ? 0 : 2);
     const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
       env: {
         ...process.env,
         PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
@@ -334,6 +346,7 @@ test("the publisher refuses to roll an alpha dist-tag back", () => {
     const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
     });
     expect(packed.status).toBe(0);
     mkdirSync(bin);
@@ -362,6 +375,7 @@ process.exit(2);
     const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
       env: {
         ...process.env,
         PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
