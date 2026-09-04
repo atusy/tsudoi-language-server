@@ -13,7 +13,7 @@ clean `main`, not from the pull-request branch:
 git switch main
 git pull --ff-only origin main
 git status --short
-npm whoami
+npm whoami --registry=https://registry.npmjs.org/
 bun install --frozen-lockfile
 bun add --global oxlint@latest oxfmt@latest
 bun run scripts/definition-of-done.ts

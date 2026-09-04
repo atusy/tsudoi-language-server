@@ -25,6 +25,8 @@ interface ValidReleaseEntry {
   readonly sha256: string;
 }
 
+const NPM_REGISTRY = "https://registry.npmjs.org/";
+
 function fail(message: string): never {
   console.error(`publish-release: ${message}`);
   process.exit(1);
@@ -86,9 +88,11 @@ function expectedPackages(
 }
 
 function registryIntegrity(packageSpec: string): string | null {
-  const viewed = spawnSync("npm", ["view", packageSpec, "dist.integrity", "--json"], {
-    encoding: "utf8",
-  });
+  const viewed = spawnSync(
+    "npm",
+    ["view", packageSpec, "dist.integrity", "--json", "--registry", NPM_REGISTRY],
+    { encoding: "utf8" },
+  );
   if (viewed.error !== undefined) {
     fail(`npm view could not start for ${packageSpec}: ${viewed.error.message}`);
   }
@@ -159,7 +163,16 @@ for (const tarball of publication) {
     );
     continue;
   }
-  const args = ["publish", tarball.path, "--access", "public", "--tag", "alpha"];
+  const args = [
+    "publish",
+    tarball.path,
+    "--registry",
+    NPM_REGISTRY,
+    "--access",
+    "public",
+    "--tag",
+    "alpha",
+  ];
   if (option === "--provenance") {
     args.push("--provenance");
   }

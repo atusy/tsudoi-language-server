@@ -30,7 +30,11 @@ test("every public package belongs to the same npm alpha release", () => {
     const expected = {
       version: RELEASE_VERSION,
       private: undefined,
-      publishConfig: { access: "public", tag: "alpha" },
+      publishConfig: {
+        access: "public",
+        registry: "https://registry.npmjs.org/",
+        tag: "alpha",
+      },
       repository: {
         type: "git",
         url: "git+https://github.com/atusy/tsudoi-language-server.git",

@@ -154,7 +154,14 @@ process.exit(2);
       .map((line) => JSON.parse(line) as string[]);
     expect(calls).toHaveLength(unpublished.length);
     expect(calls.map((args) => args.slice(2))).toEqual(
-      unpublished.map(() => ["--access", "public", "--tag", "alpha"]),
+      unpublished.map(() => [
+        "--registry",
+        "https://registry.npmjs.org/",
+        "--access",
+        "public",
+        "--tag",
+        "alpha",
+      ]),
     );
     expect(calls.map((args) => args[1])).not.toContain(
       join(destination, String(alreadyPublished?.filename)),
