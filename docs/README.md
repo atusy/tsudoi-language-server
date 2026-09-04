@@ -17,8 +17,9 @@ If you want to try tsudoi before reading the full API and installation details, 
 `@atusy/tsudoi-language-server` is published to npm under the opt-in `alpha` tag. Install the
 framework with `bun add @atusy/tsudoi-language-server@alpha` or
 `deno add npm:@atusy/tsudoi-language-server@alpha`. Install handlers with the same tag and keep the
-resolved `0.1.0-alpha.0` versions together; handlers declare that exact framework version as a
-required peer and do not install it for you.
+resolved `0.1.0-alpha.0` versions together. Handlers declare that exact framework version as a
+required peer rather than bundling their own copy; Bun and npm may auto-install required peers, but
+installing the matching framework explicitly keeps the chosen set visible.
 
 The first release keeps the untagged `latest` channel untouched. The registry commands are
 **unverified** until the first publication: nothing can run them before the package exists, and installing a tarball and
@@ -50,8 +51,8 @@ package under `packages/`, all of them linked from the table further down -- rat
 copy of it, beside the code
 it is about, and each of those documents says for itself which of its commands the suite runs and
 which it only reads. What is true of all of them is the same and is stated once, further down:
-they require the framework as an exact, versioned **peer** during alpha, and they do not install it
-for the consumer.
+they require the framework as an exact, versioned **peer** during alpha rather than bundling or
+choosing a framework copy. Bun and npm may still auto-install a required peer.
 
 ## What you need first
 
@@ -685,10 +686,11 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | [`@atusy/tsudoi-completion-document`](../packages/tsudoi-completion-document/README.md)     | `textDocument/completion`, from open documents' words |
   | [`@atusy/tsudoi-completion-shell`](../packages/tsudoi-completion-shell/README.md)           | `textDocument/completion`, from a native shell        |
 
-  **Neither brings tsudoi.** Both declare `@atusy/tsudoi-language-server` as a required, exact
-  **peer** at `0.1.0-alpha.0` — the framework is yours to choose, not a handler's, and a plain
-  dependency would leave a second copy in your `node_modules` that your CLI never runs. Install the
-  matching framework alpha beside every handler; each package does not install it for you.
+  **Neither bundles its own tsudoi.** Both declare `@atusy/tsudoi-language-server` as a required,
+  exact **peer** at `0.1.0-alpha.0` — the framework version is a host-level choice, not a handler's,
+  and a plain dependency could leave a second copy in your `node_modules` that your CLI never runs.
+  Install the matching framework alpha beside every handler explicitly; Bun and npm may otherwise
+  auto-install the required peer.
 
   **The second one answers two methods and its name says one**, which is worth reading before
   you go looking for a third package: path completion offers a directory's entries without

@@ -137,8 +137,9 @@ concluding this package is broken.
 
 This package declares `@atusy/tsudoi-language-server` as a required **peer** at
 `0.1.0-alpha.0`, the version this alpha set was tested against. The framework is yours to choose:
-a plain dependency would leave a second copy in your `node_modules` that your server never runs.
-This package does not install the framework for you, so install the matching alpha beside it.
+a plain dependency could leave a second copy in your `node_modules` that your server never runs.
+This package does not bundle or choose the framework, though Bun and npm may auto-install the
+required peer. Install the matching alpha beside it explicitly when selecting the set.
 
 **Nothing else comes with it.** Everything these handlers reach for is a `node:` builtin, so
 installing this package adds nothing to your tree but itself.

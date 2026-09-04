@@ -516,8 +516,14 @@ const facts: readonly ReadmeFact[] = [
     ],
   },
   {
-    name: "tsudoi is a required versioned peer the handler does not install",
-    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.0/, /does not install/i],
+    name: "tsudoi is a required versioned peer the handler does not bundle",
+    tokens: [
+      /required/i,
+      /peer/i,
+      /0\.1\.0-alpha\.0/,
+      /(?:does not|rather than) bundl/i,
+      /auto-install/i,
+    ],
   },
   {
     // Named because it is ASSUMED: the install step fetches tsudoi's own
@@ -749,8 +755,8 @@ const memberFacts: ReadmeFact[] = [
     tokens: [/executed/i, /never run/i, /not the command/i],
   },
   {
-    name: "tsudoi is a required versioned peer this package does not install",
-    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.0/, /does not install/i],
+    name: "tsudoi is a required versioned peer this package does not bundle",
+    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.0/, /does not bundle/i, /auto-install/i],
   },
   {
     // THE TOKEN IS DELIBERATELY GENERIC WHERE THE SENTENCE IS NOT: each
