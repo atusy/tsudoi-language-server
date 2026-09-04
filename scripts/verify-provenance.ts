@@ -29,6 +29,7 @@ function array(value: unknown, subject: string): readonly unknown[] {
 export async function verifyProvenance(
   policy: ProvenancePolicy,
   fetcher: typeof fetch = fetch,
+  bundleVerifier: (bundle: Bundle) => Promise<unknown> = verifyBundle,
 ): Promise<void> {
   const response = await fetcher(policy.attestationUrl, {
     headers: { accept: "application/json" },
@@ -44,6 +45,7 @@ export async function verifyProvenance(
   );
   if (candidate === undefined) throw new Error("attestation response has no SLSA v1 provenance");
   const bundle = object(object(candidate, "SLSA attestation").bundle, "SLSA attestation.bundle");
+  await bundleVerifier(bundle as Bundle);
   const envelope = object(bundle.dsseEnvelope, "SLSA attestation.bundle.dsseEnvelope");
   if (envelope.payloadType !== IN_TOTO_PAYLOAD || typeof envelope.payload !== "string") {
     throw new Error("SLSA attestation does not contain an in-toto payload");
@@ -96,3 +98,4 @@ export async function verifyProvenance(
   });
   if (!dependencyMatches) throw new Error("provenance commit does not match the release policy");
 }
+import { type Bundle, verify as verifyBundle } from "sigstore";

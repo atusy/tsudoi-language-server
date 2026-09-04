@@ -115,8 +115,10 @@ jobs:
           mkdir -p "$bundle/release" "$bundle/repository/scripts" "$bundle/repository/packages" "$bundle/repository/test/helpers"
           cp -R "$RUNNER_TEMP/npm-release/." "$bundle/release/"
           cp package.json "$bundle/repository/package.json"
-          cp scripts/publish-release.ts scripts/smoke-registry-release.ts scripts/verify-provenance.ts scripts/verify-registry-release.ts scripts/workspaces.ts "$bundle/repository/scripts/"
+          cp scripts/smoke-registry-release.ts scripts/workspaces.ts "$bundle/repository/scripts/"
           cp test/helpers/lsp.ts test/helpers/spawn.ts "$bundle/repository/test/helpers/"
+          bun build scripts/publish-release.ts --target=node --outfile "$bundle/repository/scripts/publish-release.js"
+          bun build scripts/verify-registry-release.ts --target=node --outfile "$bundle/repository/scripts/verify-registry-release.js"
           for member in packages/*; do
             mkdir -p "$bundle/repository/$member"
             cp "$member/package.json" "$bundle/repository/$member/package.json"
@@ -160,7 +162,7 @@ jobs:
       - name: Publish with npm Trusted Publishing
         run: |
           cd "$RUNNER_TEMP/npm-release-bundle/repository"
-          node scripts/publish-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --provenance
+          node scripts/publish-release.js "$RUNNER_TEMP/npm-release-bundle/release" --provenance
 
   verify:
     if: inputs.mode == 'publish'
@@ -191,7 +193,7 @@ jobs:
       - name: Verify registry metadata
         run: |
           cd "$RUNNER_TEMP/npm-release-bundle/repository"
-          node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance
+          node scripts/verify-registry-release.js "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance
       - name: Smoke-test fresh Bun and Deno consumers
         run: |
           cd "$RUNNER_TEMP/npm-release-bundle/repository"

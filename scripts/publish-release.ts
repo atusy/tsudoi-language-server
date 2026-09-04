@@ -4,6 +4,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { verifyProvenance } from "./verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
 interface ReleaseEntry {
@@ -27,6 +28,8 @@ interface ValidReleaseEntry {
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
 const NPM_VIEW_TIMEOUT_MS = 30_000;
+const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
+const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
 
 function fail(message: string): never {
   console.error(`publish-release: ${message}`);
@@ -156,6 +159,50 @@ function registryAlphaVersion(packageName: string): string | null {
   return version;
 }
 
+function registryAttestations(packageSpec: string): {
+  readonly url: string;
+  readonly provenance: { readonly predicateType: string };
+} {
+  const viewed = spawnSync(
+    "npm",
+    ["view", packageSpec, "dist.attestations", "--json", "--registry", NPM_REGISTRY],
+    { encoding: "utf8", timeout: NPM_VIEW_TIMEOUT_MS },
+  );
+  if (viewed.error !== undefined) {
+    fail(
+      `npm view could not complete provenance preflight for ${packageSpec}: ${viewed.error.message}`,
+    );
+  }
+  if (viewed.status !== 0) {
+    fail(`npm view failed provenance preflight for ${packageSpec}: ${viewed.stderr.trim()}`);
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(viewed.stdout);
+  } catch (cause) {
+    fail(`npm view returned invalid provenance JSON for ${packageSpec}: ${String(cause)}`);
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    fail(`${packageSpec} has no provenance metadata`);
+  }
+  const attestations = value as Record<string, unknown>;
+  const provenance = attestations.provenance;
+  if (
+    typeof attestations.url !== "string" ||
+    !attestations.url.startsWith(`${NPM_REGISTRY}-/npm/v1/attestations/`) ||
+    typeof provenance !== "object" ||
+    provenance === null ||
+    Array.isArray(provenance) ||
+    (provenance as Record<string, unknown>).predicateType !== SLSA_PROVENANCE
+  ) {
+    fail(`${packageSpec} does not expose npmjs SLSA provenance`);
+  }
+  return attestations as {
+    readonly url: string;
+    readonly provenance: { readonly predicateType: string };
+  };
+}
+
 function alphaVersionParts(version: string): readonly bigint[] {
   const match = /^(\d+)\.(\d+)\.(\d+)-alpha\.(\d+)$/.exec(version);
   if (match === null) {
@@ -244,6 +291,7 @@ const tarballs = release.packages.map((entry) => {
   return {
     entry,
     path,
+    sha512: createHash("sha512").update(bytes).digest("hex"),
     integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
   };
 });
@@ -269,6 +317,47 @@ const publication = tarballs.map((tarball) => {
   }
   return { ...tarball, published: published !== null };
 });
+
+if (option === "--provenance") {
+  const expectedRef = process.env.GITHUB_REF;
+  const expectedCommit = process.env.GITHUB_SHA;
+  if (
+    expectedRef !== `refs/tags/v${release.releaseVersion}` ||
+    expectedCommit === undefined ||
+    !/^[0-9a-f]{40}$/.test(expectedCommit)
+  ) {
+    fail("GITHUB_REF and GITHUB_SHA do not identify the exact release tag and commit");
+  }
+  const frameworkManifest = JSON.parse(
+    readFileSync(join(repoRoot, "packages/tsudoi-language-server/package.json"), "utf8"),
+  ) as { readonly repository?: { readonly url?: unknown } };
+  const repositoryValue = frameworkManifest.repository?.url;
+  if (typeof repositoryValue !== "string") fail("framework repository has no URL");
+  const repository = repositoryValue.replace(/^git\+/, "").replace(/\.git$/, "");
+  try {
+    await Promise.all(
+      publication.flatMap((tarball) => {
+        if (!tarball.published) return [];
+        const packageSpec = `${tarball.entry.name}@${tarball.entry.version}`;
+        const attestations = registryAttestations(packageSpec);
+        return [
+          verifyProvenance({
+            packageName: tarball.entry.name,
+            version: tarball.entry.version,
+            sha512: tarball.sha512,
+            attestationUrl: attestations.url,
+            repository,
+            workflowPath: RELEASE_WORKFLOW,
+            gitRef: expectedRef,
+            gitCommit: expectedCommit,
+          }),
+        ];
+      }),
+    );
+  } catch (cause) {
+    fail(`existing package provenance preflight failed: ${String(cause)}`);
+  }
+}
 
 for (const tarball of publication) {
   if (tarball.published) {

@@ -262,7 +262,7 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   ).toBeTrue();
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
   expect(verifyCommands).toContain(
-    'node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance',
+    'node scripts/verify-registry-release.js "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance',
   );
   expect(verifyCommands).toContain(
     'node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
@@ -328,7 +328,7 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     'cd "$RUNNER_TEMP/npm-release-bundle" && sha256sum --check SHA256SUMS',
   );
   expect(publishCommands).toContain(
-    'node scripts/publish-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --provenance',
+    'node scripts/publish-release.js "$RUNNER_TEMP/npm-release-bundle/release" --provenance',
   );
   expect(publishCommands).not.toContain("bun install --frozen-lockfile");
   expect(publishCommands.some((command) => command.startsWith("bun "))).toBeFalse();
@@ -379,8 +379,10 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   const bundle = prepareSteps[bundleIndex]?.run ?? "";
   expect(bundleIndex).toBeGreaterThan(packStepIndex);
   expect(bundle).toContain("scripts/smoke-registry-release.ts");
-  expect(bundle).toContain("scripts/verify-registry-release.ts");
-  expect(bundle).toContain("scripts/verify-provenance.ts");
+  expect(bundle).toContain("bun build scripts/publish-release.ts --target=node");
+  expect(bundle).toContain("scripts/publish-release.js");
+  expect(bundle).toContain("bun build scripts/verify-registry-release.ts --target=node");
+  expect(bundle).toContain("scripts/verify-registry-release.js");
   expect(bundle).toContain("scripts/workspaces.ts");
   expect(bundle).toContain("test/helpers/lsp.ts");
   expect(bundle).toContain("test/helpers/spawn.ts");

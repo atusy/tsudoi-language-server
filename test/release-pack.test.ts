@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import process from "node:process";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { buildOrder } from "../scripts/workspaces.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 import { exampleSources } from "./helpers/install.ts";
@@ -163,7 +164,7 @@ test("the publisher reports null manifest structures before contacting npm", () 
   }
 });
 
-test("the Node publisher resumes with provenance only past an identical registry artifact", () => {
+test("the publisher verifies existing provenance before resuming a matching release", () => {
   const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-resume-"));
   const destination = join(parent, "release");
   const bin = join(parent, "bin");
@@ -191,8 +192,15 @@ test("the Node publisher resumes with provenance only past an identical registry
 import { appendFileSync } from "node:fs";
 const args = process.argv.slice(2);
 if (args[0] === "view") {
-  if (args[1] === process.env.EXISTING_SPEC) {
+  if (args[1] === process.env.EXISTING_SPEC && args[2] === "dist.integrity") {
     process.stdout.write(JSON.stringify(process.env.EXISTING_INTEGRITY));
+    process.exit(0);
+  }
+  if (args[1] === process.env.EXISTING_SPEC && args[2] === "dist.attestations") {
+    process.stdout.write(JSON.stringify({
+      url: "https://registry.npmjs.org/-/npm/v1/attestations/" + args[1],
+      provenance: { predicateType: "https://slsa.dev/provenance/v1" },
+    }));
     process.exit(0);
   }
   if (args[1] === process.env.EXISTING_NAME && args[2] === "dist-tags.alpha") {
@@ -226,10 +234,33 @@ process.exit(2);
           EXISTING_VERSION: String(alreadyPublished?.version),
           EXISTING_INTEGRITY: integrity,
           PUBLISH_LOG: publishLog,
+          RELEASE_DIR: destination,
+          REPO_ROOT: repoRoot,
+          NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "test/helpers/fake-attestation-fetch.ts")).href}`,
+          GITHUB_REF: "refs/tags/v0.1.0-alpha.0",
+          GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
         },
       },
     );
-    expect(`${String(published.status)} ${published.stderr}`).toBe("0 ");
+    expect(published.status).not.toBe(0);
+    expect(published.stderr).toContain("existing package provenance preflight failed");
+    expect(existsSync(publishLog)).toBeFalse();
+
+    const resumed = spawnSync("node", ["scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: {
+        ...process.env,
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        EXISTING_SPEC: `${String(alreadyPublished?.name)}@${String(alreadyPublished?.version)}`,
+        EXISTING_NAME: String(alreadyPublished?.name),
+        EXISTING_VERSION: String(alreadyPublished?.version),
+        EXISTING_INTEGRITY: integrity,
+        PUBLISH_LOG: publishLog,
+      },
+    });
+    expect(`${String(resumed.status)} ${resumed.stderr}`).toBe("0 ");
     const calls = readFileSync(publishLog, "utf8")
       .trim()
       .split("\n")
@@ -244,7 +275,6 @@ process.exit(2);
         "public",
         "--tag",
         "alpha",
-        "--provenance",
       ]),
     );
   } finally {
