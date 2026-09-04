@@ -225,8 +225,8 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(prepareCommands).toContain("sudo apt-get install --yes fish xonsh zsh");
   expect(prepareCommands).toContain("bun install --frozen-lockfile");
   expect(prepareCommands).toContain("bun add --global oxlint@latest oxfmt@latest");
-  expect(prepareCommands).toContain('test "$(npm --version)" = "11.6.0"');
-  expect(publishCommands).toContain('test "$(npm --version)" = "11.6.0"');
+  expect(prepareCommands).toContain('test "$(npm --version)" = "11.6.1"');
+  expect(publishCommands).toContain('test "$(npm --version)" = "11.6.1"');
   expect(source).not.toContain("npm@latest");
   expect(prepareCommands).toContain("bun run scripts/definition-of-done.ts");
   expect(prepareCommands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
