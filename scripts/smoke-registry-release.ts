@@ -283,12 +283,15 @@ async function smokeDeno(
       `deno info for ${entry.name}`,
     );
     const packages = object(info.npmPackages, `deno npm packages for ${entry.name}`);
-    const installed = object(packages[`${entry.name}@${entry.version}`], entry.name);
-    if (
-      installed.name !== entry.name ||
-      installed.version !== entry.version ||
-      installed.registryUrl !== NPM_REGISTRY
-    ) {
+    const installed = Object.values(packages)
+      .map((candidate) => object(candidate, `deno npm package for ${entry.name}`))
+      .filter(
+        (candidate) =>
+          candidate.name === entry.name &&
+          candidate.version === entry.version &&
+          candidate.registryUrl === NPM_REGISTRY,
+      );
+    if (installed.length !== 1) {
       fail(`Deno did not resolve ${entry.name}@${entry.version} from npmjs`);
     }
   }

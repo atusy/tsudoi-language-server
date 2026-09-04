@@ -117,7 +117,9 @@ if (runtimeName === "bun" && args[0] === "add") {
   process.stdout.write(
     JSON.stringify({
       npmPackages: {
-        [`${name}@${releaseVersion}`]: {
+        [name === "@atusy/tsudoi-language-server"
+          ? `${name}@${releaseVersion}`
+          : `${name}@${releaseVersion}_@atusy/tsudoi-language-server@${releaseVersion}`]: {
           name,
           version: releaseVersion,
           registryUrl: "https://registry.npmjs.org/",
