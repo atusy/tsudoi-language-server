@@ -274,21 +274,21 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     "${{ github.sha }}",
   );
   expect(qualitySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
-    "node-version": "24.10.0",
+    "node-version": "24.20.0",
     "package-manager-cache": false,
   });
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
-    "node-version": "24.10.0",
+    "node-version": "24.20.0",
     "registry-url": "https://registry.npmjs.org",
     "package-manager-cache": false,
   });
   expect(publishSteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
-    "node-version": "24.10.0",
+    "node-version": "24.20.0",
     "registry-url": "https://registry.npmjs.org",
     "package-manager-cache": false,
   });
   expect(verifySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
-    "node-version": "24.10.0",
+    "node-version": "24.20.0",
     "registry-url": "https://registry.npmjs.org",
     "package-manager-cache": false,
   });
@@ -317,8 +317,8 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(qualityCommands).toContain("bun run scripts/definition-of-done.ts");
   expect(prepareCommands).toContain("bun install --frozen-lockfile");
   expect(prepareCommands).not.toContain("bun add --global oxlint@latest oxfmt@latest");
-  expect(prepareCommands).toContain('test "$(npm --version)" = "11.6.1"');
-  expect(publishCommands).toContain('test "$(npm --version)" = "11.6.1"');
+  expect(prepareCommands).toContain('test "$(npm --version)" = "11.19.0"');
+  expect(publishCommands).toContain('test "$(npm --version)" = "11.19.0"');
   expect(source).not.toContain("npm@latest");
   expect(prepareCommands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
   expect(prepareCommands).toContain(

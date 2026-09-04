@@ -41,7 +41,7 @@ jobs:
           ref: ${{ github.sha }}
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.10.0
+          node-version: 24.20.0
           package-manager-cache: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
@@ -78,7 +78,7 @@ jobs:
           fetch-depth: "0"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.10.0
+          node-version: 24.20.0
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -104,7 +104,7 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       - name: Verify the packaging npm version
-        run: test "$(npm --version)" = "11.6.1"
+        run: test "$(npm --version)" = "11.19.0"
 
       - name: Pack the release
         run: bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"
@@ -149,11 +149,11 @@ jobs:
     steps:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.10.0
+          node-version: 24.20.0
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - name: Verify the publishing npm version
-        run: test "$(npm --version)" = "11.6.1"
+        run: test "$(npm --version)" = "11.19.0"
       - name: Download the release bundle
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -176,7 +176,7 @@ jobs:
     steps:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.10.0
+          node-version: 24.20.0
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

@@ -13,8 +13,8 @@ suite. Use the same release toolchain as GitHub Actions, then verify it explicit
 command -v fish
 command -v xonsh
 command -v zsh
-test "$(node --version)" = "v24.10.0"
-test "$(npm --version)" = "11.6.1"
+test "$(node --version)" = "v24.20.0"
+test "$(npm --version)" = "11.19.0"
 test "$(bun --version)" = "1.3.13"
 test "$(deno --version | awk 'NR == 1 { print $2 }')" = "2.9.4"
 ```
