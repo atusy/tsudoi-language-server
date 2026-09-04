@@ -21,12 +21,10 @@ const config: TsudoiConfigFactory = () => {
 export default config;
 ```
 
-**It needs tsudoi at run time, whatever the manifest says.** `@atusy/tsudoi-language-server` is
-declared an **optional** peer here, and that is knowingly false — this package imports from it and
-its handlers are meaningful nowhere else. The flag buys installability while tsudoi is
-**unpublished**; install this package without it and the first thing you see is
-`Cannot find module '@atusy/tsudoi-language-server/types'`. Nothing corrects the manifest anywhere
-except this paragraph.
+**It needs tsudoi at run time.** `@atusy/tsudoi-language-server` is a required **peer** at
+`0.1.0-alpha.0`, the version this alpha set was tested against. This package does not install the
+framework for you: the host chooses the copy its CLI runs, while this package supplies handlers to
+that host.
 
 ## What it reads
 
@@ -77,10 +75,13 @@ this is no safer and no more dangerous than running efm itself.
 
 ## Installing it
 
-Neither this package nor tsudoi is published to any registry. The working route is a local
-tarball built out of a checkout, and it assumes you have already installed tsudoi itself — the
-quickstart in the [repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart) is
-what does that.
+Install the matching npm alphas together with
+`bun add @atusy/tsudoi-language-server@alpha @atusy/tsudoi-adapter-efm-config@alpha`.
+
+For testing a source checkout, the local tarball route below assumes you have already installed
+tsudoi itself — the quickstart in the
+[repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart)
+does that.
 
 Packing compiles the package, and its build reaches tsudoi through a link inside the checkout
 that `bun install` does not create. In a checkout where nothing else has run, the pack fails

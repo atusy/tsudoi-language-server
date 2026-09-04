@@ -111,21 +111,15 @@ test("only the built output ships, so no consumer receives a line of source", ()
  * toolchain answers or skips. Declaring it a runtime dependency would install a
  * types package into projects that never type-check.
  *
- * `peerDependenciesMeta.optional` IS THE RESIDUAL AND IT IS NOT COMFORTABLE. It
- * reads as `this package works without tsudoi`, WHICH IS FALSE -- both handlers
- * are typed against it and one imports a value from it, so a consumer without
- * tsudoi fails at config load. What it actually buys is that no installer goes
- * looking in a registry for a package NOTHING HAS PUBLISHED: without it
- * `bun install` in this workspace exits 1 on a 404 for
- * @atusy/tsudoi-language-server, and so does a consumer's. IT SHOULD BE DELETED
- * THE DAY TSUDOI IS PUBLISHED, and what makes that unmissable is a root test
- * tying the reversal to the README section that states the premise.
+ * THE VERSION IS EXACT DURING ALPHA. One number identifies the package set the
+ * repository tested together; a later alpha updates the framework, handler and
+ * workspace declaration in one release change.
  */
 test("tsudoi is a peer this package cannot install, and nothing else is a dependency", () => {
-  expect(manifest.peerDependencies).toEqual({ "@atusy/tsudoi-language-server": "*" });
-  expect(manifest.peerDependenciesMeta).toEqual({
-    "@atusy/tsudoi-language-server": { optional: true },
+  expect(manifest.peerDependencies).toEqual({
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
   });
+  expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toBeUndefined();
   expect(manifest.devDependencies).toEqual({
     "@types/node": "^24.0.0",

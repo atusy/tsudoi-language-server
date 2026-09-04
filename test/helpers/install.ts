@@ -340,17 +340,29 @@ export async function installConsumer(options: InstallOptions = {}): Promise<Ins
 
     writeFileSync(
       join(consumer, "package.json"),
-      JSON.stringify({ name: "tsudoi-consumer", version: "1.0.0", type: "module", private: true }),
+      JSON.stringify({
+        name: "tsudoi-consumer",
+        version: "1.0.0",
+        type: "module",
+        private: true,
+        overrides: { "@atusy/tsudoi-language-server": tarball },
+      }),
     );
-    // EVERY TARBALL IN ONE `bun install`, AND IT IS NOT A ROUTE ANY README
-    // STATES: the three of them carry three SEPARATE one-tarball installs, and
-    // nothing here reproduces that sequence. What the one command must leave
-    // standing is the PEER -- each handler declares tsudoi as a peer rather than
-    // a dependency, so it finds the consumer's copy by walking up rather than
-    // carrying one of its own -- and tsudoi's own tarball is in the same command.
-    const installed = await run("bun", ["install", tarball, ...handlerTarballs], consumer);
-    if (installed.code !== 0) {
-      fail("bun install", installed);
+    // CORE FIRST IS THE PUBLISHED GRAPH'S ORDER, not ceremony. A handler's peer
+    // is required now and the package is still absent from the registry during
+    // bootstrap; handing every tarball to one Bun invocation makes Bun look the
+    // peer up remotely before it has linked the local core tarball. Installing
+    // core first both exercises the real release order and leaves the peer in
+    // place for the handler install that follows. The override above prevents
+    // Bun from replacing that explicit tarball with a registry lookup during
+    // the bootstrap window; the manifest contract is graded separately.
+    const installedFramework = await run("bun", ["install", tarball], consumer);
+    if (installedFramework.code !== 0) {
+      fail("bun install (framework)", installedFramework);
+    }
+    const installedHandlers = await run("bun", ["install", ...handlerTarballs], consumer);
+    if (installedHandlers.code !== 0) {
+      fail("bun install (handlers)", installedHandlers);
     }
     // @types/node BORROWED and `wordnet` deliberately NOT: the handler package
     // declares wordnet, so the install above fetches it BY THE ROUTE UNDER TEST

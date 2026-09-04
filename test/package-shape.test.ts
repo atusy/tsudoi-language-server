@@ -598,7 +598,7 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 // and the whole map IS the public surface, a second script takes nothing away
 // from this one.
 test("packing builds, so a stale dist cannot be published", () => {
-  expect(scripts?.prepack).toBe("tsc -p tsconfig.build.json");
+  expect(scripts?.prepack).toBe("rm -rf dist && tsc -p tsconfig.build.json");
 });
 
 /**
@@ -696,7 +696,7 @@ test("the compiler prepack builds with is pinned by this repo, at a version it d
   // 4. prepack names it by BARE NAME. An absolute path would be someone's
   //    machine, and `npx tsc` would be the network's choice rather than this
   //    repo's; only the bare name takes the resolution steps 2 and 3 pin.
-  expect(scripts?.prepack.split(" ")[0]).toBe("tsc");
+  expect(scripts?.prepack.split(" && ").at(-1)?.split(" ")[0]).toBe("tsc");
 });
 
 // ITS PAIR is not a probe that writes a deno.json to prove existsSync works --

@@ -1,7 +1,12 @@
 {
   "name": "@atusy/tsudoi-completion-dictionary",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atusy/tsudoi-language-server.git",
+    "directory": "packages/tsudoi-completion-dictionary"
+  },
   "files": [
     "dist"
   ],
@@ -12,6 +17,10 @@
       "import": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
+  },
   "scripts": {
     "prepack": "rm -rf dist && tsc -p tsconfig.build.json"
   },
@@ -20,11 +29,6 @@
     "@types/node": "^24.0.0"
   },
   "peerDependencies": {
-    "@atusy/tsudoi-language-server": "*"
-  },
-  "peerDependenciesMeta": {
-    "@atusy/tsudoi-language-server": {
-      "optional": true
-    }
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.0"
   }
 }

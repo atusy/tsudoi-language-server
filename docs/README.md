@@ -10,20 +10,24 @@ The server runs under [bun](https://bun.sh/docs/installation) and under
 artifact.
 
 If you want to try tsudoi before reading the full API and installation details, start with the
-[GitHub-based Deno starter](../README.md#try-it-from-github) in the project overview.
+[GitHub-based Deno starter](../README.md#try-the-npm-alpha) in the project overview.
 
-## The package is not published
+## Install the npm alpha
 
-`@atusy/tsudoi-language-server` is **not published** to npm or to any other registry.
+`@atusy/tsudoi-language-server` is published to npm under the opt-in `alpha` tag. Install the
+framework with `bun add @atusy/tsudoi-language-server@alpha` or
+`deno add npm:@atusy/tsudoi-language-server@alpha`. Install handlers with the same tag and keep the
+resolved `0.1.0-alpha.0` versions together; handlers declare that exact framework version as a
+required peer and do not install it for you.
 
-Once it is, `bun add @atusy/tsudoi-language-server` and `deno add npm:@atusy/tsudoi-language-server` are the intended way to get
-it -- and both are **unverified**: nothing has ever run them, and installing a tarball and
+The first release keeps the untagged `latest` channel untouched. The registry commands are
+**unverified** until the first publication: nothing can run them before the package exists, and installing a tarball and
 resolving `npm:` through deno's own cache are different mechanisms, so one of them working says
 little about the other.
 
-For Bun, or when you want an installed artifact, the working route is the one below: build a
-tarball out of a checkout and install that. For a shorter Deno-only route, use the
-[GitHub starter](../README.md#try-it-from-github). The tarball route is the one the test suite
+For developing tsudoi itself, the checkout route below builds a tarball and installs that exact
+artifact. For a shorter Deno-only route, use the
+[GitHub starter](../README.md#try-the-npm-alpha). The tarball route is the one the test suite
 runs, and it runs it from this file's own bytes. **The
 quickstart's commands are extracted from this README and executed**, under both runtimes, so an
 instruction there that no longer works fails the suite. **Every fenced block in this document is
@@ -46,8 +50,8 @@ package under `packages/`, all of them linked from the table further down -- rat
 copy of it, beside the code
 it is about, and each of those documents says for itself which of its commands the suite runs and
 which it only reads. What is true of all of them is the same and is stated once, further down:
-they are **peers** of tsudoi, their manifests say `optional` and that is false, and nothing
-corrects it anywhere a reader who installed one will look except in that package's own README.
+they require the framework as an exact, versioned **peer** during alpha, and they do not install it
+for the consumer.
 
 ## What you need first
 
@@ -681,15 +685,10 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | [`@atusy/tsudoi-completion-document`](../packages/tsudoi-completion-document/README.md)     | `textDocument/completion`, from open documents' words |
   | [`@atusy/tsudoi-completion-shell`](../packages/tsudoi-completion-shell/README.md)           | `textDocument/completion`, from a native shell        |
 
-  **Neither brings tsudoi, and neither manifest will warn you.** Both declare
-  `@atusy/tsudoi-language-server` as a **peer** — the framework is yours to choose, not a
-  handler's, and a plain dependency would pin a range of its own and leave a second copy in your
-  `node_modules` that your CLI never runs — and both mark that peer `optional`. That flag reads
-  as _this works without tsudoi_ and is FALSE: each imports a value from it, and a project that
-  installed only a handler fails at load with
-  `Cannot find module '@atusy/tsudoi-language-server/deps/types'`. The flag buys one thing and
-  buys it only while tsudoi is **unpublished**, which is the section at the top of this file: put
-  a handler into the project that already has tsudoi, never into an empty one.
+  **Neither brings tsudoi.** Both declare `@atusy/tsudoi-language-server` as a required, exact
+  **peer** at `0.1.0-alpha.0` — the framework is yours to choose, not a handler's, and a plain
+  dependency would leave a second copy in your `node_modules` that your CLI never runs. Install the
+  matching framework alpha beside every handler; each package does not install it for you.
 
   **The second one answers two methods and its name says one**, which is worth reading before
   you go looking for a third package: path completion offers a directory's entries without

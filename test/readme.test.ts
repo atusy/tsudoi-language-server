@@ -26,7 +26,7 @@ import {
   runQuickstart,
   runQuickstartWithBrokenConfig,
   sequenceFor,
-  UNPUBLISHED,
+  ALPHA_RELEASE,
 } from "./helpers/readme.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
 
@@ -516,21 +516,8 @@ const facts: readonly ReadmeFact[] = [
     ],
   },
   {
-    // THE ONE PLACE A CONSUMER-FACING FALSEHOOD CAN BE CORRECTED:
-    // `peerDependenciesMeta.optional` is in the handler's manifest, which SHIPS,
-    // and the account of why it is there is in that package's own test, which
-    // `files: ["dist"]` keeps out of the tarball.
-    //
-    // THE PEER AND THE FLAG ARE ONE ENTRY BECAUSE THEY ARE ONE READING. `peer`
-    // alone tells a reader to install tsudoi; `optional` alone tells them not
-    // to bother. A document carrying either without the other is worse than one
-    // carrying neither.
-    //
-    // THE FAILURE TEXT IS A TOKEN so the correction is findable by someone who
-    // already hit it and is searching for the string in front of them: the
-    // install itself exits 0 with no warning, and the throw arrives at load.
-    name: "tsudoi is a peer the handler does not install, and `optional` does not mean otherwise",
-    tokens: [/peer/i, /optional/, /Cannot find module/, /unpublished/i],
+    name: "tsudoi is a required versioned peer the handler does not install",
+    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.0/, /does not install/i],
   },
   {
     // Named because it is ASSUMED: the install step fetches tsudoi's own
@@ -580,10 +567,7 @@ const facts: readonly ReadmeFact[] = [
     name: "protocol names come from the deps subpaths, and tsudoi's own from ./types",
     tokens: [/deps\/protocol/, /deps\/types/, /deps\/textdocument/, /CompletionItemKind/, /value/i],
   },
-  // SHARED WITH test/optional-peer-premise.test.ts RATHER THAN SPELLED TWICE:
-  // two spellings of one premise would let the two disagree about which section
-  // states it.
-  UNPUBLISHED,
+  ALPHA_RELEASE,
   {
     // WHAT THIS DOCUMENT PROMISES ABOUT ITSELF, owed because the promise is the
     // reason a reader trusts a command here over one in a blog post. A promise
@@ -604,11 +588,9 @@ const facts: readonly ReadmeFact[] = [
   },
   {
     // THE RIGHT BOUNDARY IS WHAT MAKES THESE TOKENS A CONTROL RATHER THAN A
-    // SHAPE. Every other command this file matches is also EXECUTED, so a wrong
-    // spelling fails by running; these two cannot be, the package being
-    // unpublished. This fact is their only spelling control, and an unbounded
-    // pattern gives it away: this package's name is a PREFIX of every name that
-    // extends it, so a README telling a reader to install
+    // SHAPE. Registry commands cannot run in the pre-publication suite, so this
+    // fact is their spelling control. An unbounded pattern gives it away: this
+    // package's name is a PREFIX of every name that extends it, so a README telling a reader to install
     // `...-language-server-wrong` satisfies all three tokens.
     //
     // THE COMPLETE INLINE COMMAND WOULD BE STRICTER AND IS DECLINED: the
@@ -767,16 +749,8 @@ const memberFacts: ReadmeFact[] = [
     tokens: [/executed/i, /never run/i, /not the command/i],
   },
   {
-    // THE FALSEHOOD THE MANIFEST SHIPS, CORRECTED WHERE ITS READER IS: the same
-    // reading the root document owes a maintainer, owed again because a stranger
-    // who installed the package sees only this file.
-    //
-    // THE PEER AND THE FLAG ARE ONE ENTRY BECAUSE THEY ARE ONE READING. `peer`
-    // alone tells a reader to install tsudoi; `optional` alone tells them not to
-    // bother. `unpublished` is here because it is the PREMISE: the day it stops
-    // holding, the flag is a lie with nothing bought by it.
-    name: "tsudoi is a peer this package does not install, and `optional` does not mean otherwise",
-    tokens: [/peer/i, /optional/, /Cannot find module/, /unpublished/i],
+    name: "tsudoi is a required versioned peer this package does not install",
+    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.0/, /does not install/i],
   },
   {
     // THE TOKEN IS DELIBERATELY GENERIC WHERE THE SENTENCE IS NOT: each
