@@ -219,6 +219,112 @@ test("the publisher refuses a checksummed tarball carrying another package ident
   }
 });
 
+test("the publisher checks every local tarball before contacting npm", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-local-preflight-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  const npmLog = join(parent, "npm.jsonl");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(packed.status).toBe(0);
+    const manifest = JSON.parse(
+      readFileSync(join(destination, "release-manifest.json"), "utf8"),
+    ) as ReleaseManifest;
+    const last = manifest.packages?.at(-1);
+    expect(last).toBeDefined();
+    writeFileSync(join(destination, String(last?.filename)), "tampered\n");
+
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(
+      fakeNpm,
+      `#!/usr/bin/env node
+import { appendFileSync } from "node:fs";
+appendFileSync(process.env.NPM_LOG, JSON.stringify(process.argv.slice(2)) + "\\n");
+process.exit(2);
+`,
+    );
+    chmodSync(fakeNpm, 0o755);
+    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        NPM_LOG: npmLog,
+      },
+    });
+    expect(published.status).not.toBe(0);
+    expect(published.stderr).toContain("release tarball checksum does not match");
+    expect(existsSync(npmLog)).toBeFalse();
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("the publisher completes registry preflight before publishing anything", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-registry-preflight-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  const npmLog = join(parent, "npm.jsonl");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(packed.status).toBe(0);
+    const manifest = JSON.parse(
+      readFileSync(join(destination, "release-manifest.json"), "utf8"),
+    ) as ReleaseManifest;
+    const mismatch = manifest.packages?.at(-1);
+    expect(mismatch).toBeDefined();
+
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(
+      fakeNpm,
+      `#!/usr/bin/env node
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+appendFileSync(process.env.NPM_LOG, JSON.stringify(args) + "\\n");
+if (args[0] === "view" && args[1] === process.env.MISMATCH_SPEC && args[2] === "dist.integrity") {
+  process.stdout.write(JSON.stringify("sha512-AAAAAAAA"));
+  process.exit(0);
+}
+if (args[0] === "view") {
+  console.error("npm error code E404");
+  process.exit(1);
+}
+process.exit(args[0] === "publish" ? 0 : 2);
+`,
+    );
+    chmodSync(fakeNpm, 0o755);
+    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        MISMATCH_SPEC: `${String(mismatch?.name)}@${String(mismatch?.version)}`,
+        NPM_LOG: npmLog,
+      },
+    });
+    expect(published.status).not.toBe(0);
+    expect(published.stderr).toContain("registry integrity does not match");
+    const calls = readFileSync(npmLog, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as string[]);
+    expect(calls.some(([command]) => command === "publish")).toBeFalse();
+    expect(calls.at(-2)?.[1]).toBe(`${String(mismatch?.name)}@${String(mismatch?.version)}`);
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
 test("the publisher refuses to roll an alpha dist-tag back", () => {
   const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-rollback-"));
   const destination = join(parent, "release");
