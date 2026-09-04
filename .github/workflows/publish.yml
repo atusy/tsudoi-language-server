@@ -44,6 +44,8 @@ jobs:
           test "$RELEASE_TAG" = "v${release_version}"
           tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")"
           test "$(git rev-parse HEAD)" = "$tag_commit"
+          test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"
+          test "$GITHUB_SHA" = "$tag_commit"
 
       - name: Install shell test prerequisites
         run: |

@@ -199,6 +199,8 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   );
   expect(source).toContain("refs/tags/$RELEASE_TAG");
   expect(source).toContain("v${release_version}");
+  expect(source).toContain('test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"');
+  expect(source).toContain('test "$GITHUB_SHA" = "$tag_commit"');
   expect(source).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN|secrets\./);
 
   const definitionIndex = commands.indexOf("bun run scripts/definition-of-done.ts");

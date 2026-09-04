@@ -70,11 +70,13 @@ git switch main
 git pull --ff-only origin main
 git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
 git push origin v0.1.0-alpha.1
-gh workflow run publish.yml --ref main -f release-tag=v0.1.0-alpha.1
+gh workflow run publish.yml --ref v0.1.0-alpha.1 -f release-tag=v0.1.0-alpha.1
 ```
 
-Approve the `npm` environment deployment after inspecting the requested tag. The job checks that
-the tag, checked-out commit, and package version agree; installs the latest `oxlint` and `oxfmt`;
-runs the complete Definition of Done under Bun and Deno; packs a fresh checksummed release; and
-publishes through OIDC with provenance. Re-running the job is safe only for registry artifacts whose
-integrity matches the freshly packed tarballs; any other existing artifact is refused.
+Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is
+dispatched from that tag so npm's provenance names the release ref and commit. The job checks that
+the event ref, event commit, checked-out commit, tag, and package version agree; installs the latest
+`oxlint` and `oxfmt`; runs the complete Definition of Done under Bun and Deno; packs a fresh
+checksummed release; and publishes through OIDC with provenance. Re-running the job is safe only for
+registry artifacts whose integrity matches the freshly packed tarballs; any other existing artifact
+is refused.
