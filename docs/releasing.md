@@ -13,6 +13,7 @@ clean `main`, not from the pull-request branch:
 git switch main
 git pull --ff-only origin main
 git status --short
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 npm whoami --registry=https://registry.npmjs.org/
 bun install --frozen-lockfile
 bun add --global oxlint@latest oxfmt@latest
@@ -55,10 +56,12 @@ Publisher** with these exact values:
 - Allowed actions: `npm publish`
 
 In the GitHub repository, create or review the `npm` environment and require an appropriate
-reviewer before deployment. Do not add an npm token to repository or environment secrets. The
-workflow requests `id-token: write` and uses npm Trusted Publishing's short-lived OIDC credential.
-See npm's [Trusted Publishing documentation](https://docs.npmjs.com/trusted-publishers/) and
-GitHub's [deployment environment documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
+reviewer before deployment. Add a repository ruleset that restricts creation and update of
+`v*-alpha.*` tags to release maintainers. Do not add an npm token to repository or environment
+secrets. The workflow requests `id-token: write` and uses npm Trusted Publishing's short-lived OIDC
+credential. See npm's
+[Trusted Publishing documentation](https://docs.npmjs.com/trusted-publishers/) and GitHub's
+[deployment environment documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
 ## Later alpha releases
 

@@ -46,6 +46,8 @@ jobs:
           test "$(git rev-parse HEAD)" = "$tag_commit"
           test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"
           test "$GITHUB_SHA" = "$tag_commit"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main
 
       - name: Install shell test prerequisites
         run: |
