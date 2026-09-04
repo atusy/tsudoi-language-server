@@ -16,8 +16,11 @@ If you want to try tsudoi before reading the full API and installation details, 
 
 `@atusy/tsudoi-language-server` is published to npm under the opt-in `alpha` tag. Install the
 framework with `bun add @atusy/tsudoi-language-server@alpha` or
-`deno add npm:@atusy/tsudoi-language-server@alpha`. Install handlers with the same tag and keep the
-resolved `0.1.0-alpha.0` versions together. Handlers declare that exact framework version as a
+`deno add --save-exact npm:@atusy/tsudoi-language-server@alpha`. Install handlers with the same tag
+and keep the resolved `0.1.0-alpha.0` versions together. In a Deno-only project, start the server
+through its exported CLI with
+`deno run -A --frozen --node-modules-dir=none @atusy/tsudoi-language-server/cli --config ./tsudoi.config.ts`.
+Handlers declare that exact framework version as a
 required peer rather than bundling their own copy; Bun and npm may auto-install required peers, but
 installing the matching framework explicitly keeps the chosen set visible.
 
@@ -102,12 +105,10 @@ member reachable only through the `dist/` its own build writes. Run `bun test` f
 `bun run scripts/typecheck-workspaces.ts`, which builds before it checks; both leave the tree
 in a state `tsc --noEmit` reads.
 
-**It does not name tsudoi itself, and that is a known gap rather than a sign tsudoi is fine.**
-tsudoi's `exports` map ends in a source arm, so in that same unbuilt state the compiler quietly
-reads its sources instead of the artifact and says nothing -- while both runtimes fail loudly.
-A handler's map has no such arm, which is why only the handlers are named. The fifth command
-refuses a published subpath that answers from anywhere but the artifact, but it builds first, so
-what it catches is an artifact that survived a build rather than a checkout nobody has built.
+The framework is named too: all of its export conditions point into `dist/`, so the compiler,
+Bun, and Deno fail instead of silently substituting source that a registry consumer never receives.
+The fifth command additionally refuses a published subpath that answers from anywhere but the
+artifact after the build.
 
 No `paths` mapping stands in for any of this, anywhere: tsudoi is a workspace member like the
 handlers, and a mapping would let a type check answer a package's imports without its own

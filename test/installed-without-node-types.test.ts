@@ -36,11 +36,9 @@ applySuiteDeadline();
  * test/helpers/typecheck.ts's `consumerCompilerOptions`, so THE PROBE HARNESS
  * ITSELF WAS BLIND, not merely the build.
  *
- * THROUGH installConsumer, NOT typeCheckProbe, and the two are not
- * interchangeable: the in-repo arm resolves the exports map's `default`
- * straight at packages/tsudoi-language-server/src/types.ts, so it observes a
- * file rather than what ships. test/published-artifacts.test.ts measures that
- * difference directly.
+ * THROUGH installConsumer, not only typeCheckProbe: both resolve the built
+ * declaration, while this fixture additionally proves the package works with
+ * no Node typings installed by the consumer.
  *
  * EVERYTHING HERE IS BORN GREEN, stated plainly rather than dressed up: the
  * specifier already behaves this way, and what was missing is the CHECK. So the

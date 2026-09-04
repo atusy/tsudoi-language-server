@@ -12,30 +12,35 @@
   ],
   "type": "module",
   "exports": {
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js",
+      "default": "./dist/cli.js"
+    },
     "./deps/error": {
       "types": "./dist/deps/error.d.ts",
       "import": "./dist/deps/error.js",
-      "default": "./src/deps/error.ts"
+      "default": "./dist/deps/error.js"
     },
     "./deps/protocol": {
       "types": "./dist/deps/protocol.d.ts",
       "import": "./dist/deps/protocol.js",
-      "default": "./src/deps/protocol.ts"
+      "default": "./dist/deps/protocol.js"
     },
     "./deps/textdocument": {
       "types": "./dist/deps/textdocument.d.ts",
       "import": "./dist/deps/textdocument.js",
-      "default": "./src/deps/textdocument.ts"
+      "default": "./dist/deps/textdocument.js"
     },
     "./deps/types": {
       "types": "./dist/deps/types.d.ts",
       "import": "./dist/deps/types.js",
-      "default": "./src/deps/types.ts"
+      "default": "./dist/deps/types.js"
     },
     "./types": {
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js",
-      "default": "./src/types.ts"
+      "default": "./dist/types.js"
     }
   },
   "publishConfig": {
@@ -51,6 +56,6 @@
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.18.0"
   },
-  "//exports": "SUPERSEDES the note this key carried through sprint 9, which said an installed copy CANNOT run under deno and that main/bin belong elsewhere. That is now false: this package ships COMPILED .js built by prepack, and deno's restriction is on type-STRIPPING under node_modules, not on running .js from there. The published surface is dist/ alone -- src/ is deliberately NOT shipped, so no user can aim a runtime at a .ts entry point under node_modules and hit that error at all. There is still no `main`, no `.` export and no `bin`. The map's three arms and the reason for each, the refusal of `bin`, and why JSR was measured and declined are asserted in test/package-shape.test.ts: package.json cannot carry comments, oxfmt sorts this key to the tail, and a test is the one home for a reason that fails when someone violates it.",
+  "//exports": "The published surface is dist/ alone: every conditional export names a compiled file included by `files`, including the CLI subpath used by Deno's npm resolver. There is no package-root export, `main`, or `bin`. The complete map and those refusals are asserted in test/package-shape.test.ts; package.json cannot carry comments, so this field links the declaration to its rationale.",
   "//publishConfig": "PUBLIC AND ALPHA ARE DECLARED HERE AS PACKAGE DATA, not remembered as command flags. The access is required for a scoped first publication, and the tag keeps a pre-stable release away from npm's default latest channel. test/release-package-set.test.ts applies the same contract to every public member."
 }

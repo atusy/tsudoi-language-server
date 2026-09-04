@@ -16,52 +16,12 @@
 # dist/ -- so the build below is load-bearing for MORE routes than it was, not
 # fewer.
 #
-# AND WITH dist/ ABSENT THE THREE STOP AGREEING, WHICH IS A NAMED, ACCEPTED
-# RESIDUE AND NOT A THING THIS FILE FIXES. MEASURED on a tree with every dist/
-# removed: the runtimes fail loudly, but tsc alone probes for the file, falls
-# through the map's `default: ./src/*.ts` arm and reads
-# packages/tsudoi-language-server/src/types.ts -- exiting with only the two
-# errors the HANDLER packages produce, whose own maps name no source arm.
-# RE-MEASURED at sprint 58 with the FRAMEWORK'S dist/ alone moved aside, which
-# isolates it: tsc then exits 0 with no diagnostic at all.
-#
-# THE SEPARATE DECISION THIS PARAGRAPH DEFERRED WAS TAKEN, AND IT REFUSED THE
-# DELETION. Removing the `default` arms makes the absent state loud -- TS2307
-# naming the framework's own subpaths, exactly as a handler already fails -- and
-# leaves every reader answering from the same file with the artifact present. It
-# is refused by the cost: three arms in this suite reach the framework through a
-# probe whose tree has the manifest and a symlinked src/ and NO dist/, so the
-# deletion turns graded resolutions into missing files. What landed instead is a
-# refusal on the FIFTH check -- `refuseSubpathsAnsweringFromSource` in
-# scripts/workspaces.ts -- which is narrower than this residue: it runs AFTER a
-# build and says nothing about the bare `tsc --noEmit` this paragraph is about.
-#
-# AND THE STATE THIS PARAGRAPH DESCRIBES HAS A NAMED PRODUCER, WHERE IT USED TO
-# READ AS IF IT TOOK A TARGETED DELETE. MEASURED END TO END at sprint 61 on a
-# staged tree nobody had built, tsc 7.0.2 at base 6d1c85d: `bun pm pack` in one
-# handler package and then in the other -- each in the member it is documented
-# for -- EXITS 0 and produces its tarball, because the prepack compiler answers
-# `@atusy/tsudoi-language-server/{types,deps/types,deps/protocol}` from
-# packages/tsudoi-language-server/src/*.ts and never notices the artifact it was
-# promised is missing. THREE AND NOT TWO, because this trace is the UNION OVER
-# BOTH PACKS: ONE handler's own build answers fewer subpaths, which is a
-# different measurement, and both are right. After the first pack the root check
-# is exit 1 with ONE error; AFTER THE SECOND IT IS EXIT 0 AND SILENT, with
-# packages/tsudoi-language-server/dist/ still absent -- the residue above,
-# arrived at by two documented commands. THE FRAMEWORK MEMBER IS NAMED AND NOT
-# CALLED `this package`: this file sits at the CHECKOUT ROOT, whose own package
-# is the private workspace -- it has no tsconfig.build.json, is never built, and
-# has no dist/ for any of this to be about.
-#
-# CONSTRAINED, BECAUSE THE HONEST CLAIM IS NARROWER THAN THE ALARMING ONE: NO
-# SINGLE INVOCATION THIS REPOSITORY OWNS PRODUCES THAT STATE. The preload below
-# and the fifth check both build the framework member first, and test/helpers/install.ts
-# packs the handlers only after the preload has built. What produces it is TWO
-# DOCUMENTED COMMANDS IN AN ORDER NOTHING FORBIDS, and nothing runs that route
-# today -- so what changed is that the cell no longer needs a hand-made deletion,
-# not that anything here reaches it. WHAT WRITES AND WHAT REMOVES A dist/ IS
-# ENUMERATED AT `prepareWorkspace` in scripts/workspaces.ts, and what the whole
-# arrangement does to the fourth check's colour is at test/helpers/build.ts.
+# With dist/ absent, Bun, Deno, and tsc now agree: every published export
+# condition targets compiled output, so all three fail loudly rather than
+# substituting source a registry consumer never receives. The preload builds the
+# framework before its handlers so each one is checked against current
+# declarations. `test/unbuilt-artifact.test.ts` covers partial and absent output;
+# `refuseSubpathsAnsweringFromSource` covers the successful post-build route.
 #
 # MEASURED ON THIS TREE, AND RECORDED AS WHAT REDDENS RATHER THAN AS A COUNT. A
 # number written here goes stale with nobody editing it -- the suite grows and

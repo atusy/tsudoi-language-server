@@ -222,14 +222,11 @@ export function mirrorInstalledDependencies(into: string): void {
  * that removing the exports entry makes the same check fail, and that half can
  * only be observed against a package.json nobody ships.
  *
- * package.json is COPIED from the repo and src/ is SYMLINKED to it, so these
- * tests track the identity and the module that actually ship. The installed
- * dependencies are MIRRORED rather than installed --
- * packages/tsudoi-language-server/src/types.ts imports tsudoi's own declared
- * dependencies, and installing them per probe would cost a network fetch to
- * prove nothing. Named that way rather than listed: the set of declared
- * dependencies grows, and a comment that spells it out goes stale at the next
- * one.
+ * package.json and dist/ exercise the same declarations a packed consumer
+ * receives. src/ is also linked for tests that deliberately import a source
+ * file by relative path; package subpaths cannot reach it. The installed
+ * dependencies are MIRRORED rather than installed; installing them per probe
+ * would cost a network fetch to prove nothing.
  */
 export async function typeCheckProbe(
   files: Record<string, string>,
@@ -237,15 +234,16 @@ export async function typeCheckProbe(
 ): Promise<TypeCheckResult> {
   const dir = mkdtempSync(join(tmpdir(), "tsudoi-tsc-"));
   try {
-    // THE FRAMEWORK'S MANIFEST AND ITS SOURCE, WHICH ARE NO LONGER THE CHECKOUT
-    // ROOT'S. This probe stages a copy of THE PACKAGE -- its `exports` map is
-    // what answers the specifiers the probes write, and the workspace root's
-    // manifest carries none.
+    // THE FRAMEWORK'S MANIFEST AND BUILT ARTIFACT, WHICH ARE NO LONGER THE
+    // CHECKOUT ROOT'S. This probe stages a copy of THE PACKAGE -- its `exports`
+    // map is what answers the specifiers the probes write, and the workspace
+    // root's manifest carries none.
     const packageJson: Record<string, unknown> = JSON.parse(
       readFileSync(join(frameworkRoot, "package.json"), "utf8"),
     ) as Record<string, unknown>;
     editPackage(packageJson);
     writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson, null, 2));
+    symlinkSync(join(frameworkRoot, "dist"), join(dir, "dist"), "dir");
     symlinkSync(join(frameworkRoot, "src"), join(dir, "src"), "dir");
     mirrorInstalledDependencies(dir);
     writeFileSync(

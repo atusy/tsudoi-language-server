@@ -46,8 +46,10 @@ export default config;
 
 The first npm release is an opt-in alpha. Install the framework and whichever handlers you want
 with `bun add @atusy/tsudoi-language-server@alpha`, or use
-`deno add npm:@atusy/tsudoi-language-server@alpha` in a Deno project. All tsudoi packages in one
-project should use the same alpha version.
+`deno add --save-exact npm:@atusy/tsudoi-language-server@alpha` in a Deno project. Deno users run
+the installed CLI with
+`deno run -A --frozen --node-modules-dir=none @atusy/tsudoi-language-server/cli --config ./tsudoi.config.ts`.
+All tsudoi packages in one project should use the same alpha version.
 
 You can also try a pinned repository snapshot without cloning or building this repository. With
 [Deno](https://docs.deno.com/runtime/getting_started/installation/) installed, download the

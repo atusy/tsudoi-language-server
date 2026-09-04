@@ -607,7 +607,8 @@ const facts: readonly ReadmeFact[] = [
     name: "the registry route is intended and unverified",
     tokens: [
       /bun add @atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
-      /deno add npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+      /deno add --save-exact npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+      /deno run -A --frozen --node-modules-dir=none @atusy\/tsudoi-language-server\/cli/,
       /unverified/i,
     ],
   },
@@ -838,10 +839,8 @@ const publishedExports = Object.keys(
 ).sort();
 
 /**
- * THE CLI PATH IS NOT A SUBPATH, and the lookbehind is what says so:
- * `node_modules/@atusy/tsudoi-language-server/dist/cli.js` is a path INTO the
- * installed package that the quickstart tells a reader to run, reached by
- * walking the tree rather than through the exports map.
+ * The checkout quickstart's node_modules path is not a subpath; the registry
+ * route's `/cli` spelling is and must remain in step with the exports map.
  */
 function subpathsNamed(markdown: string): string[] {
   return [

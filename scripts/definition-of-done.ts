@@ -57,17 +57,11 @@ import { fileURLToPath } from "node:url";
  * and the order is the dashboard's, never this file's.
  *
  * AND THAT ORDER IS WHAT LETS A READER DECIDE, IN ONE STEP, WHAT A GREEN FOURTH
- * CHECK MEANT. The framework's `exports` map ends in a source arm, so
- * `tsc --noEmit` answers its published subpaths from dist/ when the artifact is
- * there and FROM src/ AT EXIT 0 WHEN IT IS NOT.
- * A GREEN FOURTH CHECK PRINTED BY THIS RUNNER WAS READ FROM dist/ -- PROVIDED
- * THE FIRST CHECK WAS GREEN TOO, and that condition is the step rather than a
- * nicety. Unconditioned, `a green printed by this runner` reads two ways: the
- * RUN was green, or THAT CELL printed green. They come apart in exactly the
- * state this procedure exists for -- the first check red because its preload
- * build threw, so no artifact was written, and the fourth green because the
- * compiler fell through to src/ and raised nothing, which is the silent cell
- * measured below -- and that reader is sent to `dist/`. WITH BOTH GREEN the
+ * CHECK MEANT. Every framework export points into dist/, so a missing artifact
+ * is loud rather than silently answered by source. A GREEN fourth check printed
+ * by this runner was read from dist/ -- PROVIDED THE FIRST CHECK WAS GREEN too,
+ * and that condition still protects against a stale or partially emitted build.
+ * WITH BOTH GREEN the
  * step holds: the first check builds every artifact before
  * the fourth reads, and the fifth then refuses any published subpath answering
  * from anywhere but its `types` artifact. A GREEN FROM A BARE `tsc --noEmit` SAYS

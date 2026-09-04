@@ -580,7 +580,8 @@ export const ALPHA_RELEASE: ReadmeFact = {
   name: "the package is published under npm's alpha tag",
   tokens: [
     /bun add @atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
-    /deno add npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+    /deno add --save-exact npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+    /deno run -A --frozen --node-modules-dir=none @atusy\/tsudoi-language-server\/cli/,
   ],
 };
 
