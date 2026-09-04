@@ -111,8 +111,13 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
 
   expect(uses.length).toBeGreaterThan(0);
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
+  const nodeSetup = steps.find((step) => step.uses?.startsWith("actions/setup-node@"));
   const bunSetup = steps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"));
   const denoSetup = steps.find((step) => step.uses?.startsWith("denoland/setup-deno@"));
+  expect(nodeSetup?.with).toEqual({
+    "node-version": "24.20.0",
+    "package-manager-cache": false,
+  });
   expect(bunSetup?.with?.["bun-version"]).toBe("1.3.13");
   expect(denoSetup?.with?.["deno-version"]).toBe("v2.9.4");
 
@@ -192,6 +197,10 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   const prepareCommands = commandLinesOf(prepareSteps);
   const publishCommands = commandLinesOf(publishSteps);
   const verifyCommands = commandLinesOf(verifySteps);
+  const validationStep = prepareSteps.find((step) => step.name === "Validate the release tag");
+  const validationCommands = commandLinesOf(
+    validationStep === undefined ? [] : [validationStep],
+  ).filter((command) => !command.startsWith("#"));
   const uses = [...qualitySteps, ...prepareSteps, ...publishSteps, ...verifySteps].flatMap(
     (step) => (typeof step.uses === "string" ? [step.uses] : []),
   );
@@ -350,10 +359,12 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(downloadIndex).toBeGreaterThan(npmVersionIndex);
   expect(checksumIndex).toBeGreaterThan(downloadIndex);
   expect(publishIndex).toBeGreaterThan(checksumIndex);
-  expect(source).toContain("refs/tags/$RELEASE_TAG");
-  expect(source).toContain("v${release_version}");
-  expect(source).toContain('test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"');
-  expect(source).toContain('test "$GITHUB_SHA" = "$tag_commit"');
+  expect(validationCommands).toContain('test "$RELEASE_TAG" = "v${release_version}"');
+  expect(validationCommands).toContain(
+    'tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")"',
+  );
+  expect(validationCommands).toContain('test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"');
+  expect(validationCommands).toContain('test "$GITHUB_SHA" = "$tag_commit"');
   expect(prepareCommands).toContain("git fetch --no-tags origin main");
   expect(prepareCommands).toContain(
     'git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main',
