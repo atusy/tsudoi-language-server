@@ -72,7 +72,7 @@ contains composable handlers for:
 | [completion-path](packages/tsudoi-completion-path/README.md)             | filesystem and workspace-path completion          |
 | [completion-document](packages/tsudoi-completion-document/README.md)     | words from the current buffer or open documents   |
 | [completion-dictionary](packages/tsudoi-completion-dictionary/README.md) | indexed completion from your own dictionary files |
-| [completion-shell](packages/tsudoi-completion-shell/README.md)           | native Bash, Zsh, or Fish completion              |
+| [completion-shell](packages/tsudoi-completion-shell/README.md)           | native Fish, Zsh, or Xonsh completion             |
 | [hover-wordnet](packages/tsudoi-hover-wordnet/README.md)                 | English definitions on hover                      |
 | [adapter-efm-config](packages/tsudoi-adapter-efm-config/README.md)       | handlers derived from an efm config               |
 
