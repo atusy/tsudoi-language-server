@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
+import type { Hover, InitializeResult } from "vscode-languageserver-protocol";
 import {
   chmodSync,
   existsSync,
@@ -16,9 +17,14 @@ import process from "node:process";
 import { spawnSync } from "node:child_process";
 import { buildOrder } from "../scripts/workspaces.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
+import { exampleSources } from "./helpers/install.ts";
+import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
+import { requireRuntime } from "./helpers/preflight.ts";
 import { repoRoot } from "./helpers/spawn.ts";
 
 applySuiteDeadline();
+
+await requireRuntime(denoRuntime);
 
 const SPAWN_TIMEOUT_MS = 30_000;
 
@@ -385,6 +391,87 @@ process.exit(2);
     expect(published.status).not.toBe(0);
     expect(published.stderr).toContain("would not advance the alpha dist-tag");
     expect(existsSync(publishLog)).toBeFalse();
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("the release tarballs install together and execute under Bun and Deno", async () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-consumer-"));
+  const destination = join(parent, "release");
+  const consumer = join(parent, "consumer");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+    });
+    expect(packed.status).toBe(0);
+    const manifest = JSON.parse(
+      readFileSync(join(destination, "release-manifest.json"), "utf8"),
+    ) as ReleaseManifest;
+    const artifacts = (manifest.packages ?? []).map((entry) => ({
+      name: String(entry.name),
+      path: join(destination, String(entry.filename)),
+    }));
+    const framework = artifacts.find(({ name }) => name === "@atusy/tsudoi-language-server");
+    expect(framework).toBeDefined();
+    const handlers = artifacts.filter(({ name }) => name !== framework?.name);
+
+    mkdirSync(consumer);
+    writeFileSync(
+      join(consumer, "package.json"),
+      `${JSON.stringify(
+        {
+          name: "release-artifact-consumer",
+          private: true,
+          type: "module",
+          overrides: { "@atusy/tsudoi-language-server": framework?.path },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const installedFramework = spawnSync("bun", ["install", String(framework?.path)], {
+      cwd: consumer,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+    });
+    expect(installedFramework.status).toBe(0);
+    const installedHandlers = spawnSync("bun", ["install", ...handlers.map(({ path }) => path)], {
+      cwd: consumer,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+    });
+    expect(installedHandlers.status).toBe(0);
+    for (const [path, source] of Object.entries(exampleSources())) {
+      writeFileSync(join(consumer, path), source);
+    }
+
+    for (const runtime of [bunRuntime, denoRuntime]) {
+      const command = `${runtime.command} ${runtime.runArgs.join(" ")} node_modules/@atusy/tsudoi-language-server/dist/cli.js --config ./tsudoi.config.ts`;
+      const session = LspSession.startCommand(command, consumer);
+      try {
+        const initialized = await session.request<InitializeResult>("initialize", initializeParams);
+        expect(initialized).toHaveProperty("serverInfo.name", "tsudoi");
+        session.notify("textDocument/didOpen", {
+          textDocument: {
+            uri: "file:///release-artifact.txt",
+            languageId: "plaintext",
+            version: 1,
+            text: "dictionary",
+          },
+        });
+        const hover = await session.request<Hover | null>("textDocument/hover", {
+          textDocument: { uri: "file:///release-artifact.txt" },
+          position: { line: 0, character: 2 },
+        });
+        expect(hover).toHaveProperty("contents.value");
+        expect(session.unframedStdoutBytes).toBe(0);
+      } finally {
+        session.dispose();
+      }
+    }
   } finally {
     rmSync(parent, { recursive: true, force: true });
   }
