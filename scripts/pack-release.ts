@@ -62,16 +62,22 @@ function prepareDestination(argument: string): string {
   return destination;
 }
 
-function packedFilename(output: string, packageName: string): string {
+function packedFilename(output: string, expected: ReleasePackage): string {
   let parsed: unknown;
   try {
     parsed = JSON.parse(output);
   } catch (cause) {
-    fail(`npm pack for ${packageName} returned invalid JSON: ${String(cause)}`);
+    fail(`npm pack for ${expected.name} returned invalid JSON: ${String(cause)}`);
   }
-  const filename = (parsed as Array<{ filename?: unknown }>)[0]?.filename;
+  const result = (parsed as Array<{ filename?: unknown; name?: unknown; version?: unknown }>)[0];
+  if (result?.name !== expected.name || result.version !== expected.version) {
+    fail(
+      `npm pack identity does not match ${expected.name}@${expected.version}: ${String(result?.name)}@${String(result?.version)}`,
+    );
+  }
+  const filename = result.filename;
   if (typeof filename !== "string" || filename !== basename(filename)) {
-    fail(`npm pack for ${packageName} returned an unsafe filename: ${String(filename)}`);
+    fail(`npm pack for ${expected.name} returned an unsafe filename: ${String(filename)}`);
   }
   return filename;
 }
@@ -99,12 +105,20 @@ if (releaseVersion === undefined || !/^\d+\.\d+\.\d+-alpha\.\d+$/.test(releaseVe
 
 const destination = prepareDestination(destinationArgument);
 const packed: PackedPackage[] = [];
+const filenames = new Set<string>();
+const identities = new Set<string>();
 for (const packageToPack of packages) {
   const output = execFileSync("npm", ["pack", "--json", "--pack-destination", destination], {
     cwd: packageToPack.dir,
     encoding: "utf8",
   });
-  const filename = packedFilename(output, packageToPack.name);
+  const filename = packedFilename(output, packageToPack);
+  const identity = `${packageToPack.name}@${packageToPack.version}`;
+  if (filenames.has(filename) || identities.has(identity)) {
+    fail(`npm pack returned a duplicate release entry: ${identity} in ${filename}`);
+  }
+  filenames.add(filename);
+  identities.add(identity);
   const tarball = readFileSync(join(destination, filename));
   packed.push({
     name: packageToPack.name,

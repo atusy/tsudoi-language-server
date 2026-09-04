@@ -114,6 +114,26 @@ function registryIntegrity(packageSpec: string): string | null {
   return integrity;
 }
 
+function tarballIdentity(path: string): { readonly name: string; readonly version: string } {
+  let source: string;
+  try {
+    source = execFileSync("tar", ["-xOf", path, "package/package.json"], { encoding: "utf8" });
+  } catch (cause) {
+    fail(`cannot read package/package.json from ${path}: ${String(cause)}`);
+  }
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(source);
+  } catch (cause) {
+    fail(`tarball package.json is invalid in ${path}: ${String(cause)}`);
+  }
+  const { name, version } = manifest as { readonly name?: unknown; readonly version?: unknown };
+  if (typeof name !== "string" || typeof version !== "string") {
+    fail(`tarball package.json has no string name and version in ${path}`);
+  }
+  return { name, version };
+}
+
 const [directoryArgument, option, ...unexpected] = process.argv.slice(2);
 if (
   directoryArgument === undefined ||
@@ -131,19 +151,33 @@ const actual = release.packages.map(({ name, version }) => ({ name, version }));
 if (JSON.stringify(actual) !== JSON.stringify(expected)) {
   fail("release manifest packages do not match the workspace release order");
 }
+if (
+  new Set(release.packages.map(({ name, version }) => `${name}@${version}`)).size !==
+    release.packages.length ||
+  new Set(release.packages.map(({ filename }) => filename)).size !== release.packages.length
+) {
+  fail("release manifest contains duplicate identities or filenames");
+}
 const tarballs = release.packages.map((entry) => {
   const path = join(directory, entry.filename);
   if (!existsSync(path) || !statSync(path).isFile()) {
     fail(`release tarball is missing: ${path}`);
   }
-  const actual = createHash("sha256").update(readFileSync(path)).digest("hex");
+  const bytes = readFileSync(path);
+  const actual = createHash("sha256").update(bytes).digest("hex");
   if (actual !== entry.sha256) {
     fail(`release tarball checksum does not match: ${path}`);
+  }
+  const identity = tarballIdentity(path);
+  if (identity.name !== entry.name || identity.version !== entry.version) {
+    fail(
+      `tarball identity does not match ${entry.name}@${entry.version}: ${identity.name}@${identity.version}`,
+    );
   }
   return {
     entry,
     path,
-    integrity: `sha512-${createHash("sha512").update(readFileSync(path)).digest("base64")}`,
+    integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
   };
 });
 

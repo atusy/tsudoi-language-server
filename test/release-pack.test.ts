@@ -170,3 +170,46 @@ process.exit(2);
     rmSync(parent, { recursive: true, force: true });
   }
 });
+
+test("the publisher refuses a checksummed tarball carrying another package identity", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-identity-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(packed.status).toBe(0);
+    const manifestPath = join(destination, "release-manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as ReleaseManifest;
+    const [first, second] = manifest.packages ?? [];
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    const wrongTarball = readFileSync(join(destination, String(first?.filename)));
+    writeFileSync(join(destination, String(second?.filename)), wrongTarball);
+    const tampered = {
+      ...manifest,
+      packages: (manifest.packages ?? []).map((entry) =>
+        entry === second
+          ? { ...entry, sha256: createHash("sha256").update(wrongTarball).digest("hex") }
+          : entry,
+      ),
+    };
+    writeFileSync(manifestPath, `${JSON.stringify(tampered, null, 2)}\n`);
+
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(fakeNpm, "#!/bin/sh\nexit 2\n");
+    chmodSync(fakeNpm, 0o755);
+    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` },
+    });
+    expect(published.status).not.toBe(0);
+    expect(published.stderr).toContain("tarball identity does not match");
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
