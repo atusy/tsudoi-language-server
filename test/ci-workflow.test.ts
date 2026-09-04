@@ -21,6 +21,9 @@ interface WorkflowJob {
   environment?: unknown;
   if?: unknown;
   "continue-on-error"?: unknown;
+  needs?: unknown;
+  outputs?: Record<string, string>;
+  permissions?: { contents?: string; "id-token"?: string };
   "runs-on"?: string;
   "timeout-minutes"?: number;
   steps?: WorkflowStep[];
@@ -37,7 +40,7 @@ interface Workflow {
   };
   permissions?: { contents?: string; "id-token"?: string };
   concurrency?: { group?: string; "cancel-in-progress"?: boolean };
-  jobs?: { checks?: WorkflowJob; publish?: WorkflowJob };
+  jobs?: { checks?: WorkflowJob; prepare?: WorkflowJob; publish?: WorkflowJob };
 }
 
 const workflowPath = join(repoRoot, ".github", "workflows", "ci.yml");
@@ -159,10 +162,15 @@ test("a commented Definition of Done command does not satisfy the workflow contr
 test("publishing is a manually approved OIDC job for one exact alpha tag", () => {
   const source = readFileSync(publishWorkflowPath, "utf8");
   const workflow = parseWorkflow(source);
+  const prepare = workflow.jobs?.prepare;
   const publish = workflow.jobs?.publish;
-  const steps = publish?.steps ?? [];
-  const commands = commandLinesOf(steps);
-  const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
+  const prepareSteps = prepare?.steps ?? [];
+  const publishSteps = publish?.steps ?? [];
+  const prepareCommands = commandLinesOf(prepareSteps);
+  const publishCommands = commandLinesOf(publishSteps);
+  const uses = [...prepareSteps, ...publishSteps].flatMap((step) =>
+    typeof step.uses === "string" ? [step.uses] : [],
+  );
 
   expect(workflow.on).toEqual({
     workflow_dispatch: {
@@ -171,46 +179,61 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
       },
     },
   });
-  expect(workflow.permissions).toEqual({ contents: "read", "id-token": "write" });
+  expect(workflow.permissions).toEqual({ contents: "read" });
+  expect(prepare?.permissions?.["id-token"]).toBeUndefined();
+  expect(prepare?.environment).toBeUndefined();
+  expect(prepare?.["runs-on"]).toBe("ubuntu-latest");
   expect(publish?.environment).toBe("npm");
+  expect(publish?.needs).toBe("prepare");
+  expect(publish?.permissions).toEqual({ contents: "read", "id-token": "write" });
   expect(publish?.["runs-on"]).toBe("ubuntu-latest");
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
-  expect(steps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
+  expect(prepareSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
     "${{ inputs.release-tag }}",
   );
-  expect(steps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
+  expect(prepareSteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
     "node-version": "24",
     "registry-url": "https://registry.npmjs.org",
   });
   expect(
-    steps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
+    prepareSteps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
   ).toBe("1.3.13");
   expect(
-    steps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.["deno-version"],
+    prepareSteps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.[
+      "deno-version"
+    ],
   ).toBe("v2.9.4");
 
-  expect(commands).toContain("sudo apt-get install --yes fish xonsh zsh");
-  expect(commands).toContain("bun install --frozen-lockfile");
-  expect(commands).toContain("bun add --global oxlint@latest oxfmt@latest");
-  expect(commands).toContain("bun run scripts/definition-of-done.ts");
-  expect(commands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
-  expect(commands).toContain(
-    'bun run scripts/publish-release.ts "$RUNNER_TEMP/npm-release" --provenance',
+  expect(prepareCommands).toContain("sudo apt-get install --yes fish xonsh zsh");
+  expect(prepareCommands).toContain("bun install --frozen-lockfile");
+  expect(prepareCommands).toContain("bun add --global oxlint@latest oxfmt@latest");
+  expect(prepareCommands).toContain("bun run scripts/definition-of-done.ts");
+  expect(prepareCommands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
+  expect(prepareCommands).toContain(
+    "find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS",
   );
+  expect(publishCommands).toContain(
+    'cd "$RUNNER_TEMP/npm-release-bundle" && sha256sum --check SHA256SUMS',
+  );
+  expect(publishCommands).toContain(
+    'node scripts/publish-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --provenance',
+  );
+  expect(publishCommands).not.toContain("bun install --frozen-lockfile");
+  expect(publishCommands.some((command) => command.startsWith("bun "))).toBeFalse();
   expect(source).toContain("refs/tags/$RELEASE_TAG");
   expect(source).toContain("v${release_version}");
   expect(source).toContain('test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"');
   expect(source).toContain('test "$GITHUB_SHA" = "$tag_commit"');
-  expect(commands).toContain("git fetch --no-tags origin main");
-  expect(commands).toContain('git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main');
+  expect(prepareCommands).toContain("git fetch --no-tags origin main");
+  expect(prepareCommands).toContain(
+    'git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main',
+  );
   expect(source).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN|secrets\./);
 
-  const definitionIndex = commands.indexOf("bun run scripts/definition-of-done.ts");
-  const packIndex = commands.indexOf('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
-  const publishIndex = commands.indexOf(
-    'bun run scripts/publish-release.ts "$RUNNER_TEMP/npm-release" --provenance',
+  const definitionIndex = prepareCommands.indexOf("bun run scripts/definition-of-done.ts");
+  const packIndex = prepareCommands.indexOf(
+    'bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"',
   );
   expect(definitionIndex).toBeGreaterThanOrEqual(0);
   expect(packIndex).toBeGreaterThan(definitionIndex);
-  expect(publishIndex).toBeGreaterThan(packIndex);
 });
