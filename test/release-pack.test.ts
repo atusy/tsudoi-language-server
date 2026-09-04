@@ -159,9 +159,10 @@ process.exit(2);
       .trim()
       .split("\n")
       .map((line) => JSON.parse(line) as string[]);
-    expect(calls).toHaveLength(unpublished.length);
-    expect(calls.map((args) => args.slice(2))).toEqual(
-      unpublished.map(() => [
+    expect(calls).toEqual(
+      unpublished.map((entry) => [
+        "publish",
+        join(destination, String(entry.filename)),
         "--registry",
         "https://registry.npmjs.org/",
         "--access",
@@ -169,9 +170,6 @@ process.exit(2);
         "--tag",
         "alpha",
       ]),
-    );
-    expect(calls.map((args) => args[1])).not.toContain(
-      join(destination, String(alreadyPublished?.filename)),
     );
   } finally {
     rmSync(parent, { recursive: true, force: true });
