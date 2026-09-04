@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -124,6 +125,10 @@ if (args[0] === "view") {
     process.stdout.write(JSON.stringify(process.env.EXISTING_INTEGRITY));
     process.exit(0);
   }
+  if (args[1] === process.env.EXISTING_NAME && args[2] === "dist-tags.alpha") {
+    process.stdout.write(JSON.stringify(process.env.EXISTING_VERSION));
+    process.exit(0);
+  }
   console.error("npm error code E404");
   process.exit(1);
 }
@@ -143,6 +148,8 @@ process.exit(2);
         ...process.env,
         PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
         EXISTING_SPEC: `${String(alreadyPublished?.name)}@${String(alreadyPublished?.version)}`,
+        EXISTING_NAME: String(alreadyPublished?.name),
+        EXISTING_VERSION: String(alreadyPublished?.version),
         EXISTING_INTEGRITY: integrity,
         PUBLISH_LOG: publishLog,
       },
@@ -209,6 +216,57 @@ test("the publisher refuses a checksummed tarball carrying another package ident
     });
     expect(published.status).not.toBe(0);
     expect(published.stderr).toContain("tarball identity does not match");
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("the publisher refuses to roll an alpha dist-tag back", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-rollback-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  const publishLog = join(parent, "published.jsonl");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(packed.status).toBe(0);
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(
+      fakeNpm,
+      `#!/usr/bin/env node
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+if (args[0] === "view" && args[2] === "dist.integrity") {
+  console.error("npm error code E404");
+  process.exit(1);
+}
+if (args[0] === "view" && args[2] === "dist-tags.alpha") {
+  process.stdout.write(JSON.stringify("0.1.0-alpha.1"));
+  process.exit(0);
+}
+if (args[0] === "publish") {
+  appendFileSync(process.env.PUBLISH_LOG, JSON.stringify(args) + "\\n");
+  process.exit(0);
+}
+process.exit(2);
+`,
+    );
+    chmodSync(fakeNpm, 0o755);
+    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        PUBLISH_LOG: publishLog,
+      },
+    });
+    expect(published.status).not.toBe(0);
+    expect(published.stderr).toContain("would not advance the alpha dist-tag");
+    expect(existsSync(publishLog)).toBeFalse();
   } finally {
     rmSync(parent, { recursive: true, force: true });
   }

@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: npm-alpha-publish
+  cancel-in-progress: false
+
 jobs:
   prepare:
     runs-on: ubuntu-latest

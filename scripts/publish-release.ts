@@ -114,6 +114,55 @@ function registryIntegrity(packageSpec: string): string | null {
   return integrity;
 }
 
+function registryAlphaVersion(packageName: string): string | null {
+  const viewed = spawnSync(
+    "npm",
+    ["view", packageName, "dist-tags.alpha", "--json", "--registry", NPM_REGISTRY],
+    { encoding: "utf8" },
+  );
+  if (viewed.error !== undefined) {
+    fail(`npm view could not start for ${packageName}: ${viewed.error.message}`);
+  }
+  if (viewed.status !== 0) {
+    if (/\bE404\b/.test(viewed.stderr)) {
+      return null;
+    }
+    fail(`npm view failed for ${packageName}: ${viewed.stderr.trim()}`);
+  }
+  let version: unknown;
+  try {
+    version = JSON.parse(viewed.stdout);
+  } catch (cause) {
+    fail(`npm view returned invalid JSON for ${packageName}: ${String(cause)}`);
+  }
+  if (typeof version !== "string") {
+    fail(`npm view returned an invalid alpha dist-tag for ${packageName}: ${String(version)}`);
+  }
+  return version;
+}
+
+function alphaVersionParts(version: string): readonly bigint[] {
+  const match = /^(\d+)\.(\d+)\.(\d+)-alpha\.(\d+)$/.exec(version);
+  if (match === null) {
+    fail(`alpha dist-tag has an unsupported version: ${version}`);
+  }
+  return match.slice(1).map((part) => BigInt(part));
+}
+
+function compareAlphaVersions(left: string, right: string): number {
+  const leftParts = alphaVersionParts(left);
+  const rightParts = alphaVersionParts(right);
+  for (const [index, leftPart] of leftParts.entries()) {
+    const rightPart = rightParts[index];
+    if (rightPart === undefined) {
+      fail(`cannot compare alpha versions: ${left} and ${right}`);
+    }
+    if (leftPart < rightPart) return -1;
+    if (leftPart > rightPart) return 1;
+  }
+  return 0;
+}
+
 function tarballIdentity(path: string): { readonly name: string; readonly version: string } {
   let source: string;
   try {
@@ -184,8 +233,21 @@ const tarballs = release.packages.map((entry) => {
 const publication = tarballs.map((tarball) => {
   const packageSpec = `${tarball.entry.name}@${tarball.entry.version}`;
   const published = registryIntegrity(packageSpec);
+  const currentAlpha = registryAlphaVersion(tarball.entry.name);
   if (published !== null && published !== tarball.integrity) {
     fail(`registry integrity does not match the release tarball: ${packageSpec}`);
+  }
+  if (published !== null && currentAlpha !== tarball.entry.version) {
+    fail(`already-published ${packageSpec} is not the current alpha dist-tag`);
+  }
+  if (
+    published === null &&
+    currentAlpha !== null &&
+    compareAlphaVersions(currentAlpha, tarball.entry.version) >= 0
+  ) {
+    fail(
+      `${packageSpec} would not advance the alpha dist-tag from its current ${currentAlpha} version`,
+    );
   }
   return { ...tarball, published: published !== null };
 });

@@ -83,3 +83,8 @@ the event ref, event commit, checked-out commit, tag, and package version agree;
 checksummed release; and publishes through OIDC with provenance. Re-running the job is safe only for
 registry artifacts whose integrity matches the freshly packed tarballs; any other existing artifact
 is refused.
+
+If a publish run fails after changing some packages, rerun that same tag immediately and verify the
+registry before preparing another version. The fixed workflow concurrency group prevents two
+release runs from publishing at the same time, and the publisher refuses to move an `alpha`
+dist-tag to the same or an older version.

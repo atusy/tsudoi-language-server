@@ -180,6 +180,10 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     },
   });
   expect(workflow.permissions).toEqual({ contents: "read" });
+  expect(workflow.concurrency).toEqual({
+    group: "npm-alpha-publish",
+    "cancel-in-progress": false,
+  });
   expect(prepare?.permissions?.["id-token"]).toBeUndefined();
   expect(prepare?.environment).toBeUndefined();
   expect(prepare?.["runs-on"]).toBe("ubuntu-latest");
