@@ -89,6 +89,8 @@ create and push the matching tag, wait for CI, then dispatch the publishing work
 ```sh
 git switch main
 git pull --ff-only origin main
+git status --short
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
 git push origin v0.1.0-alpha.1
 gh workflow run publish.yml --ref v0.1.0-alpha.1 -f release-tag=v0.1.0-alpha.1
