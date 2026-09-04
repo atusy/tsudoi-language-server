@@ -52,6 +52,7 @@ Publisher** with these exact values:
 - Repository: `tsudoi-language-server`
 - Workflow filename: `publish.yml`
 - Environment: `npm`
+- Allowed actions: `npm publish`
 
 In the GitHub repository, create or review the `npm` environment and require an appropriate
 reviewer before deployment. Do not add an npm token to repository or environment secrets. The
