@@ -1,0 +1,176 @@
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { buildOrder } from "./workspaces.ts";
+
+const NPM_REGISTRY = "https://registry.npmjs.org/";
+const NPM_TIMEOUT_MS = 30_000;
+const FRAMEWORK = "@atusy/tsudoi-language-server";
+
+interface PackageManifest {
+  readonly name?: unknown;
+  readonly version?: unknown;
+  readonly private?: unknown;
+  readonly repository?: unknown;
+  readonly peerDependencies?: unknown;
+  readonly peerDependenciesMeta?: unknown;
+}
+
+interface ReleaseEntry {
+  readonly name?: unknown;
+  readonly version?: unknown;
+  readonly filename?: unknown;
+}
+
+function fail(message: string): never {
+  console.error(`verify-registry-release: ${message}`);
+  process.exit(1);
+}
+
+function readJson(path: string): unknown {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch (cause) {
+    fail(`cannot read ${path}: ${String(cause)}`);
+  }
+}
+
+function npmJson(args: readonly string[], subject: string): unknown {
+  const result = spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
+    encoding: "utf8",
+    timeout: NPM_TIMEOUT_MS,
+  });
+  if (result.error !== undefined) {
+    if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
+      fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
+    }
+    fail(`npm ${args[0] ?? "command"} could not complete for ${subject}: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    fail(`npm ${args[0] ?? "command"} failed for ${subject}: ${result.stderr.trim()}`);
+  }
+  try {
+    return JSON.parse(result.stdout);
+  } catch (cause) {
+    fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
+  }
+}
+
+function object(value: unknown, subject: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    fail(`${subject} is not an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+const [directoryArgument, ...unexpected] = process.argv.slice(2);
+if (directoryArgument === undefined || unexpected.length !== 0) {
+  fail("usage: node scripts/verify-registry-release.ts <release-directory>");
+}
+
+const repoRoot = fileURLToPath(new URL("../", import.meta.url));
+const directory = resolve(directoryArgument);
+const manifestPath = join(directory, "release-manifest.json");
+const release = object(readJson(manifestPath), manifestPath);
+if (
+  typeof release.releaseVersion !== "string" ||
+  !/^\d+\.\d+\.\d+-alpha\.\d+$/.test(release.releaseVersion) ||
+  !Array.isArray(release.packages)
+) {
+  fail(`${manifestPath} is not an alpha release manifest`);
+}
+
+const expected = buildOrder(repoRoot).flatMap((dir) => {
+  const manifestPath = join(dir, "package.json");
+  const manifest = object(readJson(manifestPath), manifestPath) as PackageManifest;
+  if (manifest.private === true) return [];
+  if (typeof manifest.name !== "string" || typeof manifest.version !== "string") {
+    fail(`${manifestPath} must declare string name and version fields`);
+  }
+  return [{ dir, manifest: manifest as PackageManifest & { name: string; version: string } }];
+});
+
+const entries = release.packages.map((candidate) => {
+  const entry = object(candidate, `${manifestPath} package entry`) as ReleaseEntry;
+  if (
+    typeof entry.name !== "string" ||
+    typeof entry.version !== "string" ||
+    entry.version !== release.releaseVersion ||
+    typeof entry.filename !== "string" ||
+    entry.filename !== basename(entry.filename)
+  ) {
+    fail(`${manifestPath} contains an invalid package entry`);
+  }
+  return entry as { readonly name: string; readonly version: string; readonly filename: string };
+});
+
+if (
+  JSON.stringify(entries.map(({ name, version }) => ({ name, version }))) !==
+  JSON.stringify(
+    expected.map(({ manifest }) => ({ name: manifest.name, version: manifest.version })),
+  )
+) {
+  fail("release manifest packages do not match the workspace release order");
+}
+
+for (const [index, entry] of entries.entries()) {
+  const local = expected[index]?.manifest;
+  if (local === undefined) fail(`no local manifest for ${entry.name}`);
+  const tarball = readFileSync(join(directory, entry.filename));
+  const integrity = `sha512-${createHash("sha512").update(tarball).digest("base64")}`;
+  const packageSpec = `${entry.name}@${entry.version}`;
+  const metadata = object(
+    npmJson(
+      [
+        "view",
+        packageSpec,
+        "name",
+        "version",
+        "dist.integrity",
+        "dist-tags",
+        "repository",
+        "peerDependencies",
+        "peerDependenciesMeta",
+      ],
+      packageSpec,
+    ),
+    `registry metadata for ${packageSpec}`,
+  );
+  const tags = object(metadata["dist-tags"], `registry dist-tags for ${packageSpec}`);
+  if (
+    metadata.name !== entry.name ||
+    metadata.version !== entry.version ||
+    metadata["dist.integrity"] !== integrity
+  ) {
+    fail(`registry identity or integrity does not match ${packageSpec}`);
+  }
+  if (tags.alpha !== entry.version || Object.hasOwn(tags, "latest")) {
+    fail(`${entry.name} must expose only the intended alpha channel, not latest`);
+  }
+  if (JSON.stringify(metadata.repository) !== JSON.stringify(local.repository)) {
+    fail(`registry repository metadata does not match ${packageSpec}`);
+  }
+  if (entry.name === FRAMEWORK) {
+    if (metadata.peerDependencies !== undefined || metadata.peerDependenciesMeta !== undefined) {
+      fail(`${packageSpec} unexpectedly declares peer metadata`);
+    }
+  } else if (
+    JSON.stringify(metadata.peerDependencies) !==
+      JSON.stringify({ [FRAMEWORK]: release.releaseVersion }) ||
+    metadata.peerDependenciesMeta !== undefined
+  ) {
+    fail(`${packageSpec} does not expose the exact required framework peer`);
+  }
+  const access = object(
+    npmJson(["access", "get", "status", entry.name], entry.name),
+    `registry access for ${entry.name}`,
+  );
+  if (access[entry.name] !== "public") {
+    fail(`${entry.name} is not public`);
+  }
+}
+
+console.log(`verified ${entries.length} public registry packages at ${release.releaseVersion}`);

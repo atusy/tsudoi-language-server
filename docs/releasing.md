@@ -53,12 +53,15 @@ Publishing is the maintainer's explicit, 2FA-protected action:
 
 ```sh
 bun run scripts/publish-release.ts "$release_dir"
+node scripts/verify-registry-release.ts "$release_dir"
 ```
 
 The publisher checks every local SHA-256 before contacting npm. It also checks the SHA-512
 integrity of any version already in the registry. A retry skips an already-published package only
 when its registry artifact is byte-for-byte the same; a mismatch or a registry error stops the run
-before another package is published.
+before another package is published. The read-only verifier then checks all seven registry
+identities and versions, each retained tarball's integrity, public access, repository and exact peer
+metadata, the synchronized `alpha` tags, and the absence of an accidental `latest` tag.
 
 After publication, ask the repository agent to verify all seven versions and the `alpha` dist-tag,
 then smoke-test fresh Bun and Deno consumers against the registry. The first release cannot be
