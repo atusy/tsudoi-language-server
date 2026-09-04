@@ -2,7 +2,7 @@
 
 |                     |                                       |
 | ------------------- | ------------------------------------- |
-| **Status**          | proposed                              |
+| **Status**          | accepted                              |
 | **Date**            | 2026-09-05                            |
 | **Decision-makers** | Project stakeholder and maintainers   |
 | **Consulted**       | npm publication and package contracts |

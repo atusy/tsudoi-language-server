@@ -83,7 +83,8 @@ diagnostics and formatting in the same config.
 ## Learn more
 
 The [complete guide](docs/README.md) covers npm and checkout installation, configuring Bun or Deno,
-handler and context APIs, initialization, custom methods, cancellation, and cleanup.
+handler and context APIs, initialization, custom methods, cancellation, and cleanup. Maintainers use
+the [npm alpha release runbook](docs/releasing.md) for bootstrap and later OIDC releases.
 
 ## License
 
