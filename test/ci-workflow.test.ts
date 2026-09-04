@@ -36,12 +36,26 @@ interface Workflow {
     push?: { branches?: string[]; tags?: string[] };
     schedule?: Array<{ cron?: string }>;
     workflow_dispatch?: {
-      inputs?: Record<string, { required?: boolean; type?: string }>;
+      inputs?: Record<
+        string,
+        {
+          default?: string;
+          description?: string;
+          options?: string[];
+          required?: boolean;
+          type?: string;
+        }
+      >;
     };
   };
   permissions?: { contents?: string; "id-token"?: string };
   concurrency?: { group?: string; "cancel-in-progress"?: boolean };
-  jobs?: { checks?: WorkflowJob; prepare?: WorkflowJob; publish?: WorkflowJob };
+  jobs?: {
+    bootstrap?: WorkflowJob;
+    checks?: WorkflowJob;
+    prepare?: WorkflowJob;
+    publish?: WorkflowJob;
+  };
 }
 
 const workflowPath = join(repoRoot, ".github", "workflows", "ci.yml");
@@ -163,6 +177,7 @@ test("a commented Definition of Done command does not satisfy the workflow contr
 test("publishing is a manually approved OIDC job for one exact alpha tag", () => {
   const source = readFileSync(publishWorkflowPath, "utf8");
   const workflow = parseWorkflow(source);
+  const bootstrap = workflow.jobs?.bootstrap;
   const prepare = workflow.jobs?.prepare;
   const publish = workflow.jobs?.publish;
   const prepareSteps = prepare?.steps ?? [];
@@ -176,7 +191,18 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(workflow.on).toEqual({
     workflow_dispatch: {
       inputs: {
-        "release-tag": { required: true, type: "string" },
+        mode: {
+          description: "Bootstrap tag dispatching, or publish an alpha release",
+          required: true,
+          default: "bootstrap",
+          type: "choice",
+          options: ["bootstrap", "publish"],
+        },
+        "release-tag": {
+          description: "Exact v*-alpha.* tag; required in publish mode",
+          required: false,
+          type: "string",
+        },
       },
     },
   });
@@ -185,16 +211,26 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     group: "npm-alpha-publish",
     "cancel-in-progress": false,
   });
+  expect(bootstrap).toMatchObject({
+    if: "inputs.mode == 'bootstrap'",
+    "runs-on": "ubuntu-latest",
+    "timeout-minutes": 1,
+  });
+  expect(bootstrap?.permissions?.["id-token"]).toBeUndefined();
+  expect(bootstrap?.environment).toBeUndefined();
+  expect(bootstrap?.steps).toEqual([
+    { run: 'echo "Tag-scoped workflow dispatching is now enabled; nothing was published."' },
+  ]);
   expect(prepare?.permissions?.["id-token"]).toBeUndefined();
   expect(prepare?.environment).toBeUndefined();
   expect(prepare?.["runs-on"]).toBe("ubuntu-latest");
-  expect(prepare?.if).toBeUndefined();
+  expect(prepare?.if).toBe("inputs.mode == 'publish'");
   expect(prepare?.["continue-on-error"]).toBeUndefined();
   expect(publish?.environment).toBe("npm");
   expect(publish?.needs).toBe("prepare");
   expect(publish?.permissions).toEqual({ contents: "read", "id-token": "write" });
   expect(publish?.["runs-on"]).toBe("ubuntu-latest");
-  expect(publish?.if).toBeUndefined();
+  expect(publish?.if).toBe("inputs.mode == 'publish'");
   expect(publish?.["continue-on-error"]).toBeUndefined();
   expect(
     [...prepareSteps, ...publishSteps].every(

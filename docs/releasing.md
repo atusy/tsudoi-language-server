@@ -32,6 +32,7 @@ git switch main
 git pull --ff-only origin main
 git status --short
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+gh workflow run publish.yml --ref main -f mode=bootstrap
 npm whoami --registry=https://registry.npmjs.org/
 bun install --frozen-lockfile
 bun add --global oxlint@latest oxfmt@latest
@@ -42,9 +43,11 @@ git tag -a v0.1.0-alpha.0 -m "v0.1.0-alpha.0"
 git push origin v0.1.0-alpha.0
 ```
 
-`git status --short` must print nothing. Wait for the tag's CI run to pass before continuing. Keep
-`release_dir` and the same terminal: those are the tarballs that passed locally. The release
-manifest lists the framework first and records every tarball's SHA-256.
+`git status --short` must print nothing. Wait for the bootstrap-only `publish.yml` run to succeed;
+it exists solely to enable future tag-scoped API/CLI dispatches and has no checkout, environment, or
+OIDC permission. Then wait for the tag's CI run to pass before continuing. Keep `release_dir` and
+the same terminal: those are the tarballs that passed locally. The release manifest lists the
+framework first and records every tarball's SHA-256.
 
 Publishing is the maintainer's explicit, 2FA-protected action:
 
@@ -93,7 +96,7 @@ git status --short
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
 git push origin v0.1.0-alpha.1
-gh workflow run publish.yml --ref v0.1.0-alpha.1 -f release-tag=v0.1.0-alpha.1
+gh workflow run publish.yml --ref v0.1.0-alpha.1 -f mode=publish -f release-tag=v0.1.0-alpha.1
 ```
 
 Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is

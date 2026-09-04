@@ -3,8 +3,17 @@ name: Publish npm alpha
 on:
   workflow_dispatch:
     inputs:
-      release-tag:
+      mode:
+        description: Bootstrap tag dispatching, or publish an alpha release
         required: true
+        default: bootstrap
+        type: choice
+        options:
+          - bootstrap
+          - publish
+      release-tag:
+        description: Exact v*-alpha.* tag; required in publish mode
+        required: false
         type: string
 
 permissions:
@@ -15,7 +24,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  bootstrap:
+    if: inputs.mode == 'bootstrap'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - run: echo "Tag-scoped workflow dispatching is now enabled; nothing was published."
+
   prepare:
+    if: inputs.mode == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
@@ -102,6 +119,7 @@ jobs:
           retention-days: "1"
 
   publish:
+    if: inputs.mode == 'publish'
     needs: prepare
     environment: npm
     runs-on: ubuntu-latest
