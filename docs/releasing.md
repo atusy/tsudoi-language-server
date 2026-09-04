@@ -4,6 +4,24 @@ This runbook separates repository work from npm and GitHub authority. The reposi
 ordered, checksummed set of seven tarballs. A maintainer owns the irreversible publication,
 two-factor authentication, and external trusted-publisher settings.
 
+## Release prerequisites
+
+Install `fish`, `xonsh`, and `zsh` with the platform package manager before running the release
+suite. Use the same release toolchain as GitHub Actions, then verify it explicitly:
+
+```sh
+command -v fish
+command -v xonsh
+command -v zsh
+test "$(node --version)" = "v24.10.0"
+test "$(npm --version)" = "11.6.1"
+test "$(bun --version)" = "1.3.13"
+test "$(deno --version | awk 'NR == 1 { print $2 }')" = "2.9.4"
+```
+
+Only `oxlint` and `oxfmt` deliberately float to their latest versions. Stop before packing if a
+pinned tool differs; do not silently produce the bootstrap tarballs with another npm implementation.
+
 ## First release: maintainer bootstrap
 
 Run the bootstrap only after the release pull request is merged. Start from the merged commit on a
