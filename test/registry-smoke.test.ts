@@ -109,28 +109,45 @@ test("the registry smoke refuses malformed release metadata before installing", 
   }
 });
 
-test("the registry smoke refuses a package set missing a workspace member before installing", () => {
-  const release = mkdtempSync(join(tmpdir(), "tsudoi-registry-smoke-incomplete-"));
+test("the registry smoke refuses every package-set mismatch before installing", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-registry-smoke-mismatch-"));
   try {
-    const packages = releasePackages().slice(0, -1);
-    writeFileSync(
-      join(release, "release-manifest.json"),
-      `${JSON.stringify({ releaseVersion: "0.1.0-alpha.0", packages })}\n`,
-    );
-    const result = spawnSync(process.execPath, ["scripts/smoke-registry-release.ts", release], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: { ...process.env, PATH: "" },
-      timeout: SPAWN_TIMEOUT_MS,
-    });
+    const packages = releasePackages();
+    const version = packages[0]?.version;
+    const first = packages[0];
+    const second = packages[1];
+    if (version === undefined || first === undefined || second === undefined) {
+      throw new Error("the workspace needs at least two public release packages");
+    }
+    const mismatches = [
+      packages.slice(0, -1),
+      [...packages.slice(0, -1), { name: "@atusy/other", version }],
+      [...packages.slice(0, -1), first],
+      [second, first, ...packages.slice(2)],
+    ];
+    for (const [index, mismatch] of mismatches.entries()) {
+      const release = join(parent, String(index));
+      mkdirSync(release);
+      writeFileSync(
+        join(release, "release-manifest.json"),
+        `${JSON.stringify({ releaseVersion: version, packages: mismatch })}\n`,
+      );
+      const result = spawnSync(process.execPath, ["scripts/smoke-registry-release.ts", release], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: { ...process.env, PATH: "" },
+        timeout: SPAWN_TIMEOUT_MS,
+      });
 
-    expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain(
-      "release manifest packages do not match the workspace release order",
-    );
-    expect(result.stderr).not.toContain("could not complete");
+      expect(result.error).toBeUndefined();
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(
+        "release manifest packages do not match the workspace release order",
+      );
+      expect(result.stderr).not.toContain("could not complete");
+    }
   } finally {
-    rmSync(release, { recursive: true, force: true });
+    rmSync(parent, { recursive: true, force: true });
   }
 });
 
