@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -8,7 +9,9 @@ import { buildOrder } from "./workspaces.ts";
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
 const NPM_TIMEOUT_MS = 30_000;
+const NPM_INSTALL_TIMEOUT_MS = 120_000;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
+const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 
 interface PackageManifest {
   readonly name?: unknown;
@@ -59,6 +62,26 @@ function npmJson(args: readonly string[], subject: string): unknown {
   }
 }
 
+function npmRun(
+  args: readonly string[],
+  subject: string,
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+): void {
+  const result = spawnSync("npm", [...args, "--registry", NPM_REGISTRY], {
+    cwd,
+    encoding: "utf8",
+    env,
+    timeout: NPM_INSTALL_TIMEOUT_MS,
+  });
+  if (result.error !== undefined) {
+    fail(`npm ${args[0] ?? "command"} could not complete for ${subject}: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    fail(`npm ${args[0] ?? "command"} failed for ${subject}: ${result.stderr.trim()}`);
+  }
+}
+
 function object(value: unknown, subject: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     fail(`${subject} is not an object`);
@@ -66,10 +89,15 @@ function object(value: unknown, subject: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-const [directoryArgument, ...unexpected] = process.argv.slice(2);
-if (directoryArgument === undefined || unexpected.length !== 0) {
-  fail("usage: node scripts/verify-registry-release.ts <release-directory>");
+const [directoryArgument, provenanceArgument, ...unexpected] = process.argv.slice(2);
+if (
+  directoryArgument === undefined ||
+  (provenanceArgument !== undefined && provenanceArgument !== "--require-provenance") ||
+  unexpected.length !== 0
+) {
+  fail("usage: node scripts/verify-registry-release.ts <release-directory> [--require-provenance]");
 }
+const requireProvenance = provenanceArgument === "--require-provenance";
 
 const repoRoot = fileURLToPath(new URL("../", import.meta.url));
 const directory = resolve(directoryArgument);
@@ -130,6 +158,7 @@ for (const [index, entry] of entries.entries()) {
         "name",
         "version",
         "dist.integrity",
+        "dist.attestations",
         "dist-tags",
         "repository",
         "peerDependencies",
@@ -146,6 +175,20 @@ for (const [index, entry] of entries.entries()) {
     metadata["dist.integrity"] !== integrity
   ) {
     fail(`registry identity or integrity does not match ${packageSpec}`);
+  }
+  if (requireProvenance) {
+    const attestations = object(
+      metadata["dist.attestations"],
+      `registry attestations for ${packageSpec}`,
+    );
+    const provenance = object(attestations.provenance, `registry provenance for ${packageSpec}`);
+    if (
+      typeof attestations.url !== "string" ||
+      !attestations.url.startsWith(`${NPM_REGISTRY}-/npm/v1/attestations/`) ||
+      provenance.predicateType !== SLSA_PROVENANCE
+    ) {
+      fail(`${packageSpec} does not expose npmjs SLSA provenance`);
+    }
   }
   if (tags.alpha !== entry.version || Object.hasOwn(tags, "latest")) {
     fail(`${entry.name} must expose only the intended alpha channel, not latest`);
@@ -173,4 +216,33 @@ for (const [index, entry] of entries.entries()) {
   }
 }
 
-console.log(`verified ${entries.length} public registry packages at ${release.releaseVersion}`);
+if (requireProvenance) {
+  const root = mkdtempSync(join(tmpdir(), "tsudoi-provenance-verify-"));
+  try {
+    const consumer = join(root, "consumer");
+    mkdirSync(consumer);
+    writeFileSync(
+      join(consumer, "package.json"),
+      `${JSON.stringify({ name: "tsudoi-provenance-verifier", private: true })}\n`,
+    );
+    const env = { ...process.env, NPM_CONFIG_CACHE: join(root, "npm-cache") };
+    npmRun(
+      [
+        "install",
+        "--ignore-scripts",
+        "--save-exact",
+        ...entries.map(({ name, version }) => `${name}@${version}`),
+      ],
+      "the exact release set",
+      consumer,
+      env,
+    );
+    npmRun(["audit", "signatures"], "the exact installed release set", consumer, env);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+console.log(
+  `verified ${entries.length} public registry packages at ${release.releaseVersion}${requireProvenance ? " with provenance" : ""}`,
+);

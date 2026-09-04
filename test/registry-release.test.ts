@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import process from "node:process";
@@ -28,9 +28,10 @@ test("the registry verifier binds metadata and channels to the retained release"
       fakeNpm,
       `#!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync } from "node:fs";
+import { appendFileSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 const args = process.argv.slice(2);
+appendFileSync(process.env.NPM_LOG, JSON.stringify(args) + "\\n");
 const release = JSON.parse(readFileSync(join(process.env.RELEASE_DIR, "release-manifest.json"), "utf8"));
 const manifests = readdirSync(join(process.env.REPO_ROOT, "packages"), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -51,6 +52,12 @@ if (args[0] === "view") {
       ...(process.env.ADD_LATEST === "1" ? { latest: version } : {}),
     },
     repository: manifest.repository,
+    ...(process.env.ADD_ATTESTATIONS === "1" ? {
+      "dist.attestations": {
+        url: "https://registry.npmjs.org/-/npm/v1/attestations/" + name + "@" + version,
+        provenance: { predicateType: "https://slsa.dev/provenance/v1" },
+      },
+    } : {}),
     ...(manifest.peerDependencies === undefined ? {} : { peerDependencies: manifest.peerDependencies }),
     ...(manifest.peerDependenciesMeta === undefined ? {} : { peerDependenciesMeta: manifest.peerDependenciesMeta }),
   };
@@ -59,6 +66,14 @@ if (args[0] === "view") {
 }
 if (args[0] === "access" && args[1] === "get" && args[2] === "status") {
   process.stdout.write(JSON.stringify({ [args[3]]: "public" }));
+  process.exit(0);
+}
+if (args[0] === "install") process.exit(0);
+if (args[0] === "audit" && args[1] === "signatures") {
+  if (process.env.FAIL_AUDIT === "1") {
+    process.stderr.write("signature verification failed\\n");
+    process.exit(1);
+  }
   process.exit(0);
 }
 process.exit(2);
@@ -70,6 +85,7 @@ process.exit(2);
       PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
       RELEASE_DIR: release,
       REPO_ROOT: repoRoot,
+      NPM_LOG: join(parent, "npm.log"),
     };
     const verified = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
@@ -88,6 +104,55 @@ process.exit(2);
     });
     expect(latest.status).not.toBe(0);
     expect(latest.stderr).toContain("not latest");
+
+    const missingProvenance = spawnSync(
+      "node",
+      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env,
+      },
+    );
+    expect(missingProvenance.status).not.toBe(0);
+    expect(missingProvenance.stderr).toContain("registry attestations");
+
+    const provenance = spawnSync(
+      "node",
+      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: { ...env, ADD_ATTESTATIONS: "1" },
+      },
+    );
+    expect(`${String(provenance.status)} ${provenance.stderr}`).toBe("0 ");
+    expect(provenance.stdout).toContain(
+      "verified 7 public registry packages at 0.1.0-alpha.0 with provenance",
+    );
+    const calls = readFileSync(join(parent, "npm.log"), "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as string[]);
+    const install = calls.find((args) => args[0] === "install");
+    expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
+    expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.0"))).toHaveLength(7);
+    expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
+
+    const failedAudit = spawnSync(
+      "node",
+      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: { ...env, ADD_ATTESTATIONS: "1", FAIL_AUDIT: "1" },
+      },
+    );
+    expect(failedAudit.status).not.toBe(0);
+    expect(failedAudit.stderr).toContain("signature verification failed");
   } finally {
     rmSync(parent, { recursive: true, force: true });
   }

@@ -88,6 +88,13 @@ credential. See npm's
 [Trusted Publishing documentation](https://docs.npmjs.com/trusted-publishers/) and GitHub's
 [deployment environment documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
 
+After the first OIDC release succeeds, verify that its unprivileged post-publish job reports SLSA
+provenance for all seven packages and passes `npm audit signatures`. Then open **Settings >
+Publishing access** for every package, select **Require two-factor authentication and disallow
+tokens**, and revoke any now-unused automation or publish tokens from the npm account. Do this only
+after OIDC has worked: npm accepts traditional authentication alongside a trusted publisher until
+the package setting explicitly disables it.
+
 ## Later alpha releases
 
 Prepare a synchronized version bump in a pull request and merge it. From the clean merged `main`,
@@ -105,12 +112,16 @@ gh workflow run publish.yml --ref v0.1.0-alpha.1 -f mode=publish -f release-tag=
 
 Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is
 dispatched from that tag so npm's provenance names the release ref and commit. The job checks that
-the event ref, event commit, checked-out commit, tag, and package version agree; installs the latest
-`oxlint` and `oxfmt`; runs the complete Definition of Done under Bun and Deno; packs a fresh
-checksummed release; and publishes through OIDC with provenance. Re-running the job is safe only for
-registry artifacts whose integrity matches the freshly packed tarballs; any other existing artifact
-is refused. A separate unprivileged job then verifies registry metadata and runs the same fresh Bun
-and Deno consumer smoke test; it has neither the `npm` environment nor OIDC permission.
+the event ref, event commit, checked-out commit, tag, and package version agree. An unprivileged
+runner installs the latest `oxlint` and `oxfmt` and runs the complete Definition of Done under Bun
+and Deno. After that succeeds, a fresh runner with locked dependencies packs a checksummed release;
+no floating Ox executable runs on the filesystem that produces the release bundle. The OIDC job
+publishes only that immutable bundle with provenance. Re-running the job is safe only for registry
+artifacts whose integrity matches the freshly packed tarballs; any other existing artifact is
+refused. A separate unprivileged job then verifies registry metadata, requires each package's SLSA
+provenance, cryptographically checks the exact installed release with `npm audit signatures`, and
+runs the same fresh Bun and Deno consumer smoke test; it has neither the `npm` environment nor OIDC
+permission.
 
 If a publish run fails after changing some packages, rerun that same tag immediately and verify the
 registry before preparing another version. The fixed workflow concurrency group prevents two

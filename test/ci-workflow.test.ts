@@ -15,7 +15,7 @@ interface WorkflowStep {
   name?: string;
   uses?: string;
   run?: string;
-  with?: Record<string, string>;
+  with?: Record<string, unknown>;
 }
 
 interface WorkflowJob {
@@ -53,6 +53,7 @@ interface Workflow {
   jobs?: {
     bootstrap?: WorkflowJob;
     checks?: WorkflowJob;
+    quality?: WorkflowJob;
     prepare?: WorkflowJob;
     publish?: WorkflowJob;
     verify?: WorkflowJob;
@@ -179,17 +180,20 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   const source = readFileSync(publishWorkflowPath, "utf8");
   const workflow = parseWorkflow(source);
   const bootstrap = workflow.jobs?.bootstrap;
+  const quality = workflow.jobs?.quality;
   const prepare = workflow.jobs?.prepare;
   const publish = workflow.jobs?.publish;
   const verify = workflow.jobs?.verify;
+  const qualitySteps = quality?.steps ?? [];
   const prepareSteps = prepare?.steps ?? [];
   const publishSteps = publish?.steps ?? [];
   const verifySteps = verify?.steps ?? [];
+  const qualityCommands = commandLinesOf(qualitySteps);
   const prepareCommands = commandLinesOf(prepareSteps);
   const publishCommands = commandLinesOf(publishSteps);
   const verifyCommands = commandLinesOf(verifySteps);
-  const uses = [...prepareSteps, ...publishSteps, ...verifySteps].flatMap((step) =>
-    typeof step.uses === "string" ? [step.uses] : [],
+  const uses = [...qualitySteps, ...prepareSteps, ...publishSteps, ...verifySteps].flatMap(
+    (step) => (typeof step.uses === "string" ? [step.uses] : []),
   );
 
   expect(workflow.on).toEqual({
@@ -225,10 +229,18 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(bootstrap?.steps).toEqual([
     { run: 'echo "Tag-scoped workflow dispatching is now enabled; nothing was published."' },
   ]);
+  expect(quality).toMatchObject({
+    if: "inputs.mode == 'publish'",
+    "runs-on": "ubuntu-latest",
+    "timeout-minutes": 60,
+  });
+  expect(quality?.permissions?.["id-token"]).toBeUndefined();
+  expect(quality?.environment).toBeUndefined();
   expect(prepare?.permissions?.["id-token"]).toBeUndefined();
   expect(prepare?.environment).toBeUndefined();
   expect(prepare?.["runs-on"]).toBe("ubuntu-latest");
   expect(prepare?.if).toBe("inputs.mode == 'publish'");
+  expect(prepare?.needs).toBe("quality");
   expect(prepare?.["continue-on-error"]).toBeUndefined();
   expect(publish?.environment).toBe("npm");
   expect(publish?.needs).toBe("prepare");
@@ -244,33 +256,47 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(verify?.if).toBe("inputs.mode == 'publish'");
   expect(verify?.["continue-on-error"]).toBeUndefined();
   expect(
-    [...prepareSteps, ...publishSteps, ...verifySteps].every(
+    [...qualitySteps, ...prepareSteps, ...publishSteps, ...verifySteps].every(
       (step) => step.if === undefined && step["continue-on-error"] === undefined,
     ),
   ).toBeTrue();
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
   expect(verifyCommands).toContain(
-    'node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
+    'node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance',
   );
   expect(verifyCommands).toContain(
     'node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
   );
+  expect(qualitySteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
+    "${{ inputs.release-tag }}",
+  );
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
     "${{ inputs.release-tag }}",
   );
+  expect(qualitySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
+    "node-version": "24.10.0",
+    "package-manager-cache": false,
+  });
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
     "node-version": "24.10.0",
     "registry-url": "https://registry.npmjs.org",
+    "package-manager-cache": false,
   });
   expect(publishSteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
     "node-version": "24.10.0",
     "registry-url": "https://registry.npmjs.org",
+    "package-manager-cache": false,
+  });
+  expect(verifySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
+    "node-version": "24.10.0",
+    "registry-url": "https://registry.npmjs.org",
+    "package-manager-cache": false,
   });
   expect(
-    prepareSteps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
+    qualitySteps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
   ).toBe("1.3.13");
   expect(
-    prepareSteps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.[
+    qualitySteps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.[
       "deno-version"
     ],
   ).toBe("v2.9.4");
@@ -283,13 +309,17 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     ],
   ).toBe("v2.9.4");
 
-  expect(prepareCommands).toContain("sudo apt-get install --yes fish xonsh zsh");
+  expect(qualityCommands).toContain("sudo apt-get install --yes fish xonsh zsh");
+  expect(qualityCommands).toContain("bun install --frozen-lockfile");
+  expect(qualityCommands).toContain("bun add --global oxlint@latest oxfmt@latest");
+  expect(qualityCommands).toContain("oxlint --version");
+  expect(qualityCommands).toContain("oxfmt --version");
+  expect(qualityCommands).toContain("bun run scripts/definition-of-done.ts");
   expect(prepareCommands).toContain("bun install --frozen-lockfile");
-  expect(prepareCommands).toContain("bun add --global oxlint@latest oxfmt@latest");
+  expect(prepareCommands).not.toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(prepareCommands).toContain('test "$(npm --version)" = "11.6.1"');
   expect(publishCommands).toContain('test "$(npm --version)" = "11.6.1"');
   expect(source).not.toContain("npm@latest");
-  expect(prepareCommands).toContain("bun run scripts/definition-of-done.ts");
   expect(prepareCommands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
   expect(prepareCommands).toContain(
     "find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS",
@@ -330,22 +360,47 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   );
   expect(source).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN|secrets\./);
 
-  const definitionIndex = prepareCommands.indexOf("bun run scripts/definition-of-done.ts");
-  const packIndex = prepareCommands.indexOf(
-    'bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"',
-  );
   const validationIndex = prepareSteps.findIndex(
     (step) => step.name === "Validate the release tag",
   );
-  const definitionStepIndex = prepareSteps.findIndex(
-    (step) => step.run?.trim() === "bun run scripts/definition-of-done.ts",
+  const installIndex = prepareSteps.findIndex(
+    (step) => step.run?.trim() === "bun install --frozen-lockfile",
   );
   const packStepIndex = prepareSteps.findIndex(
     (step) => step.run?.trim() === 'bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"',
   );
   expect(validationIndex).toBeGreaterThanOrEqual(0);
-  expect(definitionStepIndex).toBeGreaterThan(validationIndex);
-  expect(packStepIndex).toBeGreaterThan(definitionStepIndex);
-  expect(definitionIndex).toBeGreaterThanOrEqual(0);
-  expect(packIndex).toBeGreaterThan(definitionIndex);
+  expect(installIndex).toBeGreaterThan(validationIndex);
+  expect(packStepIndex).toBeGreaterThan(installIndex);
+
+  const bundleIndex = prepareSteps.findIndex(
+    (step) => step.name === "Build the immutable release bundle",
+  );
+  const bundle = prepareSteps[bundleIndex]?.run ?? "";
+  expect(bundleIndex).toBeGreaterThan(packStepIndex);
+  expect(bundle).toContain("scripts/smoke-registry-release.ts");
+  expect(bundle).toContain("scripts/verify-registry-release.ts");
+  expect(bundle).toContain("scripts/workspaces.ts");
+  expect(bundle).toContain("test/helpers/lsp.ts");
+  expect(bundle).toContain("test/helpers/spawn.ts");
+
+  expect(verify?.["timeout-minutes"]).toBe(35);
+  const verifySetupIndex = verifySteps.findIndex((step) =>
+    step.uses?.startsWith("actions/setup-node@"),
+  );
+  const verifyDownloadIndex = verifySteps.findIndex((step) =>
+    step.uses?.startsWith("actions/download-artifact@"),
+  );
+  const verifyChecksumIndex = verifySteps.findIndex(
+    (step) => step.name === "Verify the release bundle",
+  );
+  const metadataIndex = verifySteps.findIndex((step) => step.name === "Verify registry metadata");
+  const smokeIndex = verifySteps.findIndex(
+    (step) => step.name === "Smoke-test fresh Bun and Deno consumers",
+  );
+  expect(verifySetupIndex).toBeGreaterThanOrEqual(0);
+  expect(verifyDownloadIndex).toBeGreaterThan(verifySetupIndex);
+  expect(verifyChecksumIndex).toBeGreaterThan(verifyDownloadIndex);
+  expect(metadataIndex).toBeGreaterThan(verifyChecksumIndex);
+  expect(smokeIndex).toBeGreaterThan(metadataIndex);
 });
