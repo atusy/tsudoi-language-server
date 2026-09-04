@@ -55,6 +55,7 @@ interface Workflow {
     checks?: WorkflowJob;
     prepare?: WorkflowJob;
     publish?: WorkflowJob;
+    verify?: WorkflowJob;
   };
 }
 
@@ -180,11 +181,14 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   const bootstrap = workflow.jobs?.bootstrap;
   const prepare = workflow.jobs?.prepare;
   const publish = workflow.jobs?.publish;
+  const verify = workflow.jobs?.verify;
   const prepareSteps = prepare?.steps ?? [];
   const publishSteps = publish?.steps ?? [];
+  const verifySteps = verify?.steps ?? [];
   const prepareCommands = commandLinesOf(prepareSteps);
   const publishCommands = commandLinesOf(publishSteps);
-  const uses = [...prepareSteps, ...publishSteps].flatMap((step) =>
+  const verifyCommands = commandLinesOf(verifySteps);
+  const uses = [...prepareSteps, ...publishSteps, ...verifySteps].flatMap((step) =>
     typeof step.uses === "string" ? [step.uses] : [],
   );
 
@@ -232,12 +236,25 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(publish?.["runs-on"]).toBe("ubuntu-latest");
   expect(publish?.if).toBe("inputs.mode == 'publish'");
   expect(publish?.["continue-on-error"]).toBeUndefined();
+  expect(verify?.needs).toEqual(["prepare", "publish"]);
+  expect(verify?.permissions).toEqual({ contents: "read" });
+  expect(verify?.permissions?.["id-token"]).toBeUndefined();
+  expect(verify?.environment).toBeUndefined();
+  expect(verify?.["runs-on"]).toBe("ubuntu-latest");
+  expect(verify?.if).toBe("inputs.mode == 'publish'");
+  expect(verify?.["continue-on-error"]).toBeUndefined();
   expect(
-    [...prepareSteps, ...publishSteps].every(
+    [...prepareSteps, ...publishSteps, ...verifySteps].every(
       (step) => step.if === undefined && step["continue-on-error"] === undefined,
     ),
   ).toBeTrue();
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
+  expect(verifyCommands).toContain(
+    'node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
+  );
+  expect(verifyCommands).toContain(
+    'node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
+  );
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
     "${{ inputs.release-tag }}",
   );
@@ -254,6 +271,14 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   ).toBe("1.3.13");
   expect(
     prepareSteps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.[
+      "deno-version"
+    ],
+  ).toBe("v2.9.4");
+  expect(
+    verifySteps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
+  ).toBe("1.3.13");
+  expect(
+    verifySteps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.[
       "deno-version"
     ],
   ).toBe("v2.9.4");

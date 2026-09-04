@@ -54,6 +54,7 @@ Publishing is the maintainer's explicit, 2FA-protected action:
 ```sh
 bun run scripts/publish-release.ts "$release_dir"
 node scripts/verify-registry-release.ts "$release_dir"
+node scripts/smoke-registry-release.ts "$release_dir"
 ```
 
 The publisher checks every local SHA-256 before contacting npm. It also checks the SHA-512
@@ -61,11 +62,11 @@ integrity of any version already in the registry. A retry skips an already-publi
 when its registry artifact is byte-for-byte the same; a mismatch or a registry error stops the run
 before another package is published. The read-only verifier then checks all seven registry
 identities and versions, each retained tarball's integrity, public access, repository and exact peer
-metadata, the synchronized `alpha` tags, and the absence of an accidental `latest` tag.
-
-After publication, ask the repository agent to verify all seven versions and the `alpha` dist-tag,
-then smoke-test fresh Bun and Deno consumers against the registry. The first release cannot be
-verified this way beforehand because the package names do not yet exist in the registry.
+metadata, the synchronized `alpha` tags, and the absence of an accidental `latest` tag. The smoke
+test then installs all seven packages through `alpha` into isolated, empty Bun and Deno consumers,
+checks that every resolved version matches the retained release manifest, and completes an LSP
+initialize, document completion, shutdown, and clean exit under both runtimes. The first release
+cannot be verified this way beforehand because the package names do not yet exist in the registry.
 
 ## Enable Trusted Publishing
 
@@ -108,7 +109,8 @@ the event ref, event commit, checked-out commit, tag, and package version agree;
 `oxlint` and `oxfmt`; runs the complete Definition of Done under Bun and Deno; packs a fresh
 checksummed release; and publishes through OIDC with provenance. Re-running the job is safe only for
 registry artifacts whose integrity matches the freshly packed tarballs; any other existing artifact
-is refused.
+is refused. A separate unprivileged job then verifies registry metadata and runs the same fresh Bun
+and Deno consumer smoke test; it has neither the `npm` environment nor OIDC permission.
 
 If a publish run fails after changing some packages, rerun that same tag immediately and verify the
 registry before preparing another version. The fixed workflow concurrency group prevents two

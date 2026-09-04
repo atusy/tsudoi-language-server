@@ -257,12 +257,12 @@ export class LspSession {
    * two things that must be kept equal by hand; here the stated string IS the
    * argv, so there is nothing to keep equal.
    */
-  static startCommand(command: string, cwd: string): LspSession {
+  static startCommand(command: string, cwd: string, env?: NodeJS.ProcessEnv): LspSession {
     const [program, ...args] = command.split(" ");
     if (program === undefined) {
       throw new Error(`not a command: ${command}`);
     }
-    return new LspSession(spawn(program, args, { cwd, stdio: ["pipe", "pipe", "pipe"] }));
+    return new LspSession(spawn(program, args, { cwd, env, stdio: ["pipe", "pipe", "pipe"] }));
   }
 
   request<T>(method: string, params: unknown): Promise<T> {
