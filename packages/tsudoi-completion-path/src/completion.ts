@@ -4,9 +4,9 @@
  * fragment under the cursor names, yielded in batches.
  */
 
-import type { Dirent, Stats } from "node:fs";
+import type { Dirent } from "node:fs";
 import { opendir, stat } from "node:fs/promises";
-import nodePath, { basename, dirname, type PlatformPath } from "node:path";
+import nodePath, { basename, dirname } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
@@ -21,6 +21,19 @@ import {
   type TextEdit,
   type WorkspaceFolder,
 } from "@atusy/tsudoi-language-server/deps/types";
+
+interface PathFlavour {
+  isAbsolute(path: string): boolean;
+  join(...paths: string[]): string;
+  parse(path: string): { readonly base: string; readonly root: string };
+  resolve(...paths: string[]): string;
+}
+
+interface FileStats {
+  readonly mtime: Date;
+  readonly size: number;
+  isDirectory(): boolean;
+}
 
 /** One candidate for the path the user is typing. */
 export interface PathFragment {
@@ -46,7 +59,7 @@ export interface PathFragment {
 export function pathFragments(
   line: string,
   character: number,
-  flavour: PlatformPath = nodePath,
+  flavour: PathFlavour = nodePath,
 ): PathFragment[] {
   // A read past either end reads as WHITESPACE, which is what stops the scan
   // below and what makes `character === 0` an empty answer. `?? ""` instead
@@ -77,7 +90,7 @@ export function pathFragments(
  * than written down, so `Windows accepts a forward slash` is measured in every
  * run rather than claimed.
  */
-function separatorsOf(flavour: PlatformPath): readonly string[] {
+function separatorsOf(flavour: PathFlavour): readonly string[] {
   return ["/", "\\"].filter((candidate) => flavour.parse(`a${candidate}b`).base === "b");
 }
 
@@ -206,7 +219,7 @@ export interface CompletePathOptions {
    */
   readonly cwd?: string;
   /** How a path is spelled: `path.win32`, `path.posix`, or the host's own. */
-  readonly flavour?: PlatformPath;
+  readonly flavour?: PathFlavour;
 }
 
 /**
@@ -223,7 +236,7 @@ export function sourcesFor(
   uri: string,
   cwd: string,
   folders: readonly WorkspaceFolder[] = [],
-  flavour: PlatformPath = nodePath,
+  flavour: PathFlavour = nodePath,
 ): PathSource[] {
   const root = flavour.parse(fragment.text).root;
   if (flavour.isAbsolute(fragment.text)) {
@@ -320,7 +333,7 @@ export function editFor(
 export function listingDirectory(
   source: PathSource,
   fragment: PathFragment,
-  flavour: PlatformPath = nodePath,
+  flavour: PathFlavour = nodePath,
 ): string {
   return flavour.resolve(source.root, fragment.directory);
 }
@@ -348,7 +361,7 @@ export async function* itemsFrom(
   line: string,
   insertReplaceSupport: boolean,
   documentationFormat: MarkupKind,
-  flavour: PlatformPath = nodePath,
+  flavour: PathFlavour = nodePath,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = listingDirectory(source, fragment, flavour);
   let items: CompletionItem[] = [];
@@ -550,7 +563,7 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
  * beside lowercase `source` and `size`: it is theirs, and consistency is not
  * worth a silent edit to a thing they wrote out.
  */
-export function statLine(stats: Stats): readonly string[] {
+export function statLine(stats: FileStats): readonly string[] {
   const lastModified = `lastModified: ${toTheSecond(stats.mtime)}`;
   return stats.isDirectory() ? [lastModified] : [`size: ${String(stats.size)} bytes`, lastModified];
 }

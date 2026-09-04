@@ -508,6 +508,34 @@ test("the release tarballs install together and execute under Bun and Deno", asy
       timeout: SPAWN_TIMEOUT_MS,
     });
     expect(installedHandlers.status).toBe(0);
+    writeFileSync(
+      join(consumer, "type-probe.ts"),
+      'import { completePath } from "@atusy/tsudoi-completion-path";\nvoid completePath;\n',
+    );
+    writeFileSync(
+      join(consumer, "tsconfig.json"),
+      `${JSON.stringify({
+        compilerOptions: {
+          module: "nodenext",
+          moduleResolution: "nodenext",
+          skipLibCheck: false,
+          strict: true,
+          target: "esnext",
+          types: [],
+        },
+        files: ["type-probe.ts"],
+      })}\n`,
+    );
+    const typeChecked = spawnSync(
+      join(repoRoot, "node_modules", ".bin", "tsc"),
+      ["--noEmit", "-p", "tsconfig.json"],
+      {
+        cwd: consumer,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+      },
+    );
+    expect(`${String(typeChecked.status)} ${typeChecked.stdout}${typeChecked.stderr}`).toBe("0 ");
     for (const [path, source] of Object.entries(exampleSources())) {
       writeFileSync(join(consumer, path), source);
     }

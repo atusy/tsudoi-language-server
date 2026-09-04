@@ -105,11 +105,9 @@ test("only the built output ships, so no consumer receives a line of source", ()
  * what a stranger downloads and must be a decision.
  *
  * `@types/node` IS A DEVDEPENDENCY AND THE ASYMMETRY IS DELIBERATE. The build
- * needs it -- `types: ["node"]` in tsconfig.build.json, without which every
- * `node:` specifier is TS2591 -- and a consumer does not receive types from us
- * at all: what ships is a declaration that imports `node:path`, which their own
- * toolchain answers or skips. Declaring it a runtime dependency would install a
- * types package into projects that never type-check.
+ * needs it for the implementation's `node:` imports, but the public declarations
+ * express the small structural path and stat surfaces they expose. A consumer
+ * therefore does not need a Node ambient type package merely to use this handler.
  *
  * THE VERSION IS EXACT DURING ALPHA. One number identifies the package set the
  * repository tested together; a later alpha updates the framework, handler and
