@@ -277,6 +277,24 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   );
   expect(publishCommands).not.toContain("bun install --frozen-lockfile");
   expect(publishCommands.some((command) => command.startsWith("bun "))).toBeFalse();
+  const publishSetupIndex = publishSteps.findIndex((step) =>
+    step.uses?.startsWith("actions/setup-node@"),
+  );
+  const npmVersionIndex = publishSteps.findIndex(
+    (step) => step.name === "Verify the publishing npm version",
+  );
+  const downloadIndex = publishSteps.findIndex((step) =>
+    step.uses?.startsWith("actions/download-artifact@"),
+  );
+  const checksumIndex = publishSteps.findIndex((step) => step.name === "Verify the release bundle");
+  const publishIndex = publishSteps.findIndex(
+    (step) => step.name === "Publish with npm Trusted Publishing",
+  );
+  expect(publishSetupIndex).toBeGreaterThanOrEqual(0);
+  expect(npmVersionIndex).toBeGreaterThan(publishSetupIndex);
+  expect(downloadIndex).toBeGreaterThan(npmVersionIndex);
+  expect(checksumIndex).toBeGreaterThan(downloadIndex);
+  expect(publishIndex).toBeGreaterThan(checksumIndex);
   expect(source).toContain("refs/tags/$RELEASE_TAG");
   expect(source).toContain("v${release_version}");
   expect(source).toContain('test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"');
