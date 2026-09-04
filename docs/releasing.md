@@ -66,7 +66,7 @@ credential. See npm's
 ## Later alpha releases
 
 Prepare a synchronized version bump in a pull request and merge it. From the clean merged `main`,
-create and push the matching tag, wait for CI, then dispatch the publishing workflow from `main`:
+create and push the matching tag, wait for CI, then dispatch the publishing workflow from that tag:
 
 ```sh
 git switch main
