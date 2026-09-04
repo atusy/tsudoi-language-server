@@ -38,12 +38,16 @@ function readReleaseManifest(directory: string): {
   readonly packages: readonly ValidReleaseEntry[];
 } {
   const manifestPath = join(directory, "release-manifest.json");
-  let manifest: ReleaseManifest;
+  let parsed: unknown;
   try {
-    manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as ReleaseManifest;
+    parsed = JSON.parse(readFileSync(manifestPath, "utf8"));
   } catch (cause) {
     fail(`cannot read ${manifestPath}: ${String(cause)}`);
   }
+  if (typeof parsed !== "object" || parsed === null) {
+    fail(`${manifestPath} is not an alpha release manifest`);
+  }
+  const manifest = parsed as ReleaseManifest;
   if (
     typeof manifest.releaseVersion !== "string" ||
     !/^\d+\.\d+\.\d+-alpha\.\d+$/.test(manifest.releaseVersion) ||
@@ -52,7 +56,11 @@ function readReleaseManifest(directory: string): {
   ) {
     fail(`${manifestPath} is not an alpha release manifest`);
   }
-  const packages = (manifest.packages as ReleaseEntry[]).map((entry) => {
+  const packages = (manifest.packages as unknown[]).map((candidate) => {
+    if (typeof candidate !== "object" || candidate === null) {
+      fail(`${manifestPath} contains an invalid package entry`);
+    }
+    const entry = candidate as ReleaseEntry;
     if (
       typeof entry.name !== "string" ||
       typeof entry.version !== "string" ||
@@ -182,6 +190,9 @@ function tarballIdentity(path: string): { readonly name: string; readonly versio
     manifest = JSON.parse(source);
   } catch (cause) {
     fail(`tarball package.json is invalid in ${path}: ${String(cause)}`);
+  }
+  if (typeof manifest !== "object" || manifest === null) {
+    fail(`tarball package.json is not an object in ${path}`);
   }
   const { name, version } = manifest as { readonly name?: unknown; readonly version?: unknown };
   if (typeof name !== "string" || typeof version !== "string") {

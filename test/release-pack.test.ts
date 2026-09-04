@@ -104,6 +104,65 @@ test("the release packer refuses a non-empty destination", () => {
   }
 });
 
+test("the release packer reports malformed npm output with package context", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-pack-output-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  try {
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(fakeNpm, "#!/bin/sh\nprintf 'null\\n'\n");
+    chmodSync(fakeNpm, 0o755);
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` },
+    });
+    expect(packed.status).not.toBe(0);
+    expect(packed.stderr).toContain(
+      "npm pack for @atusy/tsudoi-language-server returned an invalid result",
+    );
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("the publisher reports null manifest structures before contacting npm", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-null-manifest-"));
+  const bin = join(parent, "bin");
+  const npmLog = join(parent, "npm-called");
+  try {
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(fakeNpm, `#!/bin/sh\nprintf called > "${npmLog}"\nexit 2\n`);
+    chmodSync(fakeNpm, 0o755);
+    const cases = [
+      { source: "null\n", error: "is not an alpha release manifest" },
+      {
+        source: '{"releaseVersion":"0.1.0-alpha.0","packages":[null]}\n',
+        error: "contains an invalid package entry",
+      },
+    ];
+    for (const [index, invalid] of cases.entries()) {
+      const destination = join(parent, `release-${String(index)}`);
+      mkdirSync(destination);
+      writeFileSync(join(destination, "release-manifest.json"), invalid.source);
+      const published = spawnSync("node", ["scripts/publish-release.ts", destination], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` },
+      });
+      expect(published.status).not.toBe(0);
+      expect(published.stderr).toContain(invalid.error);
+    }
+    expect(existsSync(npmLog)).toBeFalse();
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
 test("the Node publisher resumes with provenance only past an identical registry artifact", () => {
   const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-resume-"));
   const destination = join(parent, "release");

@@ -69,7 +69,15 @@ function packedFilename(output: string, expected: ReleasePackage): string {
   } catch (cause) {
     fail(`npm pack for ${expected.name} returned invalid JSON: ${String(cause)}`);
   }
-  const result = (parsed as Array<{ filename?: unknown; name?: unknown; version?: unknown }>)[0];
+  if (
+    !Array.isArray(parsed) ||
+    parsed.length !== 1 ||
+    typeof parsed[0] !== "object" ||
+    parsed[0] === null
+  ) {
+    fail(`npm pack for ${expected.name} returned an invalid result`);
+  }
+  const result = parsed[0] as { filename?: unknown; name?: unknown; version?: unknown };
   if (result?.name !== expected.name || result.version !== expected.version) {
     fail(
       `npm pack identity does not match ${expected.name}@${expected.version}: ${String(result?.name)}@${String(result?.version)}`,
