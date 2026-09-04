@@ -104,7 +104,7 @@ test("the release packer refuses a non-empty destination", () => {
   }
 });
 
-test("the publisher resumes only past a registry artifact with the same integrity", () => {
+test("the Node publisher resumes with provenance only past an identical registry artifact", () => {
   const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-resume-"));
   const destination = join(parent, "release");
   const bin = join(parent, "bin");
@@ -152,20 +152,24 @@ process.exit(2);
     );
     chmodSync(fakeNpm, 0o755);
 
-    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      timeout: SPAWN_TIMEOUT_MS,
-      env: {
-        ...process.env,
-        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
-        EXISTING_SPEC: `${String(alreadyPublished?.name)}@${String(alreadyPublished?.version)}`,
-        EXISTING_NAME: String(alreadyPublished?.name),
-        EXISTING_VERSION: String(alreadyPublished?.version),
-        EXISTING_INTEGRITY: integrity,
-        PUBLISH_LOG: publishLog,
+    const published = spawnSync(
+      "node",
+      ["scripts/publish-release.ts", destination, "--provenance"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: {
+          ...process.env,
+          PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+          EXISTING_SPEC: `${String(alreadyPublished?.name)}@${String(alreadyPublished?.version)}`,
+          EXISTING_NAME: String(alreadyPublished?.name),
+          EXISTING_VERSION: String(alreadyPublished?.version),
+          EXISTING_INTEGRITY: integrity,
+          PUBLISH_LOG: publishLog,
+        },
       },
-    });
+    );
     expect(`${String(published.status)} ${published.stderr}`).toBe("0 ");
     const calls = readFileSync(publishLog, "utf8")
       .trim()
@@ -181,6 +185,7 @@ process.exit(2);
         "public",
         "--tag",
         "alpha",
+        "--provenance",
       ]),
     );
   } finally {
