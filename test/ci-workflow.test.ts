@@ -18,6 +18,7 @@ interface WorkflowStep {
 }
 
 interface WorkflowJob {
+  environment?: unknown;
   if?: unknown;
   "continue-on-error"?: unknown;
   "runs-on"?: string;
@@ -30,13 +31,17 @@ interface Workflow {
     pull_request?: unknown;
     push?: { branches?: string[]; tags?: string[] };
     schedule?: Array<{ cron?: string }>;
+    workflow_dispatch?: {
+      inputs?: Record<string, { required?: boolean; type?: string }>;
+    };
   };
-  permissions?: { contents?: string };
+  permissions?: { contents?: string; "id-token"?: string };
   concurrency?: { group?: string; "cancel-in-progress"?: boolean };
-  jobs?: { checks?: WorkflowJob };
+  jobs?: { checks?: WorkflowJob; publish?: WorkflowJob };
 }
 
 const workflowPath = join(repoRoot, ".github", "workflows", "ci.yml");
+const publishWorkflowPath = join(repoRoot, ".github", "workflows", "publish.yml");
 const dependencyFields = [
   "dependencies",
   "devDependencies",
@@ -149,4 +154,59 @@ test("a commented Definition of Done command does not satisfy the workflow contr
 
   const commands = commandLinesOf(parseWorkflow(commented).jobs?.checks?.steps ?? []);
   expect(commands).not.toContain("bun run scripts/definition-of-done.ts");
+});
+
+test("publishing is a manually approved OIDC job for one exact alpha tag", () => {
+  const source = readFileSync(publishWorkflowPath, "utf8");
+  const workflow = parseWorkflow(source);
+  const publish = workflow.jobs?.publish;
+  const steps = publish?.steps ?? [];
+  const commands = commandLinesOf(steps);
+  const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
+
+  expect(workflow.on).toEqual({
+    workflow_dispatch: {
+      inputs: {
+        "release-tag": { required: true, type: "string" },
+      },
+    },
+  });
+  expect(workflow.permissions).toEqual({ contents: "read", "id-token": "write" });
+  expect(publish?.environment).toBe("npm");
+  expect(publish?.["runs-on"]).toBe("ubuntu-latest");
+  expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
+  expect(steps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
+    "${{ inputs.release-tag }}",
+  );
+  expect(steps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
+    "node-version": "24",
+    "registry-url": "https://registry.npmjs.org",
+  });
+  expect(
+    steps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
+  ).toBe("1.3.13");
+  expect(
+    steps.find((step) => step.uses?.startsWith("denoland/setup-deno@"))?.with?.["deno-version"],
+  ).toBe("v2.9.4");
+
+  expect(commands).toContain("sudo apt-get install --yes fish xonsh zsh");
+  expect(commands).toContain("bun install --frozen-lockfile");
+  expect(commands).toContain("bun add --global oxlint@latest oxfmt@latest");
+  expect(commands).toContain("bun run scripts/definition-of-done.ts");
+  expect(commands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
+  expect(commands).toContain(
+    'bun run scripts/publish-release.ts "$RUNNER_TEMP/npm-release" --provenance',
+  );
+  expect(source).toContain("refs/tags/$RELEASE_TAG");
+  expect(source).toContain("v${release_version}");
+  expect(source).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN|secrets\./);
+
+  const definitionIndex = commands.indexOf("bun run scripts/definition-of-done.ts");
+  const packIndex = commands.indexOf('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
+  const publishIndex = commands.indexOf(
+    'bun run scripts/publish-release.ts "$RUNNER_TEMP/npm-release" --provenance',
+  );
+  expect(definitionIndex).toBeGreaterThanOrEqual(0);
+  expect(packIndex).toBeGreaterThan(definitionIndex);
+  expect(publishIndex).toBeGreaterThan(packIndex);
 });
