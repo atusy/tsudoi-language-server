@@ -24,11 +24,15 @@ function fixture(
     readonly workflowPath?: string;
     readonly gitRef?: string;
     readonly gitCommit?: string;
+    readonly statementType?: string | null;
   } = {},
 ): { readonly response: Response; readonly bundle: Bundle } {
   const repository = overrides.repository ?? policy.repository;
   const gitRef = overrides.gitRef ?? policy.gitRef;
   const statement = {
+    ...(overrides.statementType === null
+      ? {}
+      : { _type: overrides.statementType ?? "https://in-toto.io/Statement/v1" }),
     subject: [
       {
         name: "pkg:npm/%40atusy/tsudoi-language-server@0.1.0-alpha.0",
@@ -91,20 +95,22 @@ test("the exact cryptographically accepted bundle is checked against the release
   expect(verificationOptions).toEqual({
     certificateIssuer: "https://token.actions.githubusercontent.com",
     certificateIdentityURI:
-      "https://github.com/atusy/tsudoi-language-server/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.0",
+      "^https://github\\.com/atusy/tsudoi-language-server/\\.github/workflows/publish\\.yml@refs/tags/v0\\.1\\.0-alpha\\.0$",
   });
 });
 
 test("a bundle signed by another identity is rejected", async () => {
   const { response } = fixture();
+  const untrustedIdentity =
+    "https://github.com/atusy/tsudoi-language-server/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.0-evil";
   await expect(
     verifyProvenance(
       policy,
       (async () => response) as unknown as typeof fetch,
       async (_bundle, options) => {
         if (
-          options.certificateIdentityURI !==
-          "https://github.com/atusy/other/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.0"
+          options.certificateIdentityURI === undefined ||
+          untrustedIdentity.match(options.certificateIdentityURI) === null
         ) {
           throw new Error("certificate identity mismatch");
         }
@@ -120,6 +126,8 @@ test("source and subject mismatches fail after cryptographic verification", asyn
     [{ workflowPath: ".github/workflows/other.yml" }, "workflow"],
     [{ gitRef: "refs/heads/main" }, "workflow"],
     [{ gitCommit: "f".repeat(40) }, "commit"],
+    [{ statementType: "https://in-toto.io/Statement/v0.1" }, "Statement v1"],
+    [{ statementType: null }, "Statement v1"],
   ] as const) {
     const { response } = fixture(overrides);
     await expect(

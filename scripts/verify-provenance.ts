@@ -4,6 +4,7 @@ const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const GITHUB_ACTIONS_BUILD =
   "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1";
 const IN_TOTO_PAYLOAD = "application/vnd.in-toto+json";
+const IN_TOTO_STATEMENT = "https://in-toto.io/Statement/v1";
 const GITHUB_ACTIONS_OIDC_ISSUER = "https://token.actions.githubusercontent.com";
 
 export interface ProvenancePolicy {
@@ -29,6 +30,10 @@ function array(value: unknown, subject: string): readonly unknown[] {
   return value;
 }
 
+function exactRegularExpression(value: string): string {
+  return `^${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`;
+}
+
 export async function verifyProvenance(
   policy: ProvenancePolicy,
   fetcher: typeof fetch = fetch,
@@ -50,7 +55,9 @@ export async function verifyProvenance(
   const bundle = object(object(candidate, "SLSA attestation").bundle, "SLSA attestation.bundle");
   await bundleVerifier(bundle as Bundle, {
     certificateIssuer: GITHUB_ACTIONS_OIDC_ISSUER,
-    certificateIdentityURI: `${policy.repository}/${policy.workflowPath}@${policy.gitRef}`,
+    certificateIdentityURI: exactRegularExpression(
+      `${policy.repository}/${policy.workflowPath}@${policy.gitRef}`,
+    ),
   });
   const envelope = object(bundle.dsseEnvelope, "SLSA attestation.bundle.dsseEnvelope");
   if (envelope.payloadType !== IN_TOTO_PAYLOAD || typeof envelope.payload !== "string") {
@@ -65,6 +72,9 @@ export async function verifyProvenance(
     );
   } catch (cause) {
     throw new Error(`cannot decode the provenance statement: ${String(cause)}`);
+  }
+  if (statement._type !== IN_TOTO_STATEMENT) {
+    throw new Error("provenance statement is not an in-toto Statement v1");
   }
   if (statement.predicateType !== SLSA_PROVENANCE) {
     throw new Error("provenance statement is not SLSA v1");
