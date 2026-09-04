@@ -575,23 +575,14 @@ export function statesFact(markdown: string, fact: ReadmeFact): boolean {
   return sectionsStating(markdown, fact).length > 0;
 }
 
-/**
- * THE PREMISE UNDER WHICH EVERY HANDLER PACKAGE MAY CALL TSUDOI AN OPTIONAL
- * PEER, EXPORTED SO THE TWO THINGS THAT DEPEND ON IT READ ONE SPELLING.
- *
- * `peerDependenciesMeta.optional` says `this package works without tsudoi`,
- * which is FALSE -- each handler imports a value from it. What it buys is that
- * no installer goes looking in a registry for a name nobody has published, and
- * that purchase EXPIRES the day tsudoi is published.
- *
- * THE README IS NOT WHAT THE PREMISE HANGS ON: prose is not on the publication
- * path, and `bun publish` never opens this document. It hangs on the root
- * manifest's `private: true`, which the tool DOES read. What the document owes
- * is not to contradict that gate.
- */
-export const UNPUBLISHED: ReadmeFact = {
-  name: "the package is not published",
-  tokens: [/not published/i, /registry/i],
+/** The release channel a reader must opt into while the package is pre-stable. */
+export const ALPHA_RELEASE: ReadmeFact = {
+  name: "the package is published under npm's alpha tag",
+  tokens: [
+    /bun add @atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+    /deno add --save-exact npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
+    /deno run -A --frozen --node-modules-dir=none @atusy\/tsudoi-language-server\/cli/,
+  ],
 };
 
 /**
@@ -810,13 +801,25 @@ function theProjectOverview(): readonly string[] {
 }
 
 /**
- * Every handler package's README.
- *
- * HANDLERS AND NOT MEMBERS, carried at this call rather than assumed: the
- * framework ships no README at all, ruled rather than overlooked.
+ * Every handler package's README. Handler-only commands and facts use this
+ * narrower set; the framework README is paired separately below.
  */
 function everyHandlersReadme(root: string): readonly string[] {
   return handlerMembers(root).map((member) => join(relative(root, member), "README.md"));
+}
+
+/** The framework README, located from the staged workspace rather than this checkout. */
+function frameworkReadme(root: string): string {
+  const framework = declaredMembers(root).find((member) => {
+    const manifest = JSON.parse(readFileSync(join(member, "package.json"), "utf8")) as {
+      name?: unknown;
+    };
+    return manifest.name === "@atusy/tsudoi-language-server";
+  });
+  if (framework === undefined) {
+    throw new Error(`${root} has no member declaring @atusy/tsudoi-language-server`);
+  }
+  return join(relative(root, framework), "README.md");
 }
 
 /** The one command a block a reader RUNS carries, as the last non-empty line. */
@@ -979,6 +982,7 @@ export const consumers: readonly Consumer[] = [
     documents: (root) => [
       ...theProjectOverview(),
       ...theCheckoutsOwnReadme(),
+      frameworkReadme(root),
       ...everyHandlersReadme(root),
     ],
     marker: "snippet",
@@ -1018,7 +1022,7 @@ export const consumers: readonly Consumer[] = [
     form: {
       kind: "read",
       reason:
-        "the package is unpublished, so running this is the thing that does not work yet; what stands in for running it is that the path it names is the one the pack beside it writes",
+        "the npm route is the supported install, while this source-checkout fallback is retained as a packaging probe; the path it names must be the one the pack beside it writes",
       needs: "this checkout's own directory name",
       subject: (block) => [installedPath(soleCommandIn(block))],
       against: (_markdown, document) => [

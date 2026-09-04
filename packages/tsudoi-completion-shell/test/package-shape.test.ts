@@ -16,11 +16,11 @@ test("the package publishes its built entry point, capture scripts, and notices"
   expect(manifest.files).toEqual(["capture", "dist", "THIRD_PARTY_NOTICES.md"]);
 });
 
-test("tsudoi is an optional peer while it is unpublished", () => {
-  expect(manifest.peerDependencies).toEqual({ "@atusy/tsudoi-language-server": "*" });
-  expect(manifest.peerDependenciesMeta).toEqual({
-    "@atusy/tsudoi-language-server": { optional: true },
+test("tsudoi is the required peer from this alpha set", () => {
+  expect(manifest.peerDependencies).toEqual({
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
   });
+  expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toBeUndefined();
 });
 

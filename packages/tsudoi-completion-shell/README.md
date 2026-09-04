@@ -30,12 +30,11 @@ The selected shell must be installed and available on `PATH`. `useShellCompletio
 a later request starts a fresh process. A request cancelled before it sends input leaves the
 existing process available for reuse.
 
-Tsudoi is an `optional` **peer** only because tsudoi is **unpublished**. This package does not
-install it. Its JavaScript artifact can load without tsudoi because the handler imports are
-type-only, but a TypeScript consumer needs the peer to resolve the public handler types, and the
-returned handler is useful only inside a tsudoi host. A missing peer is therefore a TypeScript
-resolution error such as `TS2307`, not the runtime message `Cannot find module` that a value
-import would produce.
+Tsudoi is a required **peer** at `0.1.0-alpha.0`, the version this alpha set was tested against.
+This package does not bundle or choose it, though Bun and npm may auto-install the required peer.
+Its JavaScript artifact can load without tsudoi because the handler imports are type-only, but a
+TypeScript consumer needs the peer to resolve the public handler types, and the returned handler is
+useful only inside a tsudoi host.
 
 ## Factory options
 
@@ -77,9 +76,12 @@ definitions and configuration you trust.
 
 ## Installing it
 
-Neither this package nor tsudoi is published to a registry. First follow the
-[repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart) so the checkout
-contains tsudoi's built package.
+Install the matching npm alphas together with
+`bun add @atusy/tsudoi-language-server@alpha @atusy/tsudoi-completion-shell@alpha`.
+
+For testing a source checkout, first follow the
+[repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart)
+so the checkout contains tsudoi's built package.
 
 Packing needs a workspace link that `bun install` does not create. In a fresh checkout,
 `bun pm pack` can fail with `TS2307` naming the tsudoi type import. Running

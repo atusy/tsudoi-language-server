@@ -124,6 +124,7 @@ function stage(states: Record<string, SubpathState>): Staged {
     writeFileSync(path, "export {};\n");
   };
 
+  mkdirSync(pkg, { recursive: true });
   for (const [subpath, arm] of Object.entries(manifest.exports)) {
     const state = states[subpath] ?? "complete";
     for (const [condition, file] of Object.entries(arm)) {
@@ -308,16 +309,7 @@ test("with the artifact complete every subpath answers from it, for the compiler
   }
 });
 
-/**
- * THE PARTIAL VECTOR, IN ONE TREE: one subpath carrying its module and not its
- * declaration, one wholly missing from the artifact, and the rest complete.
- *
- * THE DISAGREEMENT IS THE PROPERTY. On the artifact-only subpath the compiler
- * falls through to source while both runtimes load the module that IS there --
- * two readers, one tree, one subpath, different files. That is the state an exit
- * code cannot see and the reason the compiler is read separately at all.
- */
-test("with one subpath artifact-only and one absent, the compiler and the runtimes answer differently in the same tree", async () => {
+test("a partial artifact never falls through to an unshipped source file", async () => {
   const [partial, missing, ...complete] = Object.keys(manifest.exports);
   if (partial === undefined || missing === undefined || complete.length === 0) {
     throw new Error("this manifest has too few subpaths to hold a partial vector at all");
@@ -328,7 +320,7 @@ test("with one subpath artifact-only and one absent, the compiler and the runtim
     // consistent with a stager that put every subpath in one state, which is the
     // degenerate this file is built against.
     expect(onDisk(staged, partial)).toEqual({ types: false, import: true, default: true });
-    expect(onDisk(staged, missing)).toEqual({ types: false, import: false, default: true });
+    expect(onDisk(staged, missing)).toEqual({ types: false, import: false, default: false });
     for (const subpath of complete) {
       expect(onDisk(staged, subpath)).toEqual({ types: true, import: true, default: true });
     }
@@ -337,27 +329,18 @@ test("with one subpath artifact-only and one absent, the compiler and the runtim
     const fromBun = await runtimeAnswers(staged, bun);
     const fromDeno = await runtimeAnswers(staged, deno);
 
-    // THE ARTIFACT-ONLY SUBPATH: the compiler reads SOURCE and the runtimes read
-    // the MODULE, and the two answers are asserted to differ rather than each
-    // being asserted alone.
     const partialSpecifier = specifierOf(partial);
-    expect(compiler.answered[partialSpecifier]).toBe(fileFor(staged, partial, "default"));
+    expect(compiler.answered[partialSpecifier]).toBe(fileFor(staged, partial, "import"));
     expect(fromBun[partialSpecifier]?.loaded).toBe("ok");
     expect(fromDeno[partialSpecifier]?.loaded).toBe("ok");
-    expect(landedOn(fromDeno[partialSpecifier]?.resolved ?? "")).not.toBe(
-      compiler.answered[partialSpecifier],
-    );
     expect(landedOn(fromDeno[partialSpecifier]?.resolved ?? "")).toBe(
       fileFor(staged, partial, "import"),
     );
 
-    // THE ABSENT SUBPATH: each runtime's own output names what it could not
-    // read -- deno the FILE, bun the SPECIFIER -- and the compiler names
-    // neither, because it answered.
     const missingSpecifier = specifierOf(missing);
-    expect(compiler.answered[missingSpecifier]).toBe(fileFor(staged, missing, "default"));
+    expect(compiler.answered[missingSpecifier]).toBeUndefined();
     expect(compiler.attempted).toContain(missingSpecifier);
-    expect(compiler.output).not.toContain(fileFor(staged, missing, "import"));
+    expect(compiler.output).toContain(missingSpecifier);
     expect(fromDeno[missingSpecifier]?.loaded).toContain(fileFor(staged, missing, "import"));
     expect(fromBun[missingSpecifier]?.loaded).toContain(missingSpecifier);
 
@@ -366,9 +349,7 @@ test("with one subpath artifact-only and one absent, the compiler and the runtim
     for (const subpath of complete) {
       expect(compiler.answered[specifierOf(subpath)]).toBe(fileFor(staged, subpath, "types"));
     }
-    // AND THE COMPILER'S OWN COLOUR, recorded as a reading and not as a target:
-    // it exits 0 over a package whose artifact is half written.
-    expect(compiler.exit).toBe(0);
+    expect(compiler.exit).not.toBe(0);
   } finally {
     staged.dispose();
   }
@@ -379,7 +360,7 @@ test("with one subpath artifact-only and one absent, the compiler and the runtim
  * the shortcut a green tree cannot catch, so it is measured beside the partial
  * vector rather than instead of it.
  */
-test("with no artifact at all the compiler answers from source and says nothing, while both runtimes name what they could not read", async () => {
+test("with no artifact all readers fail instead of reaching source", async () => {
   const states = Object.fromEntries(
     Object.keys(manifest.exports).map((subpath) => [subpath, "absent" as SubpathState]),
   );
@@ -390,72 +371,20 @@ test("with no artifact at all the compiler answers from source and says nothing,
     const fromDeno = await runtimeAnswers(staged, deno);
 
     for (const subpath of Object.keys(manifest.exports)) {
-      expect(onDisk(staged, subpath)).toEqual({ types: false, import: false, default: true });
+      expect(onDisk(staged, subpath)).toEqual({ types: false, import: false, default: false });
       const specifier = specifierOf(subpath);
-      expect(compiler.answered[specifier]).toBe(fileFor(staged, subpath, "default"));
+      expect(compiler.answered[specifier]).toBeUndefined();
+      expect(compiler.output).toContain(specifier);
       expect(fromDeno[specifier]?.loaded).toContain(fileFor(staged, subpath, "import"));
       expect(fromBun[specifier]?.loaded).toContain(specifier);
     }
-    // THE SILENCE, STATED AS THE READING IT IS: no diagnostic, exit 0, over a
-    // package whose published artifact does not exist.
-    expect(compiler.exit).toBe(0);
+    expect(compiler.exit).not.toBe(0);
   } finally {
     staged.dispose();
   }
 });
 
-/**
- * THE BLOCKER, ASSERTED BESIDE THE STAGED STATES IT EXPLAINS -- and it is
- * this sprint's measured reason for refusing the deletion rather than a second
- * copy of a resolution test.
- *
- * PBI-60's fix was to DELETE the framework's source arms, so that with the
- * artifact absent the compiler names the file instead of quietly reading
- * another. It was taken and measured and REFUSED, and this is the cost that
- * refused it: THE HARNESS THIS SUITE GRADES CONSUMERS WITH HAS NO ARTIFACT AT
- * ALL. `typeCheckProbe` stages the framework's manifest with src/ symlinked and
- * no dist/, so `@atusy/tsudoi-language-server/types` resolves there through the
- * `default` arm in EVERY state of this repository -- and deleting that arm turns
- * this and two arms beside it from graded resolutions into TS2307.
- *
- * IT IS NOT THE TEST PBI-60 REFUSES, and the difference is the failure
- * direction. That one would assert THE RESIDUE and pass for as long as the
- * residue persists. This asserts THE BLOCKER, and WHAT TERMINATES THE
- * DISPOSITION IS THE PAIR BELOW ITSELF -- and not a record in
- * test/perturbations.test.ts, where there is none and none is owed. That
- * registry carries a weakening, a named arm and a required red for a weakening
- * that needs a SOURCE MUTATION; when the two readings that separate a claim are
- * ones ONE ARM CAN HOLD AT ONCE, this project's rule asks for them as an
- * assertion beside the arm, which is what the halves below are.
- *
- * SO IT REDDENS IN BOTH DIRECTIONS THE COST CAN VANISH, AND BOTH WERE TAKEN.
- * MEASURED over this file alone, `bun test test/unbuilt-artifact.test.ts`
- * against 4 pass / 0 fail; `typeCheckProbe` has other callers and they were not
- * re-run. THE HARNESS GAINS A ROUTE THAT DOES NOT END IN SOURCE -- the probe
- * symlinking the built dist/ beside the src/ it already links -- 3 pass / 1
- * fail, THIS ARM ALONE: half one still exits 0, while half two resolves through
- * the `types` arm and hands back 0 where it demands 1. THE SOURCE ARMS ARE
- * DELETED FROM THE PACKAGE, which is the fix this item refused: half one
- * receives `consumer.ts(1,42): error TS2307: Cannot find module
- * '@atusy/tsudoi-language-server/types'` where it requires no output at all.
- * That direction is 0 pass / 4 fail rather than 1, and the collateral is read
- * rather than assumed: the three staged arms above build their trees FROM THE
- * MANIFEST'S OWN ARMS, so removing arms moves them too -- the absent-artifact
- * arm dies inside `stage` with `ENOENT ... /package/package.json`, nothing
- * having been written for it to sit beside, and the other two on expectations
- * about which file answered. None of those three is this pair's reading.
- *
- * WHICH IS WHY THE DISPOSITION TERMINATES WITH NOBODY HAVING TO REMEMBER IT: the
- * day the cost stops being a cost, the arm that records the cost goes red.
- *
- * THE PAIR IS THE BLOCKER ITSELF AND NOT A SECOND OBSERVATION OF THE TREE: the
- * same probe, with the source arm removed from ITS OWN copy of the manifest,
- * cannot resolve the specifier at all. So the green above is that arm answering
- * and not some other route, and the reading holds in any tree -- including a
- * staged checkout with nothing built, where a `dist/ exists here` pair would be
- * red for a reason that is not the blocker.
- */
-test("the harness that grades a consumer's type check reaches the framework through its source arm", async () => {
+test("the consumer type-check harness reaches the built artifact", async () => {
   const consumer = {
     "consumer.ts": [
       'import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";',
@@ -464,17 +393,13 @@ test("the harness that grades a consumer's type check reaches the framework thro
     ].join("\n"),
   };
 
-  const asItStands = await typeCheckProbe(consumer);
-  expect(asItStands.output).toBe("");
-  expect(asItStands.code).toBe(0);
+  const withArtifact = await typeCheckProbe(consumer);
+  expect(withArtifact.output).toBe("");
+  expect(withArtifact.code).toBe(0);
 
-  const withoutTheSourceArm = await typeCheckProbe(consumer, (packageJson) => {
-    for (const arm of Object.values(
-      packageJson.exports as Record<string, Record<string, string>>,
-    )) {
-      delete arm.default;
-    }
+  const withoutTypesExport = await typeCheckProbe(consumer, (packageJson) => {
+    delete (packageJson.exports as Record<string, unknown>)["./types"];
   });
-  expect(withoutTheSourceArm.code).toBe(1);
-  expect(withoutTheSourceArm.output).toContain("@atusy/tsudoi-language-server/types");
+  expect(withoutTypesExport.code).toBe(1);
+  expect(withoutTypesExport.output).toContain("@atusy/tsudoi-language-server/types");
 });

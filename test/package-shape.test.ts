@@ -219,33 +219,9 @@ function publishedArm(condition: string): Record<string, string> {
  * REPLACES THAT. What still grades that source is the fifth check, under the
  * member's own tsconfig, plus the build the preload runs.
  *
- * AND THE RESIDUE THAT COMES WITH IT IS NAMED HERE AND DELIBERATELY NOT PINNED.
- * The `types` arm answers only while dist/ EXISTS. With dist/ absent -- or
- * half-written, which is the window `rm -rf dist && tsc` passes through -- tsc
- * alone probes for the file, falls through the map's `default: ./src/*.ts` arm,
- * READS A DIFFERENT FILE AND EXITS 0, with no diagnostic, while both runtimes
- * fail loudly. NO TEST HERE MAY PIN THAT: an assertion pinning it would PASS
- * while the residue persisted, specifying it rather than finding it. The arm
- * below reads the state the suite's own preload guarantees, and says nothing
- * about the other one.
- *
- * AND THAT REFUSAL IS ENFORCED BY NOTHING, WHICH IS SAID OUT LOUD BECAUSE IT SITS
- * THIRD IN A LIST OF THREE AND THE OTHER TWO ARE ENFORCED -- deleting the source
- * arms reddens, a `paths` mapping is refused by `refuseMemberMappings`, and a
- * check deciding whether some other test pins a residue would be a matcher for a
- * defect that is a property of matching, which this repository refuses by name. A
- * reader who met two enforced refusals and inferred the third would be reading a
- * silence as a mechanism.
- *
- * DELETING THE `default` ARMS WAS TAKEN, MEASURED AND REFUSED: it leaves every
- * reader answering from the file it answers from today and turns the absent state
- * into TS2307, but three arms in this suite reach the framework through
- * `typeCheckProbe`, whose tree has the manifest and a symlinked src/ AND NO
- * dist/, so the deletion converts graded resolutions into missing files. WHAT
- * STANDS IN ITS PLACE IS A DETECTOR RATHER THAN A PIN:
- * `refuseSubpathsAnsweringFromSource` refuses, on the fifth check and after the
- * build, a published subpath answering from anywhere but the artifact -- narrower
- * than this residue, and it says so at its own site.
+ * Every condition now names dist/. With dist/ absent or half-written, no reader
+ * can fall through to source that a registry consumer does not receive;
+ * test/unbuilt-artifact.test.ts stages those states directly.
  *
  * tsconfig.build.json GETS NO MAPPING EITHER. It `include`s src alone, which
  * never imports the bare specifier, so a mapping there would resolve nothing --
@@ -254,6 +230,7 @@ function publishedArm(condition: string): Record<string, string> {
  */
 test("the root type check resolves the published subpaths through the exports map, to the built artifact", async () => {
   const declarations = publishedArm("types");
+  delete declarations["@atusy/tsudoi-language-server/cli"];
   const { answers } = await traceResolutions(repoRoot);
   // BOTH SIDES RESOLVED, for the reason the compiler-pinning test below states
   // about its own two: a checkout reached through a link is answered by the path
@@ -506,45 +483,16 @@ test("the dictionary belongs to the handler package, and neither manifest here d
  * - `import` -> dist/types.js is what a runtime import of the subpath actually
  *   resolves to, and it names a file the tarball contains. Pinned by
  *   test/installed-runtime.test.ts, with the pair that drops it.
- * - `default` -> packages/tsudoi-language-server/src/types.ts is the IN-REPO
- *   FALLBACK, reached only because tsc falls through a condition whose target
- *   file is missing: root `tsc --noEmit` answers every subpath from dist/ while
- *   the artifact is there and falls through to THIS ARM the moment it is not --
- *   exit 0, no diagnostic, reading a file no consumer receives. DELETING IT IS
- *   BLOCKED BY `typeCheckProbe`, which stages this manifest with src/ SYMLINKED
- *   AND NO dist/, so three arms of this suite take this arm in every state of
- *   this repository. The blocker is asserted rather than described in
- *   test/unbuilt-artifact.test.ts.
- *
- * THE FIRING CONDITION IS THIS TEST, AND IT IS NAMED SO A READER DOES NOT INFER
- * IT: the literal below spells `default` for every subpath, so the day someone
- * deletes or retargets a source arm THIS equality reddens BY NAME, where the
- * others redden as COLLATERAL through `typeCheckProbe`. That is a KIND and not an
- * order -- `bun test` pins no file order -- and it is what makes the refusal
- * terminate rather than persist by being forgotten: a reader meeting this red is
- * told which literal to edit.
- *
- * NOT ASSERTED, and named rather than left to be found: in the tarball the
- * `default` arm points at a path that is not shipped, so a resolver matching
- * NEITHER `types` nor `import` -- a CommonJS `require` is the only one -- gets
- * ERR_MODULE_NOT_FOUND rather than a module. ITS PREMISE HAS AN OWNER THAT
- * REDDENS: `tsudoi's own subpath exports nothing at run time` is a test in
- * test/published-artifacts.test.ts, taken over the INSTALLED package's module
- * namespace, so the premise cannot go quietly false. The judgement is that the
- * package is type: module, both verified runtimes take `import`, and the
- * alternative is shipping src/ purely so an arm nobody takes can land somewhere
- * -- putting .ts files back under node_modules for a deno user to trip over.
+ * - `default` -> the same compiled JavaScript as `import`, so a resolver taking
+ *   neither specialized condition still lands on a file that ships. No export
+ *   may point into src/, because src/ is intentionally absent from the tarball.
  *
  * No `main` and no `.` export: the package name alone still must not resolve,
  * which test/published-specifier.test.ts asserts.
  *
- * NO `bin`, and this is a deliberate refusal rather than an omission. A bin is
- * executed through a shim that obeys the file's shebang, so declaring one means
- * naming an interpreter in packages/tsudoi-language-server/src/cli.ts. This
- * project verifies exactly two runtimes and neither of them reaches a package
- * this way: deno does not use node_modules/.bin at all, and the stated route is
- * a file path both runtimes take identically. A shebang naming node would be a
- * third runtime's claim that nothing here tests.
+ * NO `bin`, and this is deliberate. Bun and Deno execute the explicit `./cli`
+ * export with their own runtime instead of a package-manager shim selecting an
+ * interpreter through a shebang.
  *
  * JSR WAS MEASURED AND DECLINED, recorded so the next person does not re-derive
  * it: it type-checks this package with no slow-types errors, but it flags
@@ -559,14 +507,15 @@ test("the published surface is tsudoi's types beside the dependency subpaths, an
   const arm = (name: string): Record<string, string> => ({
     types: `./dist/${name}.d.ts`,
     import: `./dist/${name}.js`,
-    default: `./src/${name}.ts`,
+    default: `./dist/${name}.js`,
   });
 
-  // FIVE ARMS, AND THE SPLIT IS OURS-VERSUS-THEIRS. `./types` carries tsudoi's
+  // SIX ARMS, SPLIT BY PURPOSE AND ORIGIN. `./types` carries tsudoi's
   // own names; the four under `./deps/` carry upstream's,
   // because a single module re-exporting all three is TS2308 under declaration
   // emit -- ambiguous re-export, which `--noEmit` does not reproduce.
   expect(packageJson.exports).toEqual({
+    "./cli": arm("cli"),
     "./deps/protocol": arm("deps/protocol"),
     "./deps/textdocument": arm("deps/textdocument"),
     "./deps/types": arm("deps/types"),
@@ -576,6 +525,15 @@ test("the published surface is tsudoi's types beside the dependency subpaths, an
   expect(packageJson.files).toEqual(["dist"]);
   expect(packageJson.main).toBeUndefined();
   expect(packageJson.bin).toBeUndefined();
+
+  for (const conditions of Object.values(
+    packageJson.exports as Record<string, Record<string, string>>,
+  )) {
+    for (const target of Object.values(conditions)) {
+      expect(target.startsWith("./dist/")).toBeTrue();
+      expect(existsSync(join(frameworkRoot, target))).toBeTrue();
+    }
+  }
 });
 
 const scripts = packageJson.scripts as Record<string, string> | undefined;
@@ -598,7 +556,7 @@ const scripts = packageJson.scripts as Record<string, string> | undefined;
 // and the whole map IS the public surface, a second script takes nothing away
 // from this one.
 test("packing builds, so a stale dist cannot be published", () => {
-  expect(scripts?.prepack).toBe("tsc -p tsconfig.build.json");
+  expect(scripts?.prepack).toBe("rm -rf dist && tsc -p tsconfig.build.json");
 });
 
 /**
@@ -696,7 +654,7 @@ test("the compiler prepack builds with is pinned by this repo, at a version it d
   // 4. prepack names it by BARE NAME. An absolute path would be someone's
   //    machine, and `npx tsc` would be the network's choice rather than this
   //    repo's; only the bare name takes the resolution steps 2 and 3 pin.
-  expect(scripts?.prepack.split(" ")[0]).toBe("tsc");
+  expect(scripts?.prepack.split(" && ").at(-1)?.split(" ")[0]).toBe("tsc");
 });
 
 // ITS PAIR is not a probe that writes a deno.json to prove existsSync works --

@@ -100,20 +100,15 @@ test("only the built output ships, which is what keeps the ambient declaration i
  * symlinking it into every throwaway consumer -- an install now fetches it by
  * the route under test.
  *
- * `peerDependenciesMeta.optional` IS THE RESIDUAL AND IT IS NOT COMFORTABLE. It
- * reads as `this package works without tsudoi`, WHICH IS FALSE -- the handler
- * imports a value from it, so a consumer without tsudoi fails at load. What it
- * actually buys is that no installer goes looking in a registry for a package
- * NOTHING HAS PUBLISHED: MEASURED, without it `bun install` in this workspace
- * exits 1 on a 404 for @atusy/tsudoi-language-server, and so does a consumer's.
- * IT SHOULD BE DELETED THE DAY TSUDOI IS PUBLISHED, and this test is where that
- * sentence can be found, because package.json cannot hold it.
+ * THE VERSION IS EXACT DURING ALPHA. One number identifies the package set the
+ * repository tested together; a later alpha updates the framework, handler and
+ * workspace declaration in one release change.
  */
 test("tsudoi is a peer this package cannot install, and the dictionary is its own", () => {
-  expect(manifest.peerDependencies).toEqual({ "@atusy/tsudoi-language-server": "*" });
-  expect(manifest.peerDependenciesMeta).toEqual({
-    "@atusy/tsudoi-language-server": { optional: true },
+  expect(manifest.peerDependencies).toEqual({
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
   });
+  expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toEqual({ wordnet: "^2.0.0" });
 });
 
@@ -136,28 +131,9 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * -name resolution the next paragraph is about. It is run by bun, which is the
  * toolchain this repository documents.
  *
- * THE FRAMEWORK'S OWN prepack DOES NOT CLEAR, and the asymmetry holds ON THE
- * ROUTE UNDER TEST rather than everywhere: the suite's own installer packs it
- * from a FRESH staging directory, pinned entry by entry in
- * test/installed-specifier.test.ts. WHAT MATTERS HERE IS WHICH ENTRY IS ABSENT:
- * no dist/ is staged, so the framework's dist/ is built into an empty tree every
- * time. This package is packed FROM WHERE IT LIVES -- deliberately, so no probe
- * has to perturb a copy -- so its dist/ is the one that persists between packs.
- *
- * WHAT THAT LEAVES UNCOVERED, AND IT IS NOT A PACK AT THE REPOSITORY ROOT --
- * that root is private, declares no `files` and has no build of its own, so
- * packing there collects tracked files and reaches no dist/ at all. It is that
- * the framework is packed by hand from ITS OWN directory -- the command the
- * workspace's README gives for a manual runtime test -- and that pack carries
- * whatever dist/ is lying there, with the same staleness this clear removes
- * here. NOTHING IN THE SUITE
- * PACKS IT FROM A DIRECTORY WHERE A dist/ PERSISTS, which is the narrow thing
- * and not `the command is never run`: the README's pack step IS executed, as
- * every command block in that file is, but in a staged copy holding the
- * framework's package.json, src/, tsconfig.build.json and NO dist/ -- so a stale
- * artifact is never there to be carried, and the executed run cannot observe
- * this. Its src/ holds no `.d.ts` input to leak, which bounds the consequence to
- * a stale artifact rather than to a global declaration.
+ * THE FRAMEWORK'S OWN prepack now clears too. That does not make this clear
+ * redundant: each package is independently packable, and this package is the
+ * only one whose stale declaration could publish an ambient `wordnet` module.
  *
  * BY BARE NAME, which is what takes the node_modules/.bin resolution: script
  * resolution puts node_modules/.bin ahead of PATH, so the compiler is the one

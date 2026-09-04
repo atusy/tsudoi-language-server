@@ -16,11 +16,11 @@ test("the package publishes one built entry point", () => {
   expect(manifest.files).toEqual(["dist"]);
 });
 
-test("tsudoi is an optional peer while it is unpublished", () => {
-  expect(manifest.peerDependencies).toEqual({ "@atusy/tsudoi-language-server": "*" });
-  expect(manifest.peerDependenciesMeta).toEqual({
-    "@atusy/tsudoi-language-server": { optional: true },
+test("tsudoi is the required peer from this alpha set", () => {
+  expect(manifest.peerDependencies).toEqual({
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
   });
+  expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toBeUndefined();
 });
 

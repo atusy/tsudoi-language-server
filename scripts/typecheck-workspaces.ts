@@ -115,18 +115,10 @@ const root = resolve(process.argv[2] ?? process.cwd());
 // before it reads, on the preload's own reasoning: a check run against a dist/
 // nobody rebuilt reports on a tree that no longer exists.
 //
-// WHAT THE ORDER SPARES IS NOT A RED, AND A READER WHO EXPECTS ONE WILL DRAW
-// THE WRONG CONCLUSION FROM A GREEN. MEASURED at sprint 61, base 6d1c85d, tsc
-// 7.0.2, on a staged tree with no dist/ anywhere: a member's own
-// `tsc -p tsconfig.build.json` EXITS 0 AND EMITS, its
-// `@atusy/tsudoi-language-server/*` subpaths TRACED to
-// packages/tsudoi-language-server/src/*.ts, because the framework's map ends in
-// a source arm the compiler falls through to. WHAT THE ORDER BUYS IS WHICH FILE
-// THE GRADE IS TAKEN AGAINST: unbuilt, this check greens a member whose
-// declarations were read against a file no consumer receives, and it greens it
-// silently. That silence is why `refuseSubpathsAnsweringFromSource` below reads
-// what the build WROTE instead of trusting the exit codes underneath it. The
-// same reading is at `prepareWorkspace` in scripts/workspaces.ts.
+// The order makes each member compile against the current built declarations of
+// its workspace dependencies. Every export targets dist/, so missing output is
+// loud; `refuseSubpathsAnsweringFromSource` additionally verifies where the
+// successful resolution landed.
 prepareWorkspace(root);
 // EVERY MEMBER AND NOT ONLY THE HANDLERS: `buildOrder` reads this same list, so
 // narrowing it drops that member from the test-time build too. MEASURED with
