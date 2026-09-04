@@ -26,6 +26,7 @@ interface ValidReleaseEntry {
 }
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
+const NPM_VIEW_TIMEOUT_MS = 30_000;
 
 function fail(message: string): never {
   console.error(`publish-release: ${message}`);
@@ -91,10 +92,13 @@ function registryIntegrity(packageSpec: string): string | null {
   const viewed = spawnSync(
     "npm",
     ["view", packageSpec, "dist.integrity", "--json", "--registry", NPM_REGISTRY],
-    { encoding: "utf8" },
+    { encoding: "utf8", timeout: NPM_VIEW_TIMEOUT_MS },
   );
   if (viewed.error !== undefined) {
-    fail(`npm view could not start for ${packageSpec}: ${viewed.error.message}`);
+    if ((viewed.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
+      fail(`npm view timed out after ${String(NPM_VIEW_TIMEOUT_MS)}ms for ${packageSpec}`);
+    }
+    fail(`npm view could not complete for ${packageSpec}: ${viewed.error.message}`);
   }
   if (viewed.status !== 0) {
     if (/\bE404\b/.test(viewed.stderr)) {
@@ -118,10 +122,13 @@ function registryAlphaVersion(packageName: string): string | null {
   const viewed = spawnSync(
     "npm",
     ["view", packageName, "dist-tags.alpha", "--json", "--registry", NPM_REGISTRY],
-    { encoding: "utf8" },
+    { encoding: "utf8", timeout: NPM_VIEW_TIMEOUT_MS },
   );
   if (viewed.error !== undefined) {
-    fail(`npm view could not start for ${packageName}: ${viewed.error.message}`);
+    if ((viewed.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
+      fail(`npm view timed out after ${String(NPM_VIEW_TIMEOUT_MS)}ms for ${packageName}`);
+    }
+    fail(`npm view could not complete for ${packageName}: ${viewed.error.message}`);
   }
   if (viewed.status !== 0) {
     if (/\bE404\b/.test(viewed.stderr)) {
