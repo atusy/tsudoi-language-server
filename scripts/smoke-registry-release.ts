@@ -7,6 +7,7 @@ import { initializeParams, LspSession } from "../test/helpers/lsp.ts";
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
 const INSTALL_TIMEOUT_MS = 120_000;
+const LSP_REQUEST_TIMEOUT_MS = 10_000;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const COMPLETION = "@atusy/tsudoi-completion-document";
 
@@ -114,6 +115,28 @@ function writeConsumerConfig(directory: string): void {
   );
 }
 
+async function requestWithTimeout<T>(
+  runtime: string,
+  method: string,
+  request: Promise<T>,
+): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      reject(
+        new Error(
+          `smoke-registry-release: ${runtime} ${method} timed out after ${LSP_REQUEST_TIMEOUT_MS}ms`,
+        ),
+      );
+    }, LSP_REQUEST_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([request, deadline]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function smokeLsp(
   runtime: string,
   command: string,
@@ -122,10 +145,14 @@ async function smokeLsp(
 ): Promise<void> {
   const session = LspSession.startCommand(command, directory, env);
   try {
-    const initialized = await session.request<{
-      serverInfo?: { name?: unknown };
-      capabilities?: { completionProvider?: unknown };
-    }>("initialize", initializeParams);
+    const initialized = await requestWithTimeout(
+      runtime,
+      "initialize",
+      session.request<{
+        serverInfo?: { name?: unknown };
+        capabilities?: { completionProvider?: unknown };
+      }>("initialize", initializeParams),
+    );
     if (
       initialized.serverInfo?.name !== "tsudoi" ||
       initialized.capabilities?.completionProvider === undefined
@@ -142,10 +169,14 @@ async function smokeLsp(
         text: "registry reg",
       },
     });
-    const completion = await session.request<unknown>("textDocument/completion", {
-      textDocument: { uri },
-      position: { line: 0, character: 12 },
-    });
+    const completion = await requestWithTimeout(
+      runtime,
+      "textDocument/completion",
+      session.request<unknown>("textDocument/completion", {
+        textDocument: { uri },
+        position: { line: 0, character: 12 },
+      }),
+    );
     if (
       !Array.isArray(completion) ||
       !completion.some(
@@ -158,7 +189,11 @@ async function smokeLsp(
     ) {
       fail(`${runtime} completion did not return the installed handler's registry item`);
     }
-    const shutdown = await session.request<unknown>("shutdown", undefined);
+    const shutdown = await requestWithTimeout(
+      runtime,
+      "shutdown",
+      session.request<unknown>("shutdown", undefined),
+    );
     if (shutdown !== null) fail(`${runtime} shutdown did not return null`);
     session.notify("exit", undefined);
     const exit = await session.waitForExit(10_000);
