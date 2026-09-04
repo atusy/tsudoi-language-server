@@ -223,7 +223,7 @@ test("the registry smoke exercises fresh Bun and Deno consumers through a clean 
         "--json",
         "--frozen",
         "--node-modules-dir=none",
-        name,
+        name === "@atusy/tsudoi-language-server" ? `${name}/types` : name,
       ]),
       ["check", "--frozen", "--node-modules-dir=none", "tsudoi.config.ts"],
       [

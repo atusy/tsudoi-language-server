@@ -108,8 +108,12 @@ if (runtimeName === "bun" && args[0] === "add") {
 } else if (runtimeName === "deno" && args[0] === "add") {
   writeFileSync(join(process.cwd(), "deno.json"), "{}\n");
 } else if (runtimeName === "deno" && args[0] === "info") {
-  const name = args.at(-1);
-  if (name === undefined) process.exit(4);
+  const specifier = args.at(-1);
+  if (specifier === undefined) process.exit(4);
+  const name =
+    specifier === "@atusy/tsudoi-language-server/types"
+      ? "@atusy/tsudoi-language-server"
+      : specifier;
   process.stdout.write(
     JSON.stringify({
       npmPackages: {

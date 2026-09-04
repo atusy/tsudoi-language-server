@@ -270,11 +270,12 @@ async function smokeDeno(
     fail("Deno smoke unexpectedly created a package.json or node_modules directory");
   }
   for (const entry of entries) {
+    const specifier = entry.name === FRAMEWORK ? `${FRAMEWORK}/types` : entry.name;
     const info = object(
       JSON.parse(
         run(
           "deno",
-          ["info", "--json", "--frozen", "--node-modules-dir=none", entry.name],
+          ["info", "--json", "--frozen", "--node-modules-dir=none", specifier],
           directory,
           env,
         ),
