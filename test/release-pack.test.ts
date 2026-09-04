@@ -1,8 +1,17 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
+import process from "node:process";
 import { spawnSync } from "node:child_process";
 import { buildOrder } from "../scripts/workspaces.ts";
 import { applySuiteDeadline } from "./helpers/deadline.ts";
@@ -81,5 +90,76 @@ test("the release packer refuses a non-empty destination", () => {
     expect(readFileSync(join(destination, "keep.txt"), "utf8")).toBe("do not overwrite\n");
   } finally {
     rmSync(destination, { recursive: true, force: true });
+  }
+});
+
+test("the publisher resumes only past a registry artifact with the same integrity", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-resume-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  const publishLog = join(parent, "published.jsonl");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(packed.status).toBe(0);
+    const manifest = JSON.parse(
+      readFileSync(join(destination, "release-manifest.json"), "utf8"),
+    ) as ReleaseManifest;
+    const [alreadyPublished, ...unpublished] = manifest.packages ?? [];
+    expect(alreadyPublished).toBeDefined();
+    const tarball = readFileSync(join(destination, String(alreadyPublished?.filename)));
+    const integrity = `sha512-${createHash("sha512").update(tarball).digest("base64")}`;
+
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(
+      fakeNpm,
+      `#!/usr/bin/env node
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+if (args[0] === "view") {
+  if (args[1] === process.env.EXISTING_SPEC) {
+    process.stdout.write(JSON.stringify(process.env.EXISTING_INTEGRITY));
+    process.exit(0);
+  }
+  console.error("npm error code E404");
+  process.exit(1);
+}
+if (args[0] === "publish") {
+  appendFileSync(process.env.PUBLISH_LOG, JSON.stringify(args) + "\\n");
+  process.exit(0);
+}
+process.exit(2);
+`,
+    );
+    chmodSync(fakeNpm, 0o755);
+
+    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        EXISTING_SPEC: `${String(alreadyPublished?.name)}@${String(alreadyPublished?.version)}`,
+        EXISTING_INTEGRITY: integrity,
+        PUBLISH_LOG: publishLog,
+      },
+    });
+    expect(`${String(published.status)} ${published.stderr}`).toBe("0 ");
+    const calls = readFileSync(publishLog, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as string[]);
+    expect(calls).toHaveLength(unpublished.length);
+    expect(calls.map((args) => args.slice(2))).toEqual(
+      unpublished.map(() => ["--access", "public", "--tag", "alpha"]),
+    );
+    expect(calls.map((args) => args[1])).not.toContain(
+      join(destination, String(alreadyPublished?.filename)),
+    );
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
   }
 });

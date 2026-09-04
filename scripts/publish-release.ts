@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -85,6 +85,31 @@ function expectedPackages(
   });
 }
 
+function registryIntegrity(packageSpec: string): string | null {
+  const viewed = spawnSync("npm", ["view", packageSpec, "dist.integrity", "--json"], {
+    encoding: "utf8",
+  });
+  if (viewed.error !== undefined) {
+    fail(`npm view could not start for ${packageSpec}: ${viewed.error.message}`);
+  }
+  if (viewed.status !== 0) {
+    if (/\bE404\b/.test(viewed.stderr)) {
+      return null;
+    }
+    fail(`npm view failed for ${packageSpec}: ${viewed.stderr.trim()}`);
+  }
+  let integrity: unknown;
+  try {
+    integrity = JSON.parse(viewed.stdout);
+  } catch (cause) {
+    fail(`npm view returned invalid JSON for ${packageSpec}: ${String(cause)}`);
+  }
+  if (typeof integrity !== "string" || !/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(integrity)) {
+    fail(`npm view returned an invalid integrity for ${packageSpec}: ${String(integrity)}`);
+  }
+  return integrity;
+}
+
 const [directoryArgument, option, ...unexpected] = process.argv.slice(2);
 if (
   directoryArgument === undefined ||
@@ -111,11 +136,30 @@ const tarballs = release.packages.map((entry) => {
   if (actual !== entry.sha256) {
     fail(`release tarball checksum does not match: ${path}`);
   }
-  return path;
+  return {
+    entry,
+    path,
+    integrity: `sha512-${createHash("sha512").update(readFileSync(path)).digest("base64")}`,
+  };
 });
 
-for (const tarball of tarballs) {
-  const args = ["publish", tarball, "--access", "public", "--tag", "alpha"];
+const publication = tarballs.map((tarball) => {
+  const packageSpec = `${tarball.entry.name}@${tarball.entry.version}`;
+  const published = registryIntegrity(packageSpec);
+  if (published !== null && published !== tarball.integrity) {
+    fail(`registry integrity does not match the release tarball: ${packageSpec}`);
+  }
+  return { ...tarball, published: published !== null };
+});
+
+for (const tarball of publication) {
+  if (tarball.published) {
+    console.log(
+      `already published with matching integrity: ${tarball.entry.name}@${tarball.entry.version}`,
+    );
+    continue;
+  }
+  const args = ["publish", tarball.path, "--access", "public", "--tag", "alpha"];
   if (option === "--provenance") {
     args.push("--provenance");
   }
