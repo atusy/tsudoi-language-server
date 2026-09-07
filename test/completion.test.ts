@@ -504,7 +504,10 @@ for (const runtime of runtimes) {
           { kind: "response", id: completion.id },
         ]);
 
+        // Stdout and stderr are independent pipes: receiving the response does
+        // not mean the stderr data event has arrived in this process yet.
         // The PREFIX only: error.stack's first line differs between JSC and V8.
+        await session.waitForStderr("tsudoi: textDocument/completion handler failed:");
         expect(session.stderr).toContain("tsudoi: textDocument/completion handler failed:");
         expect(session.stderr).toContain(throwMessage);
 
