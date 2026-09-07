@@ -45,7 +45,7 @@ from a hover that failed.
 ## It needs tsudoi at run time
 
 This package declares `@atusy/tsudoi-language-server` as a required **peer** at
-`0.1.0-alpha.0`, the version this alpha set was tested against. The framework is yours to choose:
+`0.1.0-alpha.1`, the version this alpha set was tested against. The framework is yours to choose:
 a plain dependency would leave a second copy in your `node_modules` that your server never runs.
 This package does not bundle or choose the framework, though Bun and npm may auto-install the
 required peer. Install the matching alpha beside it explicitly when selecting the set.

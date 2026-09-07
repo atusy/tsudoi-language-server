@@ -39,9 +39,11 @@ credential-free route for later releases.
 use trusted publishing", because one version identifies a tested combination and lets every handler
 declare the real framework peer without an optionality exception.
 
-The first set is `0.1.0-alpha.0`. Every public package carries `publishConfig.access = public` and
-`publishConfig.tag = alpha`; every handler requires exactly the framework version in that set. The
-workspace root stays private and unpublished.
+The first published set is `0.1.0-alpha.1`. The `v0.1.0-alpha.0` tag is retained as an immutable
+record of a release-gate failure that happened before any npm publication; it is never moved or
+reused. Every public package carries `publishConfig.access = public` and `publishConfig.tag =
+alpha`; every handler requires exactly the framework version in that set. The workspace root stays
+private and unpublished.
 
 The initial release is packed and checked from the merged release commit, then published in build
 order with an interactive npm session and 2FA. The framework is first because every handler names

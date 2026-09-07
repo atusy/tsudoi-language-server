@@ -106,7 +106,7 @@ test("only the built output ships, which is what keeps the ambient declaration i
  */
 test("tsudoi is a peer this package cannot install, and the dictionary is its own", () => {
   expect(manifest.peerDependencies).toEqual({
-    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.1",
   });
   expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toEqual({ wordnet: "^2.0.0" });

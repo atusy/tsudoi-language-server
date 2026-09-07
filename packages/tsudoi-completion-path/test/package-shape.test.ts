@@ -115,7 +115,7 @@ test("only the built output ships, so no consumer receives a line of source", ()
  */
 test("tsudoi is a peer this package cannot install, and nothing else is a dependency", () => {
   expect(manifest.peerDependencies).toEqual({
-    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.1",
   });
   expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toBeUndefined();

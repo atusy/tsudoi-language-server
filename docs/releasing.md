@@ -24,6 +24,10 @@ pinned tool differs; do not silently produce the bootstrap tarballs with another
 
 ## First release: maintainer bootstrap
 
+`v0.1.0-alpha.0` is intentionally not reused: its tag CI exposed a nondeterministic test and failed
+before any package was published. The tag remains an immutable failure record, so the first npm
+version is `0.1.0-alpha.1`.
+
 Run the bootstrap only after the release pull request is merged. Start from the merged commit on a
 clean `main`, not from the pull-request branch:
 
@@ -39,8 +43,8 @@ bun add --global oxlint@latest oxfmt@latest
 bun run scripts/definition-of-done.ts
 release_dir="$(mktemp -d)"
 bun run scripts/pack-release.ts "$release_dir"
-git tag -a v0.1.0-alpha.0 -m "v0.1.0-alpha.0"
-git push origin v0.1.0-alpha.0
+git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
+git push origin v0.1.0-alpha.1
 ```
 
 `git status --short` must print nothing. Wait for the bootstrap-only `publish.yml` run to succeed;
