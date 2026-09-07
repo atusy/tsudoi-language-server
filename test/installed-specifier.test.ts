@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -116,6 +116,17 @@ test("the tarball ships the compiled module the exports entry points at, and not
   // of tsudoi's own declared dependencies; `files` is what keeps it out of the
   // tarball, and only this says so.
   expect(existsSync(join(consumer.packageDir, "node_modules"))).toBe(false);
+
+  const manifest = JSON.parse(readFileSync(join(consumer.packageDir, "package.json"), "utf8")) as {
+    exports: Record<string, Record<string, string>>;
+  };
+  for (const [subpath, conditions] of Object.entries(manifest.exports)) {
+    for (const [condition, target] of Object.entries(conditions)) {
+      expect(existsSync(join(consumer.packageDir, target))).toBeTrue();
+      expect(target.startsWith("./dist/")).toBeTrue();
+      expect(`${subpath} ${condition}`).not.toContain("src");
+    }
+  }
 });
 
 /**
@@ -131,11 +142,9 @@ test("the tarball ships the compiled module the exports entry points at, and not
  * NO MAPPING ANYWHERE IN THIS REPOSITORY, and test/package-shape.test.ts asserts
  * that no specifier the root check resolves is answered by one.
  *
- * WHAT IS TRUE INSTEAD, MEASURED at sprint 58: the root check resolves the
- * published subpaths through node_modules and the exports map, to
- * packages/tsudoi-language-server/dist/, exactly as a stranger's project does --
- * and it reads SOURCE only when that artifact is missing, by falling through the
- * map's own `default` arm.
+ * The root check resolves the published subpaths through node_modules and the
+ * exports map to packages/tsudoi-language-server/dist/, exactly as a stranger's
+ * project does. Every condition names that artifact, so missing output is loud.
  *
  * SO THE REASON THIS PIN SURVIVES IS NARROWER AND UNCHANGED IN EFFECT: what may
  * not reach the packing stage is any configuration that answers a subpath

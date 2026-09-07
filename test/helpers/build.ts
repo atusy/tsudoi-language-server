@@ -81,27 +81,19 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * A HANDLER PACKAGE'S dist/ IS NEEDED EVEN MORE ABSOLUTELY: a handler
  * ships dist/ and not src/ -- deno refuses to type-strip under node_modules --
  * so its `exports` map names NO SOURCE ARM at all, and nothing falls through.
- * The framework's map does end in one, which is why an absent dist/ is loud for
- * a handler and silent for it. The reasoning lives with the builder, in
+ * The framework follows the same artifact-only rule. The reasoning lives with the builder, in
  * scripts/workspaces.ts, because the fifth Definition-of-Done check runs the
  * same one.
  *
  * WHAT THIS PRELOAD THEREFORE DOES NOT COVER, stated because it is a real hole
  * rather than a theoretical one:
  * `tsc --noEmit` on a checkout nothing has built reports TS2307 at
- * examples/tsudoi.config.ts -- naming THE TWO HANDLER PACKAGES AND NOT tsudoi.
- * A handler's exports map has no source arm, so it fails loudly; the framework's
- * map ends in `default: ./src/*.ts`, so the same run resolves ITS subpaths to
- * source and says nothing. The red is still loud and still names its own remedy,
- * and any other Definition-of-Done command clears it -- but half of what it used
- * to cover is now a silent fall-through this preload hides rather than fixes.
- *
- * AND THAT HALF IS STILL NOT COVERED HERE. What covers the other half is a
- * refusal on the FIFTH check, `refuseSubpathsAnsweringFromSource` in
- * scripts/workspaces.ts, which runs AFTER a build and therefore covers an
- * artifact that survived one rather than a checkout nobody has built. The
- * invocation nobody owns is the BARE, PRE-BUILD `tsc --noEmit` a reader types --
- * not the one scripts/definition-of-done.ts spawns, which runs after the first
+ * examples/tsudoi.config.ts, naming every missing workspace artifact. The red
+ * is loud and names its own remedy, and any other Definition-of-Done command
+ * clears it. The fifth check, `refuseSubpathsAnsweringFromSource` in
+ * scripts/workspaces.ts, additionally covers an artifact that survived a build.
+ * The bare pre-build invocation remains different from the one
+ * scripts/definition-of-done.ts spawns, which runs after the first
  * check has built.
  *
  * WHICH ARRANGEMENT OF dist/ THIS PRELOAD STANDS IN FRONT OF, TAKEN AS CELLS

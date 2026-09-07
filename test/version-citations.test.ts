@@ -82,7 +82,6 @@ const accounted: ReadonlyArray<readonly [path: string, runtime: string, version:
   ["packages/tsudoi-hover-wordnet/src/wordnet.d.ts", "deno", "2.9.2"],
   ["packages/tsudoi-hover-wordnet/test/package-shape.test.ts", "bun", "1.3.13"],
   ["packages/tsudoi-hover-wordnet/test/package-shape.test.ts", "bun", "1.3.13"],
-  ["packages/tsudoi-language-server/package.json", "bun", "1.3.13"],
   ["test/code-action.test.ts", "bun", "1.3.13"],
   ["test/custom-notification-budget.test.ts", "bun", "1.3.13"],
   ["test/custom-notification.test.ts", "bun", "1.3.13"],

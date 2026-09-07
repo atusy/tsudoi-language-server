@@ -110,22 +110,11 @@ test("a type error in the example reddens the example, not the snippet", async (
  * the whole point: without the stays-green half this file is `checked again`
  * wearing the words `checked through the published arm`.
  */
-test("perturbing the published types reddens the probe while tsc --noEmit stays green", async () => {
-  // THE LEVER IS THE `types` CONDITION, not an edit to
-  // packages/tsudoi-language-server/src/types.ts: that file is consumed in full
-  // by src/, so any change to it fails the build instead of shipping a
-  // different surface. Dropping the condition leaves tsc to fall back to
-  // `default` -> ./src/types.ts, WHICH THE PACKAGE DOES NOT SHIP (`files` is
-  // dist/ alone) -- so a consumer loses the types while this repo, which does
-  // have src/, is unaffected. That asymmetry IS the pair.
+test("removing the published types subpath reddens the consumer while repo tsc stays green", async () => {
   const perturbed = await installConsumer({
     editPackage: (packageJson) => {
       const exports = packageJson.exports as Record<string, Record<string, string>>;
-      // BOTH published arms, measured: dropping `types` alone still resolves,
-      // because tsc follows `import` -> dist/types.js and picks up the sibling
-      // dist/types.d.ts. Only `default` is left, and it points into src/.
-      delete exports["./types"]?.types;
-      delete exports["./types"]?.import;
+      delete exports["./types"];
     },
   });
   try {
@@ -138,10 +127,10 @@ test("perturbing the published types reddens the probe while tsc --noEmit stays 
   }
 });
 
-test("the in-repo arm cannot observe what the published arm checks", async () => {
-  const viaRepoSources = await typeCheckProbe({ "probe.ts": readmeSnippet() });
+test("the artifact-backed probe independently accepts the published types", async () => {
+  const viaArtifact = await typeCheckProbe({ "probe.ts": readmeSnippet() });
 
-  expect(viaRepoSources.code).toBe(0);
+  expect(viaArtifact.code).toBe(0);
 });
 
 /**
@@ -228,9 +217,9 @@ test("the published module re-exports every LSP data value, and nothing else", a
  * THE TYPE ARM, which the value arm above cannot give: all but CompletionItemKind
  * and DiagnosticSeverity are types and leave no runtime trace at all.
  *
- * THROUGH THE INSTALLED CONSUMER, NOT typeCheckProbe, and the two are not
- * interchangeable: the in-repo arm resolves this subpath against sources a
- * stranger never receives.
+ * THROUGH THE INSTALLED CONSUMER, not only typeCheckProbe: both resolve this
+ * subpath against dist/, while this fixture also verifies the installed
+ * dependency layout.
  *
  * The list and the source it builds live in test/helpers/published-names.ts,
  * which carries the reason for each -- including why every name is USED rather

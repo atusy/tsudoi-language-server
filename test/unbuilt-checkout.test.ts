@@ -80,18 +80,10 @@ applySuiteDeadline();
  * rule deletes a control that cannot say what it is blind to -- and every one of
  * these is a thing a reader would otherwise assume from a green.
  *
- * (1) IT DOES NOT WATCH THE FRAMEWORK'S SILENCE. The red it asserts is bought by
- * two import lines in examples/tsudoi.config.ts, which name the two HANDLER
- * packages; inside the very run this arm calls red, the framework's own subpaths
- * answer from packages/tsudoi-language-server/src/*.ts and raise nothing. That
- * is the residue, and it is untouched here.
+ * (1) It stages the all-absent cell. Because every export targets dist/, the
+ * framework and handlers all fail loudly in this state.
  *
- * (2) IT STAGES THE ALL-ABSENT CELL AND NEVER THE SILENT ONE. MEASURED at this
- * base: with the framework's dist/ ALONE absent and both handlers built, the
- * same root check is EXIT 0 and silent. This arm never enters that state, so a
- * green here says nothing about it.
- *
- * (3) IT SAYS NOTHING ABOUT THE REAL FOURTH CHECK. That command is `tsc
+ * (2) IT SAYS NOTHING ABOUT THE REAL FOURTH CHECK. That command is `tsc
  * --noEmit` at the checkout root; what runs here is a staged copy, and a staged
  * copy is a claim about a stage. AND `NOTHING OWNS ITS INVOCATION` IS TOO WIDE,
  * QUALIFIED RATHER THAN DROPPED: scripts/definition-of-done.ts spawns exactly
@@ -100,21 +92,8 @@ applySuiteDeadline();
  * reading leans on. What nothing here owns is the BARE, PRE-BUILD invocation,
  * and that is the one this arm's subject is about.
  *
- * (4) IT IS NOT THE PIN THE CRITERION REFUSES, AND THE DIRECTION IS NAMED. The
- * refused arm is one asserting that the framework IS SILENT on an unbuilt stage:
- * it would pin the residue, pass for exactly as long as the residue persists,
- * and make fixing it a test-breaking change. This one survives that fix and
- * therefore specifies nothing about it -- with the framework's source arms
- * deleted the stage is still non-zero and merely names framework specifiers too.
- * THAT LAST CLAUSE SHIPPED AS AN UNLABELLED PREDICTION AND IS NOW MEASURED, and
- * the reading is the SPRINT 61 REVIEW'S rather than this file's: on increment
- * 11e249a, with the four source arms deleted and every dist/ MOVED ASIDE, the
- * root check is exit 1 naming `@atusy/tsudoi-language-server/types` four times,
- * `/deps/types` and `/deps/textdocument`, with both handler packages beside them.
- * Non-zero still, and now naming the framework too, which is exactly what
- * `survives the fix` has to mean. NOTHING HERE RE-TOOK IT: the reading costs
- * deleting four arms and moving every artifact, and its provenance is named so
- * it is not read as this arm's own.
+ * (3) It does not pin which package is named first. All workspace exports now
+ * target dist/, so an unbuilt stage stays non-zero as members are added.
  */
 
 /** The stage, with the two facts the reading rests on read off it rather than assumed. */

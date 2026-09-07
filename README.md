@@ -42,10 +42,17 @@ const config: TsudoiConfigFactory = async () => ({
 export default config;
 ```
 
-## Try it from GitHub
+## Try the npm alpha
 
-The packages are not on npm yet, but you do not need to clone or build this repository.
-With [Deno](https://docs.deno.com/runtime/getting_started/installation/) installed, download the
+The first npm release is an opt-in alpha. Install the framework and whichever handlers you want
+with `bun add @atusy/tsudoi-language-server@alpha`, or use
+`deno add --save-exact npm:@atusy/tsudoi-language-server@alpha` in a Deno project. Deno users run
+the installed CLI with
+`deno run -A --frozen --node-modules-dir=none @atusy/tsudoi-language-server/cli --config ./tsudoi.config.ts`.
+All tsudoi packages in one project should use the same alpha version.
+
+You can also try a pinned repository snapshot without cloning or building this repository. With
+[Deno](https://docs.deno.com/runtime/getting_started/installation/) installed, download the
 [three-file starter](examples/github) and run it:
 
     mkdir my-language-server && cd my-language-server
@@ -67,7 +74,7 @@ contains composable handlers for:
 | [completion-path](packages/tsudoi-completion-path/README.md)             | filesystem and workspace-path completion          |
 | [completion-document](packages/tsudoi-completion-document/README.md)     | words from the current buffer or open documents   |
 | [completion-dictionary](packages/tsudoi-completion-dictionary/README.md) | indexed completion from your own dictionary files |
-| [completion-shell](packages/tsudoi-completion-shell/README.md)           | native Bash, Zsh, or Fish completion              |
+| [completion-shell](packages/tsudoi-completion-shell/README.md)           | native Fish, Zsh, or Xonsh completion             |
 | [hover-wordnet](packages/tsudoi-hover-wordnet/README.md)                 | English definitions on hover                      |
 | [adapter-efm-config](packages/tsudoi-adapter-efm-config/README.md)       | handlers derived from an efm config               |
 
@@ -77,8 +84,9 @@ diagnostics and formatting in the same config.
 
 ## Learn more
 
-The [complete guide](docs/README.md) covers installation from a checkout, configuring Bun or
-Deno, handler and context APIs, initialization, custom methods, cancellation, and cleanup.
+The [complete guide](docs/README.md) covers npm and checkout installation, configuring Bun or Deno,
+handler and context APIs, initialization, custom methods, cancellation, and cleanup. Maintainers use
+the [npm alpha release runbook](docs/releasing.md) for bootstrap and later OIDC releases.
 
 ## License
 

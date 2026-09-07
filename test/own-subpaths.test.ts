@@ -8,7 +8,6 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
@@ -20,35 +19,9 @@ import { type CliResult, repoRoot, runCommand } from "./helpers/spawn.ts";
 applySuiteDeadline();
 
 /**
- * THE SUBPATHS THE ARTIFACT DETECTOR EXISTS FOR ARE THIS REPOSITORY'S OWN, AND
- * NOTHING ELSE IN THE SUITE BINDS IT TO THEM.
- *
- * WHAT IS MISSING WITHOUT THIS FILE, MEASURED RATHER THAN ARGUED: make
- * `publishedSubpaths` skip every manifest whose name begins with this
- * workspace's scope -- so the detector is blind to every package this repository
- * ships and reads only strangers' -- and the suite is green and the fifth check
- * exits 0. Every other arm drives the detector against a workspace this suite
- * WRITES, whose producer is named `@staged/producer`, so a detector that refused
- * to look at `@atusy/*` would keep all of them.
- *
- * SO THE FIXTURE HERE IS THIS CHECKOUT, staged as a copy and left in a state
- * this repository must never be in. The residue the detector was built for is
- * this repository's alone: tsudoi's `exports` map ends in `default: ./src/*.ts`,
- * so with the declaration missing the compiler falls through and reads SOURCE at
- * exit 0 -- the flip that lived in prose for six sprints. No `@staged/producer`
- * can stand in for it, because the flip is a property of tsudoi's own map.
- *
- * THE COPY IS NOT AN ISOLATION MEASURE, IT IS HOW THE READING IS TAKEN AT ALL.
- * The state under measurement is `this workspace's artifact does not answer`,
- * and the working tree may never be put in it -- every other file in the suite
- * is resolving through that artifact at the same moment.
- *
- * AND THE WEAKENING ABOVE IS A READING TAKEN BY HAND, kept in the sprint
- * dashboard, because this file is in the class test/perturbations.test.ts names
- * in its own text -- on TWO of the three mechanisms independently, `repoRoot`
- * being the stage that holds no `.git`, and the import of helpers/perturbation.ts
- * that `reRun` refuses. Said here only so the registry's silence about this file
- * does not read as an oversight; the reasons live where the class does.
+ * The post-build artifact detector over a staged copy of this repository. The
+ * generic negative cases live in test/artifact-detector.test.ts; this file binds
+ * the positive route to the actual packages and manifests we ship.
  */
 
 /** This workspace's own scope, which is the directory its members are linked under. */
@@ -153,50 +126,10 @@ async function checkStage(perturb: (root: string) => void = (): void => {}): Pro
   }
 }
 
-/**
- * The one edit that leaves the framework's artifact WITHOUT ITS DECLARATIONS,
- * applied to the stage's own build config.
- *
- * A BUILD THAT RUNS AND EMITS NOTHING THE `types` ARM NAMES is the state this
- * check owns and the fourth check cannot see: the detector runs AFTER the build,
- * so the artifact it reads is one that SURVIVED one. Removing `dist/` instead
- * would measure a state the build immediately repairs.
- *
- * AND THE HANDLERS STILL BUILD UNDER IT, which is what keeps this arm's red
- * attributable: they resolve the framework through the same fall-through the
- * detector is about, compile against its SOURCE, and the run reaches the
- * refusal instead of dying in the build with an apparatus failure.
- */
-function emitNoDeclarations(root: string): void {
-  const config = join(root, "packages", "tsudoi-language-server", "tsconfig.build.json");
-  const build = JSON.parse(readFileSync(config, "utf8")) as {
-    compilerOptions: Record<string, unknown>;
-  };
-  build.compilerOptions.declaration = false;
-  writeFileSync(config, JSON.stringify(build, null, 2));
-}
-
 test("this repository's own published subpaths answer from the artifact its build writes", async () => {
   const result = await checkStage();
 
   // THE GREEN HALF, AND WITHOUT IT THE RED BELOW IS SATISFIED BY A CHECK THAT
   // REFUSES EVERY COPY OF THIS CHECKOUT: unperturbed, the same stage passes.
   expect(`${String(result.code)} ${result.stdout}${result.stderr}`).toBe("0 ");
-});
-
-test("a build of THIS repository that emits no declarations is refused, naming tsudoi's own subpath and the source that answered", async () => {
-  const result = await checkStage(emitNoDeclarations);
-
-  expect(result.code).not.toBe(0);
-  // THE SPECIFIER IS THIS REPOSITORY'S OWN, WRITTEN OUT: a detector that reads
-  // only strangers' manifests keeps every other arm in this suite and loses this
-  // line. What the surface IS belongs to test/package-shape.test.ts; what this
-  // asserts is that the detector reached it at all.
-  expect(result.stderr).toContain("@atusy/tsudoi-language-server/types");
-  // AND THE FLIP ITSELF, WHICH IS WHY THIS FILE'S FIXTURE CANNOT BE A STAGED
-  // STRANGER: the map's last arm is source, so the compiler answers a file the
-  // package does not publish -- at exit 0, with nothing printed, which is the
-  // whole reason the trace and not a colour is what this check reads.
-  expect(result.stderr).toContain(join("packages", "tsudoi-language-server", "src", "types.ts"));
-  expect(result.stderr).toContain(join("packages", "tsudoi-language-server", "dist", "types.d.ts"));
 });

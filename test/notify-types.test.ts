@@ -13,9 +13,8 @@ applySuiteDeadline();
  * THE UPSTREAM NAMES ARRIVE THROUGH TSUDOI'S OWN PUBLISHED SUBPATH, which is
  * what `deps/` exists for: a consumer never names a protocol package directly,
  * and a probe that did would say nothing about whether the shape is reachable
- * the way a consumer reaches it. What this never reaches is the ARTIFACT -- the
- * probe stages no `dist/`, so the exports map's source arm answers; that half
- * belongs to test/package-shape.test.ts.
+ * the way a consumer reaches it. The package subpath reaches dist/; src/ is
+ * present only because the construction itself imports it relatively.
  */
 function notifyProbe(body: string): Record<string, string> {
   return {

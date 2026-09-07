@@ -133,29 +133,26 @@ source contributes nothing unless the client sends `workspaceFolders` at `initia
 absence produces an error — the completion is simply narrower — so check your client before
 concluding this package is broken.
 
-## It needs tsudoi at run time, and its manifest will not warn you
+## It needs tsudoi at run time
 
-This package declares `@atusy/tsudoi-language-server` as a **peer**, because the framework is
-yours to choose: a plain dependency would pin a range of its own and leave a second copy in your
-`node_modules` that your server never runs.
-
-It also marks that peer **`optional`**. That flag reads as _this works without tsudoi_ and is
-**false** — the handlers are typed against tsudoi and one imports a value from it, so a project
-that installed only this package fails at config load with
-`Cannot find module '@atusy/tsudoi-language-server/deps/types'`. The flag buys one thing and
-buys it only while tsudoi is **unpublished**: without it your installer goes looking in a
-registry for a name nobody has put anywhere, and the install itself fails. Install this into a
-project that already has tsudoi, and never into an empty one.
+This package declares `@atusy/tsudoi-language-server` as a required **peer** at
+`0.1.0-alpha.0`, the version this alpha set was tested against. The framework is yours to choose:
+a plain dependency could leave a second copy in your `node_modules` that your server never runs.
+This package does not bundle or choose the framework, though Bun and npm may auto-install the
+required peer. Install the matching alpha beside it explicitly when selecting the set.
 
 **Nothing else comes with it.** Everything these handlers reach for is a `node:` builtin, so
 installing this package adds nothing to your tree but itself.
 
 ## Installing it
 
-Neither this package nor tsudoi is published to any registry. The working route is a local
-tarball built out of a checkout, and it assumes you have already installed tsudoi itself — the
-quickstart in the [repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart) is
-what does that.
+Install the matching npm alphas together with
+`bun add @atusy/tsudoi-language-server@alpha @atusy/tsudoi-completion-path@alpha`.
+
+For testing a source checkout, the local tarball route below assumes you have already installed
+tsudoi itself — the quickstart in the
+[repository guide](https://github.com/atusy/tsudoi-language-server/blob/main/docs/README.md#quickstart)
+does that.
 
 Packing compiles the package, and its build reaches tsudoi through a link inside the checkout
 that `bun install` does not create. In a checkout where nothing else has run, the pack fails

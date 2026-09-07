@@ -193,11 +193,9 @@ for (const one of packed) {
  * THREE THINGS, AND EACH IS SOMETHING A STRANGER CANNOT GET ELSEWHERE. WHAT IT
  * ANSWERS: the method names, since the package name says one at best and this
  * repository has one member whose name says neither. HOW IT NEEDS TSUDOI: the
- * manifest's `peerDependenciesMeta.optional` can read as `this works alone`,
- * while a type-only handler can load as JavaScript but still needs tsudoi for
- * its public types and host. The account of why that flag is there lives in a
- * test `files` keeps out of the tarball, so without this the flag reaches a
- * consumer with no correction anywhere. WHAT BOUNDS IT: every handler decides
+ * manifest names tsudoi as a required, versioned peer, while a type-only handler
+ * can load as JavaScript but still needs tsudoi for its public types and host.
+ * WHAT BOUNDS IT: every handler decides
  * something that limits which documents it serves, and a decision that lives
  * only in a maintainer's source file is not one an installing stranger can act
  * on.
@@ -213,7 +211,8 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   "@atusy/tsudoi-completion-dictionary": [
     /textDocument\/completion/,
     /peer/i,
-    /optional/,
+    /required/i,
+    /0\.1\.0-alpha\.0/,
     /type-only/,
     /TypeScript consumer needs the peer/,
     /useful only inside a tsudoi host/,
@@ -223,14 +222,15 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
     /textDocument\/completion/,
     /completionItem\/resolve/,
     /peer/i,
-    /optional/,
-    /Cannot find module/,
+    /required/i,
+    /0\.1\.0-alpha\.0/,
     /Whitespace ends a path/i,
   ],
   "@atusy/tsudoi-completion-shell": [
     /textDocument\/completion/,
     /peer/i,
-    /optional/,
+    /required/i,
+    /0\.1\.0-alpha\.0/,
     /type-only/,
     /TypeScript consumer needs the peer/,
     /useful only inside a tsudoi host/,
@@ -239,8 +239,8 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   "@atusy/tsudoi-hover-wordnet": [
     /textDocument\/hover/,
     /peer/i,
-    /optional/,
-    /Cannot find module/,
+    /required/i,
+    /0\.1\.0-alpha\.0/,
     /Whitespace is its word rule/i,
   ],
   // THE THIRD THING THIS MEMBER MUST SAY IS THAT ITS ANSWER IS BOUNDED BY A
@@ -257,8 +257,8 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   "@atusy/tsudoi-completion-document": [
     /textDocument\/completion/,
     /peer/i,
-    /optional/,
-    /Cannot find module/,
+    /required/i,
+    /0\.1\.0-alpha\.0/,
     /The window is the point/i,
     /only where the writing system puts spaces/i,
   ],
@@ -270,8 +270,8 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   "@atusy/tsudoi-adapter-efm-config": [
     /textDocument\/diagnostic/,
     /peer/i,
-    /optional/,
-    /Cannot find module/,
+    /required/i,
+    /0\.1\.0-alpha\.0/,
     /through a shell/i,
   ],
 };

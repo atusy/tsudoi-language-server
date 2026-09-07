@@ -247,19 +247,15 @@ function build(root: string, dir: string): void {
  * reads: every published artifact built from current source, in the order
  * `buildOrder` derives from the manifests.
  *
- * A HANDLER'S dist/ IS NOT OPTIONAL. A handler publishes dist/ and NOT src/ --
- * deno refuses to type-strip under node_modules -- so its `exports` map names no
- * source arm and nothing resolves it by any other route. The framework's map
- * does end in one, which is why an absent dist/ is loud for a handler and silent
- * for it.
+ * dist/ IS NOT OPTIONAL. Every package publishes dist/ and not src/ -- deno
+ * refuses to type-strip under node_modules -- so every exports-map condition
+ * names the built artifact and an absent dist/ is loud.
  *
  * WHAT THE ORDER IS FOR IS THE RUNTIMES AND CURRENCY, NOT THE COMPILER. A
- * handler's own build falls through the framework's source arm and exits 0
- * emitting the same declarations either way -- they name the framework BY
- * SPECIFIER and never by structure, so which file answered cannot appear in them
- * (test/handler-declaration-specifier.test.ts is the arm whose subject that
- * indirection is). What source buys is the framework AS IT IS NOW; an artifact
- * grades against whatever was last built.
+ * handler's own build resolves the framework's current built declarations.
+ * They name the framework BY SPECIFIER and never by structure, so which file
+ * answered cannot appear in them (test/handler-declaration-specifier.test.ts is
+ * the arm whose subject that indirection is).
  *
  * WHAT WRITES A dist/ AND WHAT REMOVES ONE, because a reader who finds an
  * artifact missing asks here first: WRITERS are this function and each member's
