@@ -112,9 +112,11 @@ git switch main
 git pull --ff-only origin main
 git status --short
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
-git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
-git push origin v0.1.0-alpha.1
-gh workflow run publish.yml --ref v0.1.0-alpha.1 -f mode=publish -f release-tag=v0.1.0-alpha.1
+release_version="$(node -p "require('./packages/tsudoi-language-server/package.json').version")"
+release_tag="v${release_version}"
+git tag -a "$release_tag" -m "$release_tag"
+git push origin "$release_tag"
+gh workflow run publish.yml --ref "$release_tag" -f mode=publish -f release-tag="$release_tag"
 ```
 
 Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is
