@@ -67,7 +67,7 @@ test("the release packer writes ordered, checksummed tarballs for every public p
       .map(packageManifest)
       .filter((entry) => entry.private !== true);
 
-    expect(manifest.releaseVersion).toBe("0.1.0-alpha.0");
+    expect(manifest.releaseVersion).toBe("0.1.0-alpha.1");
     expect(manifest.packages?.map(({ name, version }) => ({ name, version }))).toEqual(
       expected.map(({ name, version }) => ({ name, version })),
     );
@@ -141,7 +141,7 @@ test("the publisher reports null manifest structures before contacting npm", () 
     const cases = [
       { source: "null\n", error: "is not an alpha release manifest" },
       {
-        source: '{"releaseVersion":"0.1.0-alpha.0","packages":[null]}\n',
+        source: '{"releaseVersion":"0.1.0-alpha.1","packages":[null]}\n',
         error: "contains an invalid package entry",
       },
     ];
@@ -237,7 +237,7 @@ process.exit(2);
           RELEASE_DIR: destination,
           REPO_ROOT: repoRoot,
           NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "test/helpers/fake-attestation-fetch.ts")).href}`,
-          GITHUB_REF: "refs/tags/v0.1.0-alpha.0",
+          GITHUB_REF: "refs/tags/v0.1.0-alpha.1",
           GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
         },
       },

@@ -83,12 +83,12 @@ test("the registry smoke refuses malformed release metadata before installing", 
     const cases = [
       { source: "null\n", error: "is not an object" },
       {
-        source: '{"releaseVersion":"0.1.0-alpha.0","packages":[null]}\n',
+        source: '{"releaseVersion":"0.1.0-alpha.1","packages":[null]}\n',
         error: "package entry is not an object",
       },
       {
         source:
-          '{"releaseVersion":"0.1.0-alpha.0","packages":[{"name":"@atusy/other","version":"0.1.0-alpha.0"}]}\n',
+          '{"releaseVersion":"0.1.0-alpha.1","packages":[{"name":"@atusy/other","version":"0.1.0-alpha.1"}]}\n',
         error: "release manifest packages do not match the workspace release order",
       },
     ];

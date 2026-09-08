@@ -7,7 +7,7 @@ import { repoRoot } from "./helpers/spawn.ts";
 
 applySuiteDeadline();
 
-const RELEASE_VERSION = "0.1.0-alpha.0";
+const RELEASE_VERSION = "0.1.0-alpha.1";
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 
 interface Manifest {

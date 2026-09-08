@@ -520,7 +520,7 @@ const facts: readonly ReadmeFact[] = [
     tokens: [
       /required/i,
       /peer/i,
-      /0\.1\.0-alpha\.0/,
+      /0\.1\.0-alpha\.1/,
       /(?:does not|rather than) bundl/i,
       /auto-install/i,
     ],
@@ -757,7 +757,7 @@ const memberFacts: ReadmeFact[] = [
   },
   {
     name: "tsudoi is a required versioned peer this package does not bundle",
-    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.0/, /does not bundle/i, /auto-install/i],
+    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.1/, /does not bundle/i, /auto-install/i],
   },
   {
     // THE TOKEN IS DELIBERATELY GENERIC WHERE THE SENTENCE IS NOT: each

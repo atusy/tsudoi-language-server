@@ -18,7 +18,7 @@ test("the package publishes its built entry point, capture scripts, and notices"
 
 test("tsudoi is the required peer from this alpha set", () => {
   expect(manifest.peerDependencies).toEqual({
-    "@atusy/tsudoi-language-server": "0.1.0-alpha.0",
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.1",
   });
   expect(manifest.peerDependenciesMeta).toBeUndefined();
   expect(manifest.dependencies).toBeUndefined();

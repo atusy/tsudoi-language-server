@@ -504,7 +504,12 @@ for (const runtime of runtimes) {
           { kind: "response", id: completion.id },
         ]);
 
-        // The PREFIX only: error.stack's first line differs between JSC and V8.
+        // Stdout and stderr are independent pipes: receiving the response does
+        // not mean the stderr data event has arrived in this process yet.
+        // Wait for the trailing fixture message, not only the prefix: stream
+        // chunks may split one write. The stack framing differs between JSC
+        // and V8, but this message is shared by both.
+        await session.waitForStderr(throwMessage);
         expect(session.stderr).toContain("tsudoi: textDocument/completion handler failed:");
         expect(session.stderr).toContain(throwMessage);
 

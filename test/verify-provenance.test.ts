@@ -7,13 +7,13 @@ applySuiteDeadline();
 
 const policy: ProvenancePolicy = {
   packageName: "@atusy/tsudoi-language-server",
-  version: "0.1.0-alpha.0",
+  version: "0.1.0-alpha.1",
   sha512: "a".repeat(128),
   attestationUrl:
-    "https://registry.npmjs.org/-/npm/v1/attestations/@atusy%2ftsudoi-language-server@0.1.0-alpha.0",
+    "https://registry.npmjs.org/-/npm/v1/attestations/@atusy%2ftsudoi-language-server@0.1.0-alpha.1",
   repository: "https://github.com/atusy/tsudoi-language-server",
   workflowPath: ".github/workflows/publish.yml",
-  gitRef: "refs/tags/v0.1.0-alpha.0",
+  gitRef: "refs/tags/v0.1.0-alpha.1",
   gitCommit: "0123456789abcdef0123456789abcdef01234567",
 };
 
@@ -35,7 +35,7 @@ function fixture(
       : { _type: overrides.statementType ?? "https://in-toto.io/Statement/v1" }),
     subject: [
       {
-        name: "pkg:npm/%40atusy/tsudoi-language-server@0.1.0-alpha.0",
+        name: "pkg:npm/%40atusy/tsudoi-language-server@0.1.0-alpha.1",
         digest: { sha512: overrides.sha512 ?? policy.sha512 },
       },
     ],
@@ -95,14 +95,14 @@ test("the exact cryptographically accepted bundle is checked against the release
   expect(verificationOptions).toEqual({
     certificateIssuer: "https://token.actions.githubusercontent.com",
     certificateIdentityURI:
-      "^https://github\\.com/atusy/tsudoi-language-server/\\.github/workflows/publish\\.yml@refs/tags/v0\\.1\\.0-alpha\\.0$",
+      "^https://github\\.com/atusy/tsudoi-language-server/\\.github/workflows/publish\\.yml@refs/tags/v0\\.1\\.0-alpha\\.1$",
   });
 });
 
 test("a bundle signed by another identity is rejected", async () => {
   const { response } = fixture();
   const untrustedIdentity =
-    "https://github.com/atusy/tsudoi-language-server/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.0-evil";
+    "https://github.com/atusy/tsudoi-language-server/.github/workflows/publish.yml@refs/tags/v0.1.0-alpha.1-evil";
   await expect(
     verifyProvenance(
       policy,
