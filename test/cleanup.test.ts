@@ -378,7 +378,7 @@ for (const runtime of runtimes) {
             completionParams(streamingToken),
           );
           // The same presence-first pairing as the test above, and for the same
-          // reason: `null` is what EVERY streaming response is, so the last
+          // reason: this fixture has no explicit return and answers `null`, so the last
           // literal is the only thing that says this request was answered.
           expect(session.progress.at(-1)).toEqual({
             token: streamingToken,

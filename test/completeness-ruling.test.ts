@@ -77,6 +77,7 @@ const ruled = [
   "test/fixtures/completion-yields-non-array.ts",
   "test/fixtures/initialize-absent.ts",
   "test/fixtures/resolve-detail.ts",
+  "test/fixtures/stream-final-results.ts",
   "test/fixtures/throws-on-cancel.ts",
 ];
 

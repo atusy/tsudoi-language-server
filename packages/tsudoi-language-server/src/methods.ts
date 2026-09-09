@@ -204,7 +204,7 @@ type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Pr
 type ErasedStreamHandler = (
   context: RequestContext,
   params: unknown,
-) => AsyncGenerator<unknown[], void, void>;
+) => AsyncGenerator<unknown[], unknown[] | null | void, void>;
 
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
@@ -815,7 +815,7 @@ async function driveStream(run: {
     const batches = handler(context, run.params);
     // Closing the generator is what runs the config author's `finally`.
     const drainCleanup = async (): Promise<void> => {
-      let result = await batches.return();
+      let result = await batches.return(undefined);
       for (let pulled = 0; result.done !== true; pulled += 1) {
         if (pulled >= maxCleanupYields) {
           reportCleanupFailure(
@@ -851,7 +851,14 @@ async function driveStream(run: {
         const next = settled;
         if (next.done === true) {
           completed = true;
-          return yielded && token === undefined ? collected : null;
+          const result = next.value;
+          if (result != null && !Array.isArray(result)) {
+            throw new TypeError(`${run.method} handler returned a result that is not an array`);
+          }
+          if (token !== undefined) {
+            return result ?? null;
+          }
+          return result == null ? (yielded ? collected : null) : collected.concat(result);
         }
         // NOT MADE REDUNDANT BY EITHER CHECK AROUND IT, and nothing reddens if
         // you drop it: this is the seam where the pull and the abort BOTH settled

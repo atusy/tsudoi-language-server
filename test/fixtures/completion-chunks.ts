@@ -11,11 +11,7 @@ import type {
 // the response body are two different serialisation paths out of the server.
 export const firstChunk: CompletionItem[] = [{ label: "一番目", detail: "yielded first" }];
 export const secondChunk: CompletionItem[] = [{ label: "二番目", detail: "yielded second" }];
-/**
- * THE NAME IS STALE AND IS LEFT ALONE DELIBERATELY, flagged here rather than
- * fixed: nothing is RETURNED at all -- a completion generator's return carries
- * no content, so this is the third YIELD and not a return value.
- */
+// Retained export name: this fixture yields its last batch rather than returning it.
 export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "yielded last" }];
 
 /** Supplies completion and NOT hover, so advertisement cannot cross over. */

@@ -192,8 +192,8 @@ for (const runtime of runtimes) {
     /**
      * DOUBLE DELIVERY, GUARDED IN ITS GENERAL FORM. The narrow spelling of it
      * -- `with a partialResultToken the response carries the returned array
-     * alone` -- has nothing left to say, because the response is `null` in
-     * EVERY streaming case. THE HAZARD ITSELF IS NOT GONE: a drive that
+     * alone` -- has nothing left to say, because this fixture has no
+     * explicit return and therefore answers `null` when streaming. THE HAZARD ITSELF IS NOT GONE: a drive that
      * streamed a batch AND aggregated it into the response, or sent one twice,
      * hands a client that appends 一番目 twice. What is asserted here depends on
      * no shape at all, which is what makes it survive a change to the shape.
@@ -372,26 +372,8 @@ for (const runtime of runtimes) {
       }
     });
 
-    /*
-     * WHY NOTHING HERE GUARDS `isIncomplete`, said plainly so the absence reads
-     * as a ruling rather than as a gap. A completion handler yields
-     * `CompletionItem[]` and nothing else, so neither a `CompletionList` answer
-     * nor a content-bearing generator return that could update one is writable
-     * at all. There is no subject for such a test to be about.
-     *
-     * AND THE QUESTION AN ABSENCE SKIPS, ASKED: DOES THIS SHAPE CARRY AN
-     * ANALOGOUS HAZARD? One half would be tsudoi REWRITING a property the
-     * author set while merging -- and nothing this drive concatenates carries a
-     * property, since it appends arrays of items, so there is no member for a
-     * merge to touch. The OTHER half, a merge that loses or doubles items, is
-     * entirely live and is guarded above by `a client that appends sees each
-     * item exactly once`.
-     *
-     * WHERE THE MISSING CAPABILITY IS RECORDED rather than forgotten: at the
-     * two handlers ruled NOT COMPLETE, `@atusy/tsudoi-completion-path` and
-     * examples/tsudoi.config.ts, which say at their own sites that the claim is
-     * wrong for them and why it cannot be stated.
-     */
+    // Final return values are covered by stream-final-results.test.ts; the
+    // fixtures here retain the yield-only delivery contract.
 
     // THE EXAMPLE IS EXECUTED, which is what amended standing item 6 requires
     // of it: the config a reader copies is loaded and DRIVEN, end to end,
