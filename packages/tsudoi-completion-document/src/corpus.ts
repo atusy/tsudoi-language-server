@@ -174,7 +174,7 @@ function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[
  * document to say the same thing at the same time. STREAMING THE SCAN WAS ASKED
  * FOR AND IS REFUSED FOR A SECOND REASON: a handler that offered what it had
  * indexed so far would need to tell the client to ask again, and that is
- * `isIncomplete`, which tsudoi's completion row cannot express -- so the client
+ * `isIncomplete`, which this handler does not return -- so the client
  * would take a partial list as final.
  *
  * THE ORDER IS THE STORE'S, first-seen: documents in the order the client opened
@@ -200,8 +200,8 @@ function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[
  *
  * WHAT IT IS NOT TRUE FOR IS A FUZZY CLIENT, and this is a real cost rather than a
  * caveat: `cmpl` reaching `completion` needs a candidate the prefix rejected, and
- * it was never sent -- while the answer still claims to be final, because tsudoi's
- * completion row CANNOT express `isIncomplete`. AN AUTHOR WITH A FUZZY MATCHER
+ * it was never sent -- while the answer still claims to be final, because this
+ * handler does not return `isIncomplete`. AN AUTHOR WITH A FUZZY MATCHER
  * SHOULD SAY SO IN `filters`: their own filter, or none of them and a `maxItems`.
  *
  * AND AN EDIT OR AN OPEN OVERTURNS THE ANSWER TOO: a `didChange` or a `didOpen`

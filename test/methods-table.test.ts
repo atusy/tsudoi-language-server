@@ -91,40 +91,10 @@ function codeForEveryMethod(answer: unknown): Record<string, unknown> {
 }
 
 /**
- * THE COMPILER CANNOT DO THIS ONE, AND THIS TEST IS AGAIN WHAT CATCHES A
- * MIS-KEYED STREAM-DRIVEN ENTRY. A stream-driven entry cannot pin its
- * result: the protocol declares `CompletionItem[] | CompletionList | null`
- * where a tsudoi completion handler yields `CompletionItem[]`, so the slot is
- * left OPEN -- and `HoverParams` is assignable to `CompletionParams`, they
- * differing only in OPTIONAL members, so `HoverRequest.type` written into
- * completion's slot COMPILES. That is the defect this test was built for.
- *
- * AND THE COMPILER CANNOT CLOSE IT HERE, said plainly so the next reader does
- * not re-derive the pin and find out the hard way. A tsudoi completion handler
- * yields `CompletionItem[]` and nothing else, so it cannot say
- * `CompletionList`, where `CompletionRequest.type` carries the protocol's own
- * result type. MEASURED ON THIS TREE at typescript 7.0.2 / protocol 3.18.2
- * rather than taken on trust: pinning the entry gives TS2322 AT THE TABLE,
- * `Type 'CompletionList' is missing the following properties from type
- * 'CompletionItem[]'`. `StreamDrivenEntry` in
- * packages/tsudoi-language-server/src/methods.ts leaves the result open for
- * exactly that reason.
- *
- * WHAT THIS TEST SAYS THAT NO PIN EVER COULD, and it is why it would be kept
- * even if the pin came back: `type.method` IS A RUNTIME STRING, and nothing in
- * the type system reads it. A dependency that changed the method name a request
- * constant carries while leaving its types alone would pass every compile check
- * and register completion's entry under another method's name -- it reads the
- * wire name, which the type system does not.
- *
- * WHY EITHER WOULD MATTER RATHER THAN MERELY BEING UNTIDY: the router registers
- * with the entry's `type` and looks the config author's handler up BY THE KEY.
- * Disagreeing means a client's completion request runs the hover handler, or
- * reaches nothing at all -- and every capability test would stay green, since
- * capabilities are contributed by key too.
- *
- * ONE ASSERTION, EVERY ENTRY, BY CONSTRUCTION: a method joins this the moment it
- * joins the table, and no roster here has to be kept in step with one.
+ * RequestEntry checks params, partial arrays and final results against the
+ * method map. The runtime method string is a separate invariant: a request
+ * constant with the right types but the wrong wire name would register the
+ * handler under another method. Check every table row against that name.
  */
 describe("the request table", () => {
   test("every entry's key is its own request type's method", () => {

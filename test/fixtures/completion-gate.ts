@@ -25,8 +25,7 @@ export default (): Promise<TsudoiConfig> => {
       // partial. `isIncomplete` says THE SET MAY GROW AS THE USER TYPES, where
       // streaming says THE SET ARRIVES IN PIECES -- the two are independent, and
       // this fixture exercises the second while claiming nothing about the
-      // first. IT CANNOT SAY THE FIRST IN ANY SPELLING, and that does not change
-      // this ruling either way: the answer here is COMPLETE on its own grounds.
+      // first. The answer here is COMPLETE on its own grounds.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

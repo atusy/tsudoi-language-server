@@ -14,6 +14,7 @@ import type {
   CodeActionParams,
   Command,
   CompletionItem,
+  CompletionList,
   CompletionParams,
   DocumentDiagnosticParams,
   DocumentDiagnosticReport,
@@ -346,12 +347,14 @@ export interface MethodMap {
    * Clients decide how to combine a response with earlier progress; LSP does
    * not guarantee appending response items after partial results.
    *
-   * CompletionList final results are the next implementation step of ADR 0009;
-   * this array-only result still cannot express isIncomplete.
+   * Return a CompletionList to decide isIncomplete when computation ends.
+   * Without a token its attributes apply to the aggregated items, including
+   * itemDefaults. With a token the list is sent as the response unchanged;
+   * applying its attributes to earlier progress is client-dependent.
    */
   "textDocument/completion": {
     params: CompletionParams;
-    result: AsyncGenerator<CompletionItem[], CompletionItem[] | null | void, void>;
+    result: AsyncGenerator<CompletionItem[], CompletionItem[] | CompletionList | null | void, void>;
   };
 
   "textDocument/hover": {

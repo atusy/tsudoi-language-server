@@ -2,7 +2,7 @@
 
 |                     |                                              |
 | ------------------- | -------------------------------------------- |
-| **Status**          | proposed                                     |
+| **Status**          | accepted                                     |
 | **Date**            | 2026-09-10                                   |
 | **Decision-makers** | Project stakeholder and maintainers          |
 | **Consulted**       | Completion and code-action handler contracts |
@@ -91,6 +91,8 @@ streamed items that need those defaults should carry their values explicitly.
 
 - Applying final attributes or items after progress depends on the client, as described above.
 - Wrappers that discard generator return values also discard the new final results.
+- Consumers reading `.next().value` must distinguish `done` before assuming an item array;
+  the final value can now be a completion list.
 - Configs that accidentally returned a value previously ignored by tsudoi will now expose it.
 
 **Neutral:**

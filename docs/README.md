@@ -501,6 +501,18 @@ requires an empty final response and does not guarantee appending its items. See
 [ADR 0009](architecture-decision/0009-return-final-results-from-stream-handlers.md) for the
 intentional compatibility tradeoff. Cancellation still discards subsequent output.
 
+Completion uses the same convention and additionally accepts a `CompletionList` as its return.
+Return `{ isIncomplete: searchWasTruncated, items: remainingItems }` after yielding candidates to
+choose completeness when computation finishes. Without a valid token, its attributes are retained
+and its items follow the yielded candidates. With a token, the list becomes the response unchanged;
+whether its attributes apply to earlier progress depends on the client. A list with empty `items`
+can carry the final attributes without repeating candidates. Returning a list without yielding
+provides an ordinary completion response even if the request contains a token.
+
+A returned list's `itemDefaults` also apply to earlier items when aggregated. Ensure those defaults
+are appropriate for the whole aggregate and supported by the client. For streamed items that need
+default values, put the values on the items themselves. Tsudoi does not mutate the returned list.
+
 When wrapping another generator, use `return yield* inner(context, params)` to forward both
 its yields and its final result. A bare `yield*` forwards the yields but discards the return
 value unless you use it; a `for await` loop only reads yields.

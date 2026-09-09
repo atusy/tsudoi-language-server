@@ -120,7 +120,7 @@ export function windowAround(
  *
  * WHAT IT IS NOT TRUE FOR IS A FUZZY CLIENT: `cmpl` reaching `completion` needs a
  * candidate the prefix rejected, and it was never sent -- while the answer still
- * claims to be final, because tsudoi's completion row cannot express
+ * claims to be final, because this handler does not return
  * `isIncomplete`. `filters` is where an author says otherwise.
  *
  * AND AN EDIT OVERTURNS THE ANSWER WHATEVER THE PIPELINE DOES: typing changes the
