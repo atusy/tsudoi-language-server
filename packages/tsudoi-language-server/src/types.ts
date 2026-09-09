@@ -467,17 +467,12 @@ export interface MethodMap {
    * this key, so a wrong choice costs the same either way -- and only one of them
    * can ever grow partial results without being swapped.
    *
-   * THE ARGUMENT AGAINST IT IS STILL TRUE AND IS ABOUT A DIFFERENT QUESTION,
-   * which is why an author should usually yield ONCE: a completion list is
-   * FILTERED as the user keeps typing, so a late item lands where it belongs,
-   * while a code-action menu is opened, read, and chosen from as a whole -- an
-   * action appended after it is on screen moves the row under the user's cursor.
-   * That decides what a server SHOULD send; this type decides only what it CAN.
+   * A code-action menu is usually read and chosen from as a whole; appending an
+   * action after it opens can move the row under the user's cursor. A handler
+   * with a fixed list can return it without yielding, even under a token.
    *
-   * WHAT IT COSTS AN AUTHOR WITH A FIXED LIST IS ONE `yield`, which is the price
-   * `textDocument/completion` already charges, and the drive's own contract --
-   * yields carry partial arrays and return carries the final result -- is
-   * stated once at
+   * The shared contract -- yield partial arrays and return the final result --
+   * is stated at
    * `MethodMap["textDocument/completion"]` and is not restated per row.
    *
    * WHAT YOU YIELD IS CHECKED FOR BEING AN ARRAY AND FOR NOTHING ELSE, so every
@@ -494,14 +489,11 @@ export interface MethodMap {
    *
    * `[]` IS AVAILABLE AND MEANS SOMETHING ELSE -- `I looked and there is nothing
    * you can do here`, which a client may render as a menu with no entries, where
-   * yielding nothing at all is answered `null`. WHAT A TOKEN CHANGES IS WHICH
-   * HALF OF THAT SURVIVES, and the narrower reading is the true one: the
-   * `null` RESPONSE IS IDENTICAL EITHER WAY for a yield-only handler, while the
-   * NOTIFICATIONS are not --
-   * an empty batch still leaves as its own `$/progress` and yielding nothing
-   * sends none at all. WHAT A CLIENT MAKES OF THAT PAIR IS THE CLIENT'S, and no
-   * claim about it belongs here: what tsudoi sends is the whole of what this
-   * type can promise.
+   * neither yielding nor returning a result answers `null`. With a token,
+   * `yield []` sends an empty progress batch and `return []` sends an empty
+   * response array. A yield-only handler answers `null` after its progress;
+   * a return-only handler sends no progress. Client interpretation is subject
+   * to the compatibility contract above.
    */
   "textDocument/codeAction": {
     params: CodeActionParams;
