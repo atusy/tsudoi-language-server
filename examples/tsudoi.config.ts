@@ -31,14 +31,9 @@ const config: TsudoiConfigFactory = () => {
       // to a different listing entirely. A client told the set is final shows
       // the user candidates for a prefix they have already left behind.
       //
-      // AND IT CANNOT BE FIXED HERE, WHICH IS WHY THE RULING STAYS RATHER THAN
-      // BEING QUIETLY REVISED TO MATCH WHAT SHIPS. A completion handler yields
-      // `CompletionItem[]` and nothing else, so there is no value this config
-      // or its delegate could produce that says anything other than COMPLETE --
-      // the wrongness is in the published type, and the edit that removes it is
-      // at `MethodMap` in packages/tsudoi-language-server/src/types.ts, not in
-      // this file. Relabelling this COMPLETE would make the tree consistent and
-      // leave nothing at all recording that what goes out on the wire is false.
+      // The framework now accepts a returned CompletionList (ADR 0009).
+      // This example keeps the delegate's existing policy; choosing
+      // isIncomplete here or in completePath is a separate behavior change.
       //
       // AND THE ARM JUST BELOW DECLINES A SECOND WRONG CLAIM, worth separating
       // because a re-type papers over both: it fires when the document is NOT IN
@@ -125,13 +120,10 @@ const config: TsudoiConfigFactory = () => {
           // API -- a handler that had items of its own would `yield` them and
           // still choose nothing.
           //
-          // `yield*` RATHER THAN A RETURN, and it has to be: this handler is a
-          // generator, so handing the delegate's generator BACK would make it
-          // the yielded value instead of running it. `yield*` is what forwards
-          // every batch AND the close -- tsudoi's `.return()` on cancellation
-          // reaches the delegate through it, which is what runs the `finally`
-          // that lives with the work inside `@atusy/tsudoi-completion-path`.
-          yield* completePath(context, params);
+          // `return yield*` forwards partial batches, the final result and
+          // cancellation to the delegate. Returning the generator object itself
+          // would not execute it.
+          return yield* completePath(context, params);
         }
       },
 

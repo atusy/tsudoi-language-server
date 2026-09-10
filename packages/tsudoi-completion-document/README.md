@@ -182,7 +182,7 @@ finds no word at all before a Japanese cursor, where `segmentScanner` finds `コ
 
 **A prefix filter defeats a fuzzy client.** If your editor matches `cmpl` against `completion`, it
 can no longer do it through this — the candidate was never sent, and the answer still claims to be
-final because a tsudoi handler cannot say `isIncomplete`. That is why `filters` is a list rather
+final because this handler yields arrays and does not return `isIncomplete`. That is why `filters` is a list rather
 than a flag: give it a fuzzy filter of your own, or empty it and set `maxItems` instead.
 
 <!-- snippet -->

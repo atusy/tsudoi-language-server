@@ -487,19 +487,35 @@ actions and stays quiet about which categories -- unlike the command list above,
 protocol makes required and which tsudoi therefore has to advertise empty. Naming kinds is a
 promise about what you produce, so it stays yours to make from an `initialize` handler.
 
-**The handler is an async generator**, the same shape `textDocument/completion` has, and for a
-reason that has nothing to do with how many actions you have. An editor naming a
-`partialResultToken` receives every batch you yield as its own `$/progress`; one that names none
-receives them concatenated into a single response, byte for byte what returning the list would
-have sent. Both hold **until the request is abandoned** -- after that a batch already in hand is
-dropped rather than sent, which is the point of abandoning it. So a handler with a fixed list yields once and, for an editor that named no token, is
-indistinguishable on the wire from one that could never have streamed. **Without a token**,
-yielding nothing at all is answered `null` -- _this server has no answer here_ -- where yielding
-`[]` says _I looked and there is nothing you can do_, which your editor may render as an empty
-menu. **Under a token, half of that distinction survives on the wire**: the response is `null`
-either way, but an empty batch still leaves as its own `$/progress` where yielding nothing sends
-none. What your editor makes of that pair is your editor's; what tsudoi sends is the whole of what
-this promises.
+**The handler is an async generator**, like `textDocument/completion`. Yield arrays for partial
+results and return an array for the final result. With a valid `partialResultToken`, each yield
+leaves as `$/progress` and the return becomes the response; without one, yielded items precede
+returned items in one array. Returned items are never sent as progress or repeated by tsudoi.
+A fixed list can be returned without yielding, even when the request carries a token.
+
+A bare `return` or `return null` adds no items and does not retract earlier yields. A handler
+that neither yields nor returns a result answers `null`; an explicit empty array stays `[]`
+when aggregated or returned. Existing yield-only handlers still answer `null` after streaming.
+Clients decide how to interpret a final response after progress: LSP's partial-result contract
+requires an empty final response and does not guarantee appending its items. See
+[ADR 0009](architecture-decision/0009-return-final-results-from-stream-handlers.md) for the
+intentional compatibility tradeoff. Cancellation still discards subsequent output.
+
+Completion uses the same convention and additionally accepts a `CompletionList` as its return.
+Return `{ isIncomplete: searchWasTruncated, items: remainingItems }` after yielding candidates to
+choose completeness when computation finishes. Without a valid token, its attributes are retained
+and its items follow the yielded candidates. With a token, the list becomes the response unchanged;
+whether its attributes apply to earlier progress depends on the client. A list with empty `items`
+can carry the final attributes without repeating candidates. Returning a list without yielding
+provides an ordinary completion response even if the request contains a token.
+
+A returned list's `itemDefaults` also apply to earlier items when aggregated. Ensure those defaults
+are appropriate for the whole aggregate and supported by the client. For streamed items that need
+default values, put the values on the items themselves. Tsudoi does not mutate the returned list.
+
+When wrapping another generator, use `return yield* inner(context, params)` to forward both
+its yields and its final result. A bare `yield*` forwards the yields but discards the return
+value unless you use it; a `for await` loop only reads yields.
 
 What you yield is `Command`s, `CodeAction`s, or both in one batch. tsudoi checks that the batch is
 an array -- yield anything else and the request fails -- and looks at nothing inside it, so

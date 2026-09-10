@@ -46,8 +46,11 @@ type DriveKind<M extends Method> = [StreamChunk<M>] extends [never]
   ? "awaited-once"
   : "stream-driven";
 
-/** What the client receives as the response for a method this drive awaits once. */
-type WireResult<M extends Method> = Awaited<MethodMap[M]["result"]>;
+/** The final result, with a stream handler's absent return normalized to null. */
+type WireResult<M extends Method> =
+  MethodMap[M]["result"] extends AsyncGenerator<unknown, infer R, unknown>
+    ? Exclude<R, void> | null
+    : Awaited<MethodMap[M]["result"]>;
 
 /** What one method adds to `ServerCapabilities` when the config can answer it. */
 export type CapabilityContributor = (capabilities: ServerCapabilities) => void;
@@ -70,14 +73,12 @@ interface AwaitedOnceEntry<M extends Method> {
 }
 
 /**
- * A method whose handler is DRIVEN A CHUNK AT A TIME. Its `type` leaves the
- * result open, so a request type whose params merely fit is accepted here; the
- * key and the request type are held together by test rather than by the
- * compiler.
+ * A method whose handler yields partial arrays and returns its final result.
+ * The final result and the partial type are checked independently.
  */
 interface StreamDrivenEntry<M extends Method> {
   readonly drive: DriveKind<M>;
-  readonly type: RequestType<MethodMap[M]["params"], unknown, EntryErrorPayload>;
+  readonly type: RequestType<MethodMap[M]["params"], WireResult<M>, EntryErrorPayload>;
   /** What the streamed chunks travel as. */
   readonly progress: ProgressType<StreamChunk<M>>;
   readonly capability: CapabilityContributor;
@@ -204,7 +205,7 @@ type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Pr
 type ErasedStreamHandler = (
   context: RequestContext,
   params: unknown,
-) => AsyncGenerator<unknown[], void, void>;
+) => AsyncGenerator<unknown[], unknown, void>;
 
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
@@ -757,33 +758,39 @@ function abortedRace(signal: AbortSignal): Promise<typeof abortWon> {
   });
 }
 
+/** Assemble a validated final result without mutating the handler's arrays or list. */
+function finishStream(method: Method, result: unknown, collected: unknown[] | undefined): unknown {
+  if (result == null) {
+    return collected ?? null;
+  }
+  if (Array.isArray(result)) {
+    return collected === undefined ? result : collected.concat(result);
+  }
+  if (
+    method === "textDocument/completion" &&
+    typeof result === "object" &&
+    "isIncomplete" in result &&
+    typeof result.isIncomplete === "boolean" &&
+    "items" in result &&
+    Array.isArray(result.items)
+  ) {
+    // The final list owns the attributes for the aggregate. Streamed yields
+    // are not retained here, so their interpretation stays with the client.
+    return collected === undefined ? result : { ...result, items: collected.concat(result.items) };
+  }
+  throw new TypeError(`${method} handler returned an invalid result`);
+}
+
 /**
- * The STREAM-DRIVEN drive. Whether batches leave as `$/progress` or are
- * aggregated into one response is decided HERE, from the presence of
- * `partialResultToken` and from nothing else -- what an author may rely on is
- * stated at `MethodMap["textDocument/completion"]`. There is no client capability
- * declaring partial-result support, so a client that cannot take them simply
- * omits the token.
+ * Drive partial arrays immediately under a valid token; otherwise collect them.
+ * finishStream combines the collected items with the final return, or leaves
+ * that return alone when yields were streamed. See ADR 0009 for the deliberate
+ * client-dependent interpretation of a final response after progress.
  *
- * A LOOK-AHEAD IS REFUSED HERE, and this is the loop that would grow one: it
- * would spare a one-batch answer under a token its `$/progress` and its `null`
- * response, and it can only tell a one-batch answer apart by pulling the SECOND
- * batch before sending the FIRST -- a delay landing exactly when the first chunk
- * is slow and streaming matters most.
- *
- * What a method picking this drive must satisfy: its params carry a
- * `partialResultToken`, and what it yields is ARRAYS, since aggregating
- * concatenates them. The second is what excludes `textDocument/diagnostic`, whose
- * partial results are objects carrying OTHER documents' reports rather than more
- * of the one that was asked for.
- *
- * THE CONDITIONS DO NOT SAY WHY A ROW THAT MEETS THEM IS HERE, which is the
- * reading to carry away rather than the conditions themselves.
- * `textDocument/completion` predates the split and no ruling anywhere records an
- * alternative being weighed for it; `textDocument/codeAction` could have been
- * awaited once and was RULED into this drive, its reason at
- * `MethodMap["textDocument/codeAction"]`. So a reader arriving here to learn what
- * forced a row will not find it here for either of them.
+ * No look-ahead: a yielded batch must not wait for the next pull to finish.
+ * A handler with one final result can return it without yielding instead.
+ * This drive requires array partials; document diagnostics carry related-document
+ * objects and cannot use this array aggregation.
  */
 async function driveStream(run: {
   method: Method;
@@ -815,7 +822,7 @@ async function driveStream(run: {
     const batches = handler(context, run.params);
     // Closing the generator is what runs the config author's `finally`.
     const drainCleanup = async (): Promise<void> => {
-      let result = await batches.return();
+      let result = await batches.return(undefined);
       for (let pulled = 0; result.done !== true; pulled += 1) {
         if (pulled >= maxCleanupYields) {
           reportCleanupFailure(
@@ -851,7 +858,11 @@ async function driveStream(run: {
         const next = settled;
         if (next.done === true) {
           completed = true;
-          return yielded && token === undefined ? collected : null;
+          return finishStream(
+            run.method,
+            next.value,
+            token === undefined && yielded ? collected : undefined,
+          );
         }
         // NOT MADE REDUNDANT BY EITHER CHECK AROUND IT, and nothing reddens if
         // you drop it: this is the seam where the pull and the abort BOTH settled

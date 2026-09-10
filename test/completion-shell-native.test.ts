@@ -47,11 +47,13 @@ test("fish returns its configured native candidates", async () => {
     ]);
 
     expect(answer.done).toBe(false);
-    expect(answer.value?.map(({ label, detail }) => ({ label, detail }))).toEqual([
+    if (answer.done) throw new Error("Expected a yielded completion batch");
+    expect(answer.value.map(({ label, detail }) => ({ label, detail }))).toEqual([
       { label: "alpha", detail: "first candidate" },
       { label: "alpine", detail: "second candidate" },
     ]);
-    expect(concurrent.value?.map(({ label }) => label)).toEqual(["alpha", "alpine"]);
+    if (concurrent.done) throw new Error("Expected a yielded completion batch");
+    expect(concurrent.value.map(({ label }) => label)).toEqual(["alpha", "alpine"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -76,7 +78,8 @@ test("fish returns command candidates for an empty prefix", async () => {
     }).next();
 
     expect(answer.done).toBe(false);
-    expect(answer.value?.map(({ label }) => label)).toContain("tsudoi-empty-probe");
+    if (answer.done) throw new Error("Expected a yielded completion batch");
+    expect(answer.value.map(({ label }) => label)).toContain("tsudoi-empty-probe");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -99,7 +102,8 @@ test("xonsh returns native command candidates", async () => {
     const answer = await handler(context, params).next();
 
     expect(answer.done).toBe(false);
-    expect(answer.value?.map((item) => item.label.trimEnd())).toContain("tsudoi-xonsh-probe");
+    if (answer.done) throw new Error("Expected a yielded completion batch");
+    expect(answer.value.map((item) => item.label.trimEnd())).toContain("tsudoi-xonsh-probe");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -119,7 +123,8 @@ test("zsh returns native command candidates", async () => {
     const answer = await handler(context, params).next();
 
     expect(answer.done).toBe(false);
-    expect(answer.value?.map((item) => item.label)).toContain("checkout");
+    if (answer.done) throw new Error("Expected a yielded completion batch");
+    expect(answer.value.map((item) => item.label)).toContain("checkout");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

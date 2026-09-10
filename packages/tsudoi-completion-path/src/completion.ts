@@ -669,19 +669,12 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
 /**
  * A `textDocument/completion` handler that completes paths.
  *
- * COMPLETENESS RULING: NOT COMPLETE, AND IT CANNOT SAY SO ON THE WIRE. A
- * completion handler yields `CompletionItem[]` and nothing else, so every batch
- * is aggregated into a bare array, which the specification treats as
- * `{ isIncomplete: false, items }` -- a client told the set is FINAL filters what
- * it already holds instead of asking again, and after the next keystroke shows
- * candidates for a prefix the user has already left. The set really does change:
- * typing a separator does not narrow the previous answer, it replaces the
- * directory being listed.
- *
- * IT CANNOT BE FIXED HERE, which is the whole reason this paragraph is at the
- * site: every spelling available -- yielding fewer items, yielding none, batching
- * differently -- produces the same aggregated array, and an array IS the claim.
- * The edit is tsudoi's to make at the method map its own types declare.
+ * COMPLETENESS RULING: NOT COMPLETE. This handler still yields arrays and
+ * returns void, so its aggregated result implicitly claims isIncomplete:false.
+ * Typing a separator changes the directory being listed rather than narrowing
+ * the previous candidates. ADR 0009 lets an enclosing handler return a
+ * CompletionList with isIncomplete:true; choosing that policy in this package
+ * remains separate from adding support in the framework.
  */
 export async function* completePath(
   context: RequestContext,

@@ -40,12 +40,8 @@ const rulingMarker = "COMPLETENESS RULING:";
  * `files serving it`, and a bare number says which of them it came from to
  * nobody.
  *
- * NO CONFIG IN IT ANSWERS A `CompletionList`, AND NONE CAN, said here because a
- * short enumeration reads exactly like a ruling that was dropped: a completion
- * handler yields `CompletionItem[]` and nothing else, so a config demonstrating
- * that answer is UNWRITABLE rather than merely absent. THE TWO RULINGS THAT SAY
- * `NOT COMPLETE` ARE AT packages/tsudoi-completion-path/src/completion.ts AND
- * examples/tsudoi.config.ts, which is where that limitation is recorded.
+ * The stream-final-results fixture also returns CompletionList values. The
+ * ruling records the source's choice whether carried by an array or a list.
  */
 const ruled = [
   "examples/tsudoi.config.ts",
@@ -77,6 +73,7 @@ const ruled = [
   "test/fixtures/completion-yields-non-array.ts",
   "test/fixtures/initialize-absent.ts",
   "test/fixtures/resolve-detail.ts",
+  "test/fixtures/stream-final-results.ts",
   "test/fixtures/throws-on-cancel.ts",
 ];
 

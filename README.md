@@ -32,7 +32,7 @@ import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 const config: TsudoiConfigFactory = async () => ({
   methods: {
     "textDocument/completion": async function* (context, params) {
-      yield* completePath(context, params);
+      return yield* completePath(context, params);
     },
     "completionItem/resolve": resolvePathStat,
     "textDocument/hover": hoverWordnet,
