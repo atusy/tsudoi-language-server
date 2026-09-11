@@ -123,7 +123,7 @@ for (const runtime of runtimes) {
         expect(session.progress.map((progress) => progress.token)).toEqual(
           batches.map(() => partialResultToken),
         );
-        // Final attributes apply to the listing without sending its items twice.
+        // The final response carries the flag without sending the items twice.
         expect(result).toEqual({ isIncomplete: true, items: [] });
       } finally {
         session.dispose();
