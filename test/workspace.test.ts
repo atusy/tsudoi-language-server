@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionItem,
+  type CompletionList,
   ErrorCodes,
   type Hover,
   type InitializeResult,
@@ -236,14 +237,14 @@ async function openWithRootUri(session: LspSession, rootUri: string, line: strin
 /**
  * One completion at the end of `line`, aggregated as a client without a token
  * sees it. The example yields batches of items, so the response IS the whole
- * list; `null` is `no answer at all` and reads as an empty list here.
+ * list. These callers have opened the document and requested an available line.
  */
 async function completeAt(session: LspSession, line: string): Promise<CompletionItem[]> {
-  const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+  const result = await session.request<CompletionList>("textDocument/completion", {
     textDocument: { uri },
     position: { line: 0, character: line.length },
   });
-  return result ?? [];
+  return result.items;
 }
 
 function inserted(items: readonly CompletionItem[]): string[] {

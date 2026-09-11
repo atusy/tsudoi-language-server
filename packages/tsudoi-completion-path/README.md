@@ -116,16 +116,24 @@ comma-separates** its paths is served by a handler of its own rather than by a s
 one. There is no option to change the rule, deliberately: an author who needs another writes a
 handler, and this package stays a thing that works rather than a thing that is configured.
 
-Two more limits worth knowing before you turn it on:
+**Nothing recurses.** One fragment is answered by one directory listing filtered by the
+fragment's trailing name. Unbounded walks, recursion depth and symlink cycles are not
+representable.
 
-- **Nothing recurses.** One fragment is answered by ONE directory listing filtered by the
-  fragment's trailing name. Unbounded walks, recursion depth and symlink cycles are not
-  unhandled here but unrepresentable.
-- **The answer is not marked incomplete, and it should be.** A completion handler yields
-  `CompletionItem[]`, which the specification treats as `isIncomplete: false` — a positive claim
-  that the set is final. It is not: the next keystroke changes the filter and often changes the
-  directory. The wrongness is in tsudoi's published type, not in this package, and no value
-  either could produce says otherwise.
+**Further typing requests a new listing.** `completePath` yields candidate arrays and returns
+`{ isIncomplete: true, items: [] }` when enumeration ends. Typing a separator can change the
+directory; filtering the previous candidates alone cannot discover its children. Empty or
+query-length-gated listings also remain incomplete. An unavailable document or line still
+returns no result.
+
+Without a `partialResultToken`, tsudoi collects the yielded entries into the final
+`CompletionList`. With a token, the entries travel in `$/progress` and the final response
+carries the incomplete flag with no duplicate items. Applying that flag to streamed entries
+depends on the client, as described in
+[ADR 0009](https://github.com/atusy/tsudoi-language-server/blob/main/docs/architecture-decision/0009-return-final-results-from-stream-handlers.md).
+Wrappers must use `return yield* completePath(...)` to preserve the final result; `yield*`
+alone and `for await` loops discard it. A wrapper combining several sources must choose the
+combined result's completeness itself.
 
 Two things depend on **your editor** rather than on this package: items carry an
 `InsertReplaceEdit` only where the client declared `insertReplaceSupport`, and the workspace

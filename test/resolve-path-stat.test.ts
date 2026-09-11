@@ -3,7 +3,11 @@ import { chmodSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
+import type {
+  CompletionItem,
+  CompletionList,
+  InitializeResult,
+} from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { frameworkRoot } from "./helpers/spawn.ts";
@@ -265,11 +269,11 @@ async function completedItems(session: LspSession, root: string): Promise<Comple
   });
   // No partialResultToken, so every batch is aggregated and the response IS the
   // whole list.
-  const answer = await session.request<CompletionItem[] | null>("textDocument/completion", {
+  const answer = await session.request<CompletionList>("textDocument/completion", {
     textDocument: { uri },
     position: { line: 0, character: prefix.length },
   });
-  return answer ?? [];
+  return answer.items;
 }
 
 /** The one item that inserts `insertText`, or a failure naming what was there. */

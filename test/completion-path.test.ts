@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { CompletionItem, InitializeResult } from "vscode-languageserver-protocol";
+import type {
+  CompletionItem,
+  CompletionList,
+  InitializeResult,
+} from "vscode-languageserver-protocol";
 import { bunRuntime, denoRuntime, initializeParams, LspSession } from "./helpers/lsp.ts";
 import { requireRuntime } from "./helpers/preflight.ts";
 import { frameworkRoot } from "./helpers/spawn.ts";
@@ -86,7 +90,7 @@ for (const runtime of runtimes) {
           textDocument: { uri, languageId: "plaintext", version: 1, text: "entry-" },
         });
 
-        const result = await session.request<null>("textDocument/completion", {
+        const result = await session.request<CompletionList>("textDocument/completion", {
           textDocument: { uri },
           position: { line: 0, character: "entry-".length },
           partialResultToken,
@@ -119,13 +123,70 @@ for (const runtime of runtimes) {
         expect(session.progress.map((progress) => progress.token)).toEqual(
           batches.map(() => partialResultToken),
         );
-        // The batches have already left; the response adds nothing to them, and
-        // `null` is what `empty in terms of result values` is spelled as here.
-        expect(result).toBeNull();
+        // Final attributes apply to the listing without sending its items twice.
+        expect(result).toEqual({ isIncomplete: true, items: [] });
       } finally {
         session.dispose();
         fixture.dispose();
       }
     });
+
+    for (const streamed of [false, true]) {
+      test(`a directory change replaces candidates (partial results: ${String(streamed)})`, async () => {
+        const fixture = tree(["parent/child.txt", "empty/"]);
+        const session = LspSession.startCommand(
+          `${runtime.command} ${runtime.runArgs.join(" ")} ${join(frameworkRoot, "src", "cli.ts")} --config ${demoConfig}`,
+          fixture.root,
+        );
+        try {
+          await session.request<InitializeResult>("initialize", initializeParams);
+          session.notify("initialized", {});
+          const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
+          session.notify("textDocument/didOpen", {
+            textDocument: { uri, languageId: "plaintext", version: 1, text: "par" },
+          });
+          let version = 1;
+          for (const [query, expected] of [
+            ["par", ["parent"]],
+            ["parent/", ["parent/child.txt"]],
+            ["missing", []],
+            ["empty/", []],
+            ["", []],
+          ] as const) {
+            session.notify("textDocument/didChange", {
+              textDocument: { uri, version: ++version },
+              contentChanges: [{ text: query }],
+            });
+            const progressBefore = session.progress.length;
+            const result = await session.request<CompletionList>("textDocument/completion", {
+              textDocument: { uri },
+              position: { line: 0, character: query.length },
+              context: { triggerKind: 3 },
+              ...(streamed ? { partialResultToken } : {}),
+            });
+            const progress = session.progress.slice(progressBefore);
+            const items = progress.flatMap((entry) => entry.value as CompletionItem[]);
+            expect(result.isIncomplete).toBe(true);
+            expect([...items, ...result.items].map((item) => item.insertText)).toEqual([
+              ...expected,
+            ]);
+            if (streamed) {
+              expect(result.items).toEqual([]);
+              expect(progress.every((entry) => entry.token === partialResultToken)).toBe(true);
+            } else {
+              expect(progress).toEqual([]);
+            }
+          }
+          const unavailableLine = await session.request<null>("textDocument/completion", {
+            textDocument: { uri },
+            position: { line: 9, character: 0 },
+          });
+          expect(unavailableLine).toBeNull();
+        } finally {
+          session.dispose();
+          fixture.dispose();
+        }
+      });
+    }
   });
 }
