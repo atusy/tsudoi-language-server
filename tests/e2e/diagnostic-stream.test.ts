@@ -105,10 +105,11 @@ for (const runtime of runtimes) {
             expect((await request.response).error?.code).toBe(-32800);
             session.notify("diagnostic/release", {});
             await session.waitForStderr(released);
-            expect(session.progress).toEqual(token === undefined ? [] : [{ token, value: report }]);
             expect(
               await session.request<unknown>("textDocument/diagnostic", params("return")),
             ).toEqual(report);
+            // The response is a stdout barrier; the cleanup marker arrived on stderr.
+            expect(session.progress).toEqual(token === undefined ? [] : [{ token, value: report }]);
           } finally {
             session.dispose();
           }
