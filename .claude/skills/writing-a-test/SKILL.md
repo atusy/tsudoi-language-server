@@ -7,13 +7,13 @@ description: Use when writing, changing, or reading the result of a test, guard,
 
 Every rule below was filed after an instrument here produced a clean green and
 measured nothing. The measurement is carried with the rule: a rule without one
-is advice, and this project has thirty sprints of evidence that advice does not
+is advice, and this project has repeated evidence that advice does not
 hold.
 
 ## An instrument that cannot fail measures nothing
 
 **Before reading a green, ask whether what you perturbed is REACHED by what you
-measured.** Not whether the control fired — whether it COULD have. _(sprint 42)_
+measured.** Not whether the control fired — whether it COULD have.
 MEASURED: renaming `Method` in `dist/types.d.ts` left `tsc` at exit 0 and was
 nearly read as "tsc does not consult dist/". It meant only that no example
 imports `Method`. Re-probed with a name the examples do import: `TS2305` at the
@@ -21,34 +21,34 @@ example.
 
 **Write the degenerate implementation and run your arms against it.** If they all
 pass, the arms describe an author's intention rather than a property.
-_(sprint 50, amending sprint 42)_ MEASURED: three planned arms were all satisfied
+MEASURED: three planned arms were all satisfied
 by a guard that passes any name holding a scope — which, on a repository whose
 every member is scoped, refuses NOTHING: three arms green, the fifth check exit 0
 and silent on a still-mismatching tree. The fourth arm was written from that
-measurement. Second reading _(sprint 52)_: with `handlerMembers` returning every
+measurement. Second reading: with `handlerMembers` returning every
 member, 2 pass / 3 fail — the three throwaway-tree arms reddened and the two arms
 reading this repository stayed green, correctly.
 
 **A perturbed input that is not in the program your assertion reads cannot make
-it fail.** _(sprint 49)_ MEASURED: a test rewrote the tracked root
+it fail.** MEASURED: a test rewrote the tracked root
 `tsconfig.json` to show that a member ignores it, but `tsc -p <member>
 --showConfig` proves the root config is never in that member's program. The test
 could not fail — and it was mutating a version-controlled file in order to not
 fail. The detector is cheap and should be routine.
 
-**Two states that produce byte-identical failure text are ONE red.** _(sprint 52)_
+**Two states that produce byte-identical failure text are ONE red.**
 MEASURED at the move: "the entry resolves to the WRONG package" and "there is no
 entry at all" printed the same six lines. The reading that discriminates them is
 following the entry and reading the TARGET'S DECLARED NAME — not that a symlink
 exists.
 
 **A guard that fires for a reason other than the one it was built for is not
-evidence that it guards.** Ask WHY it fired, not WHETHER. _(sprint 41)_ MEASURED:
+evidence that it guards.** Ask WHY it fired, not WHETHER. MEASURED:
 an unwrapped expression-bodied `satisfies` errors in BOTH arities, so it never
 passes silently — the check was verifying the wrong subject and failing anyway,
 because a Promise can never satisfy a function type.
 
-**The comparison mechanism is an instrument too.** _(sprint 38)_ MEASURED:
+**The comparison mechanism is an instrument too.** MEASURED:
 `JSON.stringify` with a KEY ARRAY filters NESTED keys, so two different
 capability objects serialised identically and a 120-order agreement probe would
 have reported success while measuring nothing. Pair every such probe with a
@@ -57,7 +57,7 @@ control proving it can see the thing it compares.
 ## Sweeps
 
 **A CLASS DISPOSITION IS NOT A DISPOSITION — it is an unread set with a reason
-attached.** _(sprint 63)_ A class may bound EFFORT; it may not stand in for
+attached.** A class may bound EFFORT; it may not stand in for
 READING, and a hit inside one is DEFERRED rather than dispositioned. **The
 admissibility test, which costs nothing and is the whole rule: a class warrant
 holds only if the property defining the class is decidable FROM THE MATCHED
@@ -85,23 +85,23 @@ sample reported as a sample is honest, but it adds mechanism to a rule whose
 strength is that it forbids nothing, and an approximation that reads as coverage
 is the shape this project keeps refusing.
 
-**AND A HIT IS A LINE WHERE A DISPOSITION IS A CLAUSE.** _(sprint 63)_ Same
+**AND A HIT IS A LINE WHERE A DISPOSITION IS A CLAUSE.** Same
 failure at line granularity: reading only the clause the key matched is how a
 false sentence survived in a file the sweep had opened. MEASURED — a skill file
 inside the sweep's own declared universe, reached by two of its keys, carrying
 three present-tense claims false since the refactor, was never opened at all.
 
-**WHEN A SUBTASK MOVES WHAT A FIELD CARRIES, THE FIELD'S NAME IS SWEPT AND EVERY
-HIT DISPOSITIONED IN THAT SUBTASK — BEFORE THE COMMIT, NOT AT REVIEW.**
-_(sprint 82)_ Three dispositions and no fourth: re-sited, deleted, or LEFT GREEN
+**WHEN A STEP MOVES WHAT A FIELD CARRIES, THE FIELD'S NAME IS SWEPT AND EVERY
+HIT DISPOSITIONED IN THAT STEP — BEFORE THE COMMIT, NOT AT REVIEW.**
+Three dispositions and no fourth: re-sited, deleted, or LEFT GREEN
 WITH THE REASON IT STILL READS SOMETHING. A hit with no disposition is
 unfinished work, not a finding to weigh later. The trigger is mechanical — a
 field stops carrying X and starts carrying Y — so this is a rule and not an
 intention to be careful. MEASURED: three assertions read a field whose meaning
 had moved and went on passing; two were caught by reading, and the third was
-NAMED IN THE ITEM'S OWN ACCEPTANCE CRITERIA at refinement and still re-sited
-only four subtasks later, after four full green runs had been read as passing.
-It was a grep hit at the subtask that moved the field. It needed
+NAMED IN THE CHANGE'S OWN REQUIREMENTS at planning and still re-sited
+only four steps later, after four full green runs had been read as passing.
+It was a grep hit at the step that moved the field. It needed
 dispositioning, not discovering.
 
 **WHAT THE SWEEP CANNOT SEE, so its completion is not read as coverage:** an
@@ -111,15 +111,15 @@ real claim. It also fires only on a field LOSING a meaning; one quietly
 GAINING a second produces no hit at all.
 
 **A SWEEP'S KEY LIST IS DERIVED FROM THE ENUMERATION AND THE DERIVATION IS
-SHOWN.** _(sprint 63)_ Otherwise the two are different claims and "each key
+SHOWN.** Otherwise the two are different claims and "each key
 swept" says nothing about the enumeration. MEASURED: one enumerated mechanism
-had no key — found after the item closed, swept independently at zero live
+had no key — found after the change landed, swept independently at zero live
 sites, so nothing was at risk and the closure condition had still claimed a
 correspondence that did not hold. A key with no enumerated parent, or a
 mechanism with no key, is named as such.
 
 **When the defect class you are sweeping for is a property of MATCHING, your
-sweep is an instance of that class.** Bound the instrument first. _(sprint 46)_
+sweep is an instance of that class.** Bound the instrument first.
 MEASURED: a sweep concluded "no other prefix matcher exists" using greps that
 were themselves prefix-matching, and said so in the same report without
 connecting the two. The boundary-aware re-sweep reached the same answer — so the
@@ -127,21 +127,21 @@ conclusion was right and the evidence did not support it.
 
 **A sweep runs every perturbation its subjects have subjects for**, because
 "green" and "green for want of a subject" look identical in a report.
-_(sprint 51)_ MEASURED: under the exports-deletion perturbation alone most probes
+MEASURED: under the exports-deletion perturbation alone most probes
 were green because they name a RELATIVE PATH, so nothing in them could have been
 answered by the route being removed. A sweep that stopped there would have
 produced a CLEAN, FALSE report; the second perturbation is what gave those probes
 a subject.
 
 **Enumerate files and keys — never name-grep — when what you are hunting is
-itself a property of matching.** _(sprint 48)_
+itself a property of matching.**
 
 ## Assertions
 
 **CAN THE PROPERTY BE VIOLATED BY MOVING CODE WITHOUT CHANGING ANY VALUE? If it
 can, and your arm does not redden on the move, YOUR ARM ASSERTS `WHAT` WHERE THE
-PROPERTY IS `WHEN`.** _(sprint 54)_ Apply it in seconds, before the arm is
-believed. MEASURED, four instances in one sprint, each green while the property
+PROPERTY IS `WHEN`.** Apply it in seconds, before the arm is
+believed. MEASURED, four instances in one change, each green while the property
 it defended was violated:
 
 - A spy read the VALUE handed to the runtime and not its ordinal among the
@@ -153,7 +153,7 @@ it defended was violated:
 - A module's environment read had a time (import, not call) that nobody had
   written down and nothing asserted, because every arm set the variable before
   the process started, where the two times are one reading.
-- And the sprint's own worst: a pin read the EXPORTED constant rather than the
+- And the worst of them: a pin read the EXPORTED constant rather than the
   value the runtime actually received. A one-token edit to the shipped branch
   left the whole suite green — 809 pass, all five checks — while an ungated test
   ran at a deadline lower than the helper deadline it could reach.
@@ -164,29 +164,29 @@ test HANDS OVER, name what could differ between them and check that too.
 
 **Every assertion that something is ABSENT ships with a PAIRED assertion,
 permanent in the suite, that the same measurement observes it when present.**
-_(sprint 6)_ The shape this tree uses: `expect(offenders).toEqual([])` beside
+The shape this tree uses: `expect(offenders).toEqual([])` beside
 `expect(read).toBeGreaterThan(0)` — an empty list and a reader that opened
 nothing are the same observation without the pair.
 
 **Every assertion gets a negative control: name the change that would make it
 fail.** If no change would, it is VACUOUS. And **a control that can never be the
 FIRST thing to fail is not a control** — ask whether something else would have
-failed first. _(sprint 9)_ MEASURED: a test calling `runTsc(repoRoot)` — which IS
+failed first. MEASURED: a test calling `runTsc(repoRoot)` — which IS
 the Definition of Done's own `tsc --noEmit` — was deleted, because it could not
 fail unless the DoD had already failed. It reads in both directions: a control
 that WOULD be first to fail is worth adding when existing detection is real but
 arrives WITHOUT NAMING ITS CAUSE.
 
-**A hazard owns a test whose FIRST assertion it is.** _(sprint 18)_ Two hazards
+**A hazard owns a test whose FIRST assertion it is.** Two hazards
 sharing one test means the second can never be observed: the same perturbation
 flips the first and the test stops there.
 
-**Pin a behaviour only where ONE outcome is required.** _(sprint 7)_ The cost of
+**Pin a behaviour only where ONE outcome is required.** The cost of
 over-pinning is already visible in this tree as hardcoded-response-id
 brittleness: tests that resist legitimate change without defending a requirement.
 
 **Pin a premise to something on the path BY CONSTRUCTION, not to prose that
-describes it.** _(sprint 49)_ MEASURED: the optional-peer falsehood was bound to a
+describes it.** MEASURED: the optional-peer falsehood was bound to a
 README section, so publishing WITHOUT editing the README stayed green — the pin
 sat beside the door rather than in it. `private: true` on the manifest a publish
 reads is the one edit that permits publication, so it is the edit that reddens.
@@ -196,18 +196,18 @@ TOUCHING.
 ## Names and claims about coverage
 
 **A test name that claims more than its assertion verifies is a defect, and the
-repair may be THE NAME.** _(sprint 49)_ MEASURED: widening a matcher to bare
+repair may be THE NAME.** MEASURED: widening a matcher to bare
 filenames was measured NOT to catch the named escapee — `.ts` reads back to
 `.d.ts`, which resolves — so the choice was between a true narrow name and a
 wider matcher that still misses. The name was narrowed.
 
 **A uniqueness claim about a probe is measured or it is not written.**
-_(sprint 45)_ "This probe is the only thing that would notice X" is a coverage
-claim. MEASURED on a sentence written the same sprint: deleting the `import` arm
+"This probe is the only thing that would notice X" is a coverage
+claim. MEASURED on a sentence written in the same change: deleting the `import` arm
 reddens FIVE tests, including the type-only assertion the same commit added.
 
 **Ask of every surviving test "what would make this red, NOW?" — one test at a
-time, never as a batch.** _(sprint 45)_ MEASURED: of twelve tests classified
+time, never as a batch.** MEASURED: of twelve tests classified
 individually, THREE would have stayed green while measuring nothing, and they
 failed three different ways — one removed with no re-home, one DISARMED, one
 VACUOUS (reading an empty list that is empty for a reason unrelated to the
@@ -218,28 +218,28 @@ is green, its subject still exists, and its name still describes something real.
 
 **A helper that terminates a subprocess settles every promise it owns before the
 process dies.** Cross-test misattribution is a suite-integrity failure, not a
-single-test bug. _(sprint 5)_ Implemented here in `test/helpers/lsp.ts`
+single-test bug. Implemented here in `test/helpers/lsp.ts`
 (`#pend` / `#deadServer`) and asserted in `test/session.test.ts`.
 
 **A helper rewritten to RESOLVE what it previously only REFERENCED inherits every
 state the old implementation was structurally immune to, and that inheritance is
-the author's to enumerate.** _(sprint 51)_ MEASURED: a harness closure's first
+the author's to enumerate.** MEASURED: a harness closure's first
 version crashed on a DANGLING entry, because the wholesale symlink it replaced
 resolved nothing and so nothing could dangle — a state that is routine here,
 since a relative workspace link dangles the moment a member directory moves.
 
 **WHY THE DEGENERATE ARM EARNS ITS COST, ANSWERED FROM THIS RECORD RATHER THAN
-ASSERTED** _(sprint 44, closed sprint 52)_: the project asked whether it was
+ASSERTED**: the project asked whether it was
 producing more weak probes or merely detecting more of them. The discriminator
-is WHO CAUGHT IT, and through that close every instance READ was caught BY THE
-PERSON WHO RAN IT — a sweep on its own second run, an executor measuring before
-satisfying a criterion, degenerate readings taken before the arms were believed.
+is WHO CAUGHT IT, and every instance READ when this was written was caught BY THE
+PERSON WHO RAN IT — a sweep on its own second run, an author measuring before
+satisfying a requirement, degenerate readings taken before the arms were believed.
 Author-caught is detection, not defect. WHAT WOULD REFUTE IT: an instance found
-by someone other than its runner, or found after an increment closed — and this
-paragraph carries no reading past that close, so a later one is outside it rather
+by someone other than its runner, or found after a change landed — and this
+paragraph carries no reading past its writing, so a later one is outside it rather
 than absent.
 
-**THE REFUTER ARRIVED** _(sprint 84)_: the fixture blindness below was found by an
+**THE REFUTER ARRIVED**: the fixture blindness below was found by an
 INDEPENDENT REVIEWER reading arms someone else had written, run and believed —
 and then a second one, on the round after, in prose the first round's repair had
 just introduced. So `author-caught is detection` is no longer the whole of it:
@@ -248,19 +248,19 @@ runner could not see from inside. The two are different populations and the
 project has now measured both.
 
 **A FIXTURE THAT CANNOT DISTINGUISH THE TRANSFORMATION IS AN ARM ABOUT NOTHING,
-AND THE COMMONEST SHAPE IS ONE OCCURRENCE OF A DELIMITER** _(sprint 84)_: an arm
+AND THE COMMONEST SHAPE IS ONE OCCURRENCE OF A DELIMITER**: an arm
 asserting a value CUT from a string at a delimiter must drive a fixture holding
 that delimiter at least TWICE, or a cut at the first and a cut at the last are
 the same string and the arm grades neither. MEASURED: with `notes/deep.txt` every
 label assertion in a suite passed against `everything after the FIRST slash`,
 which leaves a path popup repeating a directory segment the user has typed — the
-exact defect the sprint existed to remove. WHAT IT DOES NOT COVER: any
+exact defect the change existed to remove. WHAT IT DOES NOT COVER: any
 transformation that is not a cut, and the general case of a fixture too simple to
 exercise what an arm claims, which nothing here reduces to a rule.
 
-**The stakeholder-facing example is EXECUTED by the suite** — the config is
+**The user-facing example is EXECUTED by the suite** — the config is
 loaded and driven, and a change that breaks it must redden a named assertion.
 Two negative controls, because they are different failures: breaking its IMPORT
-must redden, and breaking a HANDLER'S RETURN must redden. _(sprint 5, amended
-sprint 13)_ It need not be the config carrying every property assertion;
+must redden, and breaking a HANDLER'S RETURN must redden. It need not be the
+config carrying every property assertion;
 purpose-built configs may.
