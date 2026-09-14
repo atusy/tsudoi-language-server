@@ -4,7 +4,7 @@ import type { Runtime } from "./lsp.ts";
 function missingRuntimeMessage(runtime: Runtime): string {
   return [
     `The ${runtime.name} runtime is required but \`${runtime.command} --version\` could not be run.`,
-    'PBI-1 accepts "The CLI starts under both bun and deno" only by spawning the real',
+    '"The CLI starts under both bun and deno" is verified only by spawning the real',
     "runtime, so a missing runtime fails this suite instead of skipping it.",
     `Install ${runtime.name}: ${runtime.installUrl}`,
   ].join("\n");

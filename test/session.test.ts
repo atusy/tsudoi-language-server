@@ -57,9 +57,9 @@ for (const runtime of runtimes) {
 
           expect(error.message).toContain("server exited with code 1");
           // BOTH SURFACES, because a test using only the first would leave
-          // `rejects` -- the word the acceptance criterion uses -- unchecked.
+          // `rejects` -- the word the requirement uses -- unchecked.
           // requestError RESOLVES with the wire-shaped error, which is how a
-          // criterion about an error CODE must read it; `request` rejects,
+          // requirement about an error CODE must read it; `request` rejects,
           // which is what a caller awaiting a result actually experiences.
           await expect(session.request("textDocument/hover", hoverParams)).rejects.toThrow(
             "server exited with code 1",

@@ -535,8 +535,9 @@ function erasedCustomEntries(
  * handler is handed; that one knows when a message may run.
  *
  * EVERY NAME THE CONFIG DECLARED, AND NEVER THE ONES THAT SAID `notification`:
- * a name carries no kind, and asking it for one is what sprint 96 was cancelled
- * for. Upstream keeps its request and notification handlers in SEPARATE MAPS, so
+ * a name carries no kind, and making the author declare one is the design this
+ * feature abandoned. Upstream keeps its request and notification handlers in
+ * SEPARATE MAPS, so
  * the same name on both collides with nothing and the JSON-RPC id decides which
  * one a message reaches -- beneath tsudoi, which therefore never asks.
  */

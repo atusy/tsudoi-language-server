@@ -15,9 +15,9 @@ import process from "node:process";
  * WHY THIS IS A SCRIPT AND NOT A CHECK, AND THE ALTERNATIVE IS REFUSED BY NAME
  * RATHER THAN OVERLOOKED: a wall-clock assertion inside `bun test` reddens when
  * the machine is busy, so its red means `the runner was loaded` as often as it
- * means `the code is wrong`, and a red a reader must interpret is a defect this
- * backlog has an item of its own about. The opposite failure is a reading taken
- * by hand once and written up as prose, which nobody can re-take. A tracked
+ * means `the code is wrong`, and a red a reader must interpret is a defect in
+ * its own right. The opposite failure is a reading taken by hand once and
+ * written up as prose, which nobody can re-take. A tracked
  * script is the middle: nothing gates on it, and a stranger runs the two lines
  * above to take the rows for themselves.
  *

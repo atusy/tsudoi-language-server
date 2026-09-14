@@ -4,7 +4,7 @@
 | ------------------- | -------------------------------------------------------------------------------- |
 | **Status**          | superseded by [ADR 0005](0005-build-immutable-dictionary-snapshots-in-memory.md) |
 | **Date**            | 2026-08-13                                                                       |
-| **Decision-makers** | Project stakeholder and maintainers                                              |
+| **Decision-makers** | Project maintainers                                                              |
 | **Consulted**       | ddc-source-dictionary and current handler package APIs                           |
 | **Informed**        | Config authors                                                                   |
 

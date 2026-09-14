@@ -36,7 +36,7 @@ applySuiteDeadline();
  * by file, so the window `rm -rf dist && tsc` passes through holds SOME subpaths
  * complete, some carrying their module and not their declaration, and some
  * entirely missing -- all at once. A uniform artifact-only tree would measure a
- * state no build ever passes through, and the criterion this answers names the
+ * state no build ever passes through, and the requirement this answers names the
  * pack window because that is the window a person actually stands in.
  *
  * SO PARTIAL IS A WRITTEN STATE RATHER THAN A WINDOW ANYBODY HAS TO HIT: the
@@ -46,7 +46,7 @@ applySuiteDeadline();
  * on whatever the last compiler run left there, and tsc WRITES dist/ before it
  * exits non-zero.
  *
- * WHY THIS IS NOT THE TEST PBI-60 REFUSES, said here because a reviewer will
+ * WHY THIS IS NOT THE REFUSED TEST, said here because a reviewer will
  * reach for that refusal first. The refused test asserts THE RESIDUE and passes
  * for as long as the residue persists. THE STAGED TREE IS WRITTEN FROM THE
  * FRAMEWORK MANIFEST'S OWN ARMS, so the day that manifest stops naming a source
@@ -356,7 +356,7 @@ test("a partial artifact never falls through to an unshipped source file", async
 });
 
 /**
- * THE ABSENT STATE, WHICH IS THE OTHER HALF THE CRITERION NAMES. Absent-only is
+ * THE ABSENT STATE, WHICH IS THE OTHER HALF THE REQUIREMENT NAMES. Absent-only is
  * the shortcut a green tree cannot catch, so it is measured beside the partial
  * vector rather than instead of it.
  */

@@ -4,7 +4,7 @@
 | ------------------- | ----------------------------------------------------- |
 | **Status**          | accepted                                              |
 | **Date**            | 2026-08-17                                            |
-| **Decision-makers** | Project stakeholder and maintainers                   |
+| **Decision-makers** | Project maintainers                                   |
 | **Consulted**       | ADR 0002, ADR 0004, and the words_alpha.txt benchmark |
 | **Informed**        | Dictionary completion config authors                  |
 

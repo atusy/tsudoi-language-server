@@ -13,7 +13,7 @@ import { applySuiteDeadline } from "./helpers/deadline.ts";
 applySuiteDeadline();
 
 /**
- * The stakeholder-facing example's own bytes, read at test time. Not a fixture
+ * The user-facing example's own bytes, read at test time. Not a fixture
  * copy: the artifact under test is examples/ itself, and a committed duplicate
  * would drift away from the files a config author reads. Both of them, since
  * the config imports its path-completion module by relative specifier and tsc
@@ -153,10 +153,10 @@ test("the tarball ships the compiled module the exports entry points at, and not
  * asserted), and the consumer's own type check runs under options that carry
  * none either.
  *
- * node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE PBI,
- * whose text says three: it is symlinked in because the build must resolve the
- * types of tsudoi's own declared dependencies, and `files` is what keeps it out
- * of the tarball.
+ * node_modules IS ONE OF THE FOUR, MEASURED RATHER THAN TAKEN FROM THE WRITTEN
+ * REQUIREMENT, whose text says three: it is symlinked in because the build must
+ * resolve the types of tsudoi's own declared dependencies, and `files` is what
+ * keeps it out of the tarball.
  */
 const stagedPaths = ["node_modules", "package.json", "src", "tsconfig.build.json"];
 

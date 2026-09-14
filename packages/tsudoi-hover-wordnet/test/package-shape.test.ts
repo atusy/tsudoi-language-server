@@ -33,7 +33,7 @@ const manifest = JSON.parse(
  * built fails at `tsc --noEmit` naming it. Loud, and any other check clears it,
  * because both the test preload and the fifth Definition-of-Done check run one
  * shared builder in scripts/workspaces.ts. THAT LOUDNESS IS EXACTLY WHAT
- * TSUDOI'S THIRD ARM COSTS IT, MEASURED at sprint 58: with every dist/ removed,
+ * TSUDOI'S THIRD ARM COSTS IT, MEASURED: with every dist/ removed,
  * the root check names THIS package and the other handler and says nothing at
  * all about tsudoi, whose subpaths the same run answers from source at exit 0.
  *
@@ -163,7 +163,7 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * `prepack` BUILDING THE FRAMEWORK FIRST IS REFUSED ON A GROUND INDEPENDENT OF
  * THAT MEASUREMENT, which is what keeps it refused if that record ever moves:
  * THIS MANIFEST TRAVELS TO A REGISTRY WITH ITS SCRIPTS. MEASURED on bun 1.3.13,
- * `bun pm pack --destination` run in this package at sprint 62's base: the
+ * `bun pm pack --destination` run in this package at an earlier base: the
  * packed package.json carries `scripts.prepack` verbatim. So the edit would put
  * a CROSS-PACKAGE BUILD IN A PUBLISHED MANIFEST whose subject exists only in
  * this workspace, and a stranger packing an installed copy would have prepack
@@ -181,9 +181,9 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * one that builds the wrong thing, which is the same import with a politer
  * message.
  *
- * SO THE STATE THAT LEAVES IS WRITTEN DOWN RATHER THAN CLOSED, AND THIS
- * PARAGRAPH IS WHERE PBI-76 ENDED. `bun pm pack` here runs THIS package's
- * prepack, which freshens THIS package's dist/ and NEVER the framework's -- so a
+ * SO THE STATE THAT LEAVES IS WRITTEN DOWN RATHER THAN CLOSED. `bun pm pack`
+ * here runs THIS package's prepack, which freshens THIS package's dist/ and
+ * NEVER the framework's -- so a
  * maintainer who edits the framework's src/ and then packs this package grades
  * its declarations against whatever was last built. MEASURED at base d2d6519,
  * bun 1.3.13 / tsc 7.0.2, with the handler type's RETURN narrowed in the
@@ -220,8 +220,9 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * it addresses an installing stranger, and the state above belongs to whoever is
  * editing the framework.
  *
- * AND NO ROUTE THIS SPRINT COULD NAME FIRES ON IT -- said at that width rather
- * than as `nothing fires`, because the warrant is two routes and not a census.
+ * AND NO ROUTE NAMED WHEN THIS WAS WRITTEN FIRES ON IT -- said at that width
+ * rather than as `nothing fires`, because the warrant is two routes and not a
+ * census.
  * THE TWO ARE RULED OUT BY THEIR OWN ORDER: an arm under `bun test` runs after a
  * preload that has just rebuilt every package, and the fifth Definition-of-Done
  * check calls `prepareWorkspace` before it reads anything. Both stand after a

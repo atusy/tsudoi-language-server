@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Tests pass",
+    "run": "bun test"
+  },
+  {
+    "name": "Lint passes",
+    "run": "oxlint --format unix --deny-warnings --report-unused-disable-directives-severity error"
+  },
+  {
+    "name": "Format check passes",
+    "run": "oxfmt --check ."
+  },
+  {
+    "name": "Type check passes",
+    "run": "tsc --noEmit"
+  },
+  {
+    "name": "Workspace members type-check under their own configs",
+    "run": "bun run scripts/typecheck-workspaces.ts"
+  }
+]

@@ -20,7 +20,7 @@ test("the preflight fails, rather than skipping, when a required runtime is abse
 
   expect(error).toBeInstanceOf(Error);
   const message = (error as Error).message;
-  // Names the criterion it is protecting, and where to get the runtime.
+  // Names the requirement it is protecting, and where to get the runtime.
   expect(message).toContain("The CLI starts under both bun and deno");
   expect(message).toContain(absentRuntime.installUrl);
   // Not a raw spawn failure leaking through.

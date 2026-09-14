@@ -21,7 +21,7 @@ applySuiteDeadline();
  * An arm that mutated a version-controlled file in order to fire has a recorded
  * history in this repository of measuring nothing, and here it would also race
  * every other file in the suite -- test/readme.test.ts reads the same document
- * in the same run. `readReadme()`'s hardcoded path is exactly how this sprint
+ * in the same run. `readReadme()`'s hardcoded path is exactly how this change
  * would have fallen into it, which is why the sweep takes a ROOT.
  *
  * THE STAGE IS `stageCheckout()`, WHOSE RETURN IS BRANDED. Every mutating end
@@ -99,13 +99,13 @@ interface FenceForm {
  * the skip was invisible to every arm in this repository. With the list, the
  * same weakening reads 932 pass / 2 fail, THE TWO PLANTED ARMS ALONE, on bun
  * 1.3.13. A ruling written in three places and armed at the one tag it was never
- * in danger over is a claim in prose, which is the defect this item exists to
- * refuse -- reproduced, here, by this item's own fix.
+ * in danger over is a claim in prose, which is the defect this sweep exists to
+ * refuse -- reproduced, here, by the change that shipped the sweep.
  *
  * NO REGISTRY ROW CAN CARRY THAT WEAKENING, WHICH IS WHY IT IS A LIST AND NOT A
  * RECORD: `reRun` refuses any arm file that imports helpers/perturbation.ts, and
  * every arm over this sweep must import it -- they stage. So the weakening is
- * carried where the dashboard header permits it, beside the arms it reddens,
+ * carried where this project's rule permits it, beside the arms it reddens,
  * exactly as the untracked-file arm further down carries its own.
  */
 const fenceForms: readonly FenceForm[] = [
@@ -190,7 +190,7 @@ function aHandlersReadme(root: string): string {
 }
 
 /**
- * THE PLANT IS STAGED BECAUSE THE PREMISE THE CRITERION WAS WRITTEN ON TURNED
+ * THE PLANT IS STAGED BECAUSE THE PREMISE THE REQUIREMENT WAS WRITTEN ON TURNED
  * OUT FALSE.
  *
  * It assumed every block in this tree today is reached or declared, so an
@@ -358,10 +358,9 @@ test("the enumeration refuses a directory that is not a checkout, rather than an
  * A MARKER IS NOT AN ACCOUNT, AND A ROW WHOSE PROJECTION COMES BACK EMPTY DOES
  * NOT COVER THE BLOCK IT WAS POINTED AT.
  *
- * THIS ARM EXISTS BECAUSE THE CLAIM WAS ALREADY WRITTEN DOWN IN THREE PLACES --
- * the table's own docstring, this sprint's record, and the skill -- and asserted
- * by nothing, which is the exact defect this item was filed for: a coverage
- * claim taken on recollection. The subject is a marked `ts` block with no
+ * THIS ARM EXISTS BECAUSE THE CLAIM WAS ALREADY WRITTEN DOWN -- in the table's
+ * own docstring -- and asserted by nothing, which is the exact defect this arm
+ * exists for: a coverage claim taken on recollection. The subject is a marked `ts` block with no
  * import, which the snippet row's projection answers `[]` about.
  *
  * THE TWO REFUSALS MUST NOT PRINT ALIKE, and that is what the second assertion

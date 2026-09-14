@@ -260,7 +260,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
       // again was refused -32600 `already initialized`, the phase having moved by
       // then. A wedged session and nothing anywhere saying why.
       //
-      // THE STAKEHOLDER RULED THAT UNACCEPTABLE AND THE PRICE ACCEPTABLE: one
+      // THE MAINTAINER RULED THAT UNACCEPTABLE AND THE PRICE ACCEPTABLE: one
       // stringify of one small object, on the handshake path, once a session
       // THAT DECLARES THIS HANDLER -- the fast path above returns before it.
       //
@@ -395,7 +395,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
  * that does not complete does the same thing in every case; what the two callers
  * supply is the sentence and the answer, which are the only things that differ.
  *
- * THE PROCESS DIES BECAUSE THE STAKEHOLDER RULED A SECOND `initialize` REFUSED
+ * THE PROCESS DIES BECAUSE THE MAINTAINER RULED A SECOND `initialize` REFUSED
  * WITH NO EXCEPTION, and a session that cannot hand back the handshake has
  * nothing left to serve. What stood here was a backwards edge to `uninitialized`
  * -- `abandonInitialize` -- justified as `a failed handshake must not consume the

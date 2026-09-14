@@ -613,10 +613,10 @@ const dodArms = "test/definition-of-done.test.ts";
 const dodRunner = "scripts/definition-of-done.ts";
 
 // THE MEMBER ARM FILE AND THE MODULE THE BLOCK IS COMPOSED IN, spelled once
-// because the criteria of PBI-83 land almost entirely on the two: the wire
-// claims are stated at the root on two runtimes and the member arm is the cheap
-// statement of each, so none of PBI-83's records spawns a server. THAT WAS
-// WRITTEN AS A CLAIM OVER EVERY RECORD BELOW AND IS NOT ONE: the code-action
+// because the path-completion requirements land almost entirely on the two:
+// the wire claims are stated at the root on two runtimes and the member arm is
+// the cheap statement of each, so none of the records grading them spawns a
+// server. THAT WAS WRITTEN AS A CLAIM OVER EVERY RECORD BELOW AND IS NOT ONE: the code-action
 // record at the end of this list spawns one, having no cheaper site to point at,
 // and says so where it stands.
 const memberArms = "packages/tsudoi-completion-path/test/resolve.test.ts";
@@ -652,9 +652,9 @@ const records: readonly PerturbationRecord[] = [
   {
     // THE REFUSAL MOVED ONE NOUN, WHICH IS THE ADJACENT READING A REVIEWER
     // NODS AT: guard the CHECKS being empty instead of the MATCHES being empty.
-    // `readChecks` already refuses an empty dashboard, so the moved guard never
-    // fires again -- and a filter matching nothing runs no check and reports
-    // green, which is the degenerate both refusals exist for.
+    // `readChecks` already refuses an empty scripts/definition-of-done.json, so
+    // the moved guard never fires again -- and a filter matching nothing runs no
+    // check and reports green, which is the degenerate both refusals exist for.
     arm: {
       file: dodArms,
       name: "a filter matching NO check is refused, where the same tree unfiltered is green",
@@ -778,7 +778,7 @@ const records: readonly PerturbationRecord[] = [
     ],
   },
   {
-    // THE STAMP LEFT AS THE DISK KEPT IT, WHICH IS THE SPELLING THE STAKEHOLDER
+    // THE STAMP LEFT AS THE DISK KEPT IT, WHICH IS THE SPELLING THE MAINTAINER
     // WAS SHOWN AND DECLINED. IT MOVES EVERY RENDERED BYTE and the collateral
     // list below is long for that reason -- which is the correction to a claim
     // this repository carried for one commit: a truncation is a NO-OP on a
@@ -860,7 +860,7 @@ const records: readonly PerturbationRecord[] = [
     },
     redAt: 'expect(await sectionOf("edge")).toEqual({',
     // MEASURED. `a directory far past the bound renders twenty names and no more`
-    // is NOT among them, and its absence is the half criterion 5 turns on: a
+    // is NOT among them, and its absence is the half the requirement turns on: a
     // weakening that reddened the truncated case too would be grading the
     // parenthetical rather than the boundary.
     alsoReddens: [
@@ -919,7 +919,7 @@ const records: readonly PerturbationRecord[] = [
     },
     // THE PREMISE AND NOT THE DISCRIMINATOR, WHICH IS THIS RECORD'S OWN
     // CONFESSION TURNED INTO SOMETHING THE INSTRUMENT GRADES. The comment above
-    // has said in prose since sprint 82 that the red lands at the four source
+    // has said in prose that the red lands at the four source
     // names; declared at the `detail` assertion instead, this record reads
     // REFUSED naming this very line -- MEASURED before it was written here, and
     // that reading is what the field was added for.
@@ -1081,11 +1081,11 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
-    // THE THIRD FIELD, AND THE RECORD PBI-85's CRITERION 2 ASKED FOR: with the
+    // THE THIRD FIELD, AND THE RECORD ITS REQUIREMENT ASKED FOR: with the
     // directory part gone from the label, `filterText` is the only thing left
     // carrying it to a client that filters on the text its edit range covers.
     //
-    // NARROWED RATHER THAN DROPPED, AND THE CRITERION SAID DROPPED -- both were
+    // NARROWED RATHER THAN DROPPED, AND THE REQUIREMENT SAID DROPPED -- both were
     // measured and this is the one that discriminates. Dropping the field
     // reddens the single-segment control too, since an absent field is absent
     // for every fragment shape; narrowing it to the entry name leaves that arm
@@ -1127,7 +1127,7 @@ const records: readonly PerturbationRecord[] = [
     // with this record stashed out, the same two runs of this file reported the
     // same three REFUSED and then all of them HELD. Those arms re-run a file
     // measured at fourteen seconds alone against a twenty-five second budget, and
-    // nothing in this sprint touched either number.
+    // nothing in this change touched either number.
     arm: {
       file: "test/code-action.test.ts",
       name: "a config supplying a codeAction handler advertises the provider and no kinds (bun)",
@@ -1152,7 +1152,7 @@ const records: readonly PerturbationRecord[] = [
     // first refused token on ANY stream-driven row silences every other row for
     // the session, so an author who saw the line once never learns their other
     // handler's items were aggregated too. INVISIBLE FROM ONE ROW ALONE, and
-    // there was only one row until the sprint that wrote this.
+    // there was only one row until the change that wrote this.
     //
     // THE ARM IT NAMES IS THE ONE THAT DID NOT EXIST WHEN THE DEFECT SHIPPED.
     // Review found it, not the suite; the record is what stops the next reader

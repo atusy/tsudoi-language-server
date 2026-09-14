@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { parse } from "yaml";
@@ -149,18 +148,10 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
 });
 
 test("the release lint command rejects warnings and stale suppressions", () => {
-  const result = spawnSync("bun", ["run", "scrum.ts"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  });
-  expect(`${String(result.status)} ${result.stderr}`).toBe("0 ");
-
-  const dashboard = JSON.parse(result.stdout) as {
-    definition_of_done?: { checks?: Array<{ name?: unknown; run?: unknown }> };
-  };
-  const lintChecks = (dashboard.definition_of_done?.checks ?? []).filter(
-    (check) => check.name === "Lint passes",
-  );
+  const checks = JSON.parse(
+    readFileSync(join(repoRoot, "scripts", "definition-of-done.json"), "utf8"),
+  ) as Array<{ name?: unknown; run?: unknown }>;
+  const lintChecks = checks.filter((check) => check.name === "Lint passes");
   expect(lintChecks).toEqual([
     {
       name: "Lint passes",

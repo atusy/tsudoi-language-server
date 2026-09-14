@@ -12,7 +12,7 @@ export const unserializableFailure = "this capability cannot describe itself";
 
 /**
  * A HANDSHAKE HANDLER WHOSE ANSWER CANNOT BE SERIALISED, which is the failure the
- * stakeholder ruled must be reported rather than recorded.
+ * maintainer ruled must be reported rather than recorded.
  *
  * A THROWING GETTER AND NOT A BigInt OR A CYCLE, and the class is the same three:
  * those two fail with the ENGINE'S OWN sentence and the engines disagree --

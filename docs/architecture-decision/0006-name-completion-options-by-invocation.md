@@ -4,7 +4,7 @@
 | ------------------- | --------------------------------------- |
 | **Status**          | accepted                                |
 | **Date**            | 2026-08-30                              |
-| **Decision-makers** | Project stakeholder and maintainers     |
+| **Decision-makers** | Project maintainers                     |
 | **Consulted**       | Existing completion package public APIs |
 | **Informed**        | Completion handler package authors      |
 

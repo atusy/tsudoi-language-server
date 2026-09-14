@@ -21,7 +21,7 @@ applySuiteDeadline();
  * accounted for and unchecked. That is the account rule working as designed --
  * the alternative is a rule admitting `it is read` wholesale, which certifies
  * the rubber stamp, or one demanding that corrupting any byte reddens
- * something, which would refuse the very blocks this item forbids refusing.
+ * something, which would refuse the very blocks the account rule forbids refusing.
  */
 const accounts = readAccounts(repoRoot).filter(
   (account) => account.form.needs !== "the document alone",

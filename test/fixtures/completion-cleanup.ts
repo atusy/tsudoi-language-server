@@ -29,7 +29,7 @@ export const cleanupMarker = "completion-cleanup: released";
  * That shape is the one an early close can reach: a generator parked inside its
  * own `await` queues `return()` behind the pending `next()` instead.
  *
- * The `finally` is the whole user story. A config author cannot watch it run --
+ * The `finally` is the whole point. A config author cannot watch it run --
  * the request is answered -32800 either way -- so nothing but this record says
  * whether the resources the request held were released or leaked.
  */

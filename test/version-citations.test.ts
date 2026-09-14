@@ -37,10 +37,6 @@ applySuiteDeadline();
  * wordnet.d.ts's 127ms are the same shape, and either label survives an argument
  * for both. A label nothing asserts, over a boundary nobody can state, is prose
  * with a type annotation on it.
- *
- * scrum.ts IS OUT OF SUBJECT BY RULING RATHER THAN BY OVERSIGHT: a dated sprint
- * note citing the runtime of its day is correct by construction, and rewriting
- * one edits a result.
  */
 // `[\s*]+` rather than `\s+` because this tree wraps prose inside JSDoc, and a
 // citation split as `bun\n * 1.3.13` is the shape it actually writes --
@@ -107,7 +103,7 @@ function citations(): string[] {
   // with odd characters and a quoted path matches no file.
   const tracked = execFileSync("git", ["-C", repoRoot, "ls-files", "-z"], { encoding: "utf8" })
     .split("\0")
-    .filter((path: string) => /\.(ts|md|toml|json)$/.test(path) && path !== "scrum.ts");
+    .filter((path: string) => /\.(ts|md|toml|json)$/.test(path));
   const found: string[] = [];
   for (const path of tracked) {
     const text = readFileSync(join(repoRoot, path), "utf8");

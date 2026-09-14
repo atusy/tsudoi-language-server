@@ -239,7 +239,7 @@ test("bun runs no test file under an ignored segment, and runs them without the 
  * 5000ms default and from a module that set nothing, and 1500 straddles both.
  *
  * WHAT THE `UNDER` HALF DOES NOT RULE OUT: at 100ms it passes under any deadline
- * anyone could set, so it witnesses the criterion's other direction and nothing
+ * anyone could set, so it witnesses the requirement's other direction and nothing
  * more. The two arms after this loop are the ones that make a PASS impossible
  * for an ambient default to have produced.
  */
@@ -499,8 +499,8 @@ const callsWhenRegistered = spy.mock.calls.length;
  *
  * IT ALSO GUARDS THE REFUSAL RATHER THAN ONLY THE VALUE: the malformed-value
  * check runs at that module's scope, so a per-call read would accept anything
- * assigned afterwards -- the silent-disable class by the one route its own
- * subtask cannot see.
+ * assigned afterwards -- the silent-disable class by the one route the refusal
+ * itself cannot see.
  */
 test("the override is read once at import, not again at every call", async () => {
   const frozenMs = 300;

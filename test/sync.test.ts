@@ -18,7 +18,7 @@ await Promise.all(runtimes.map(requireRuntime));
 const uri = "file:///workspace/a.txt";
 const otherUri = "file:///workspace/b.txt";
 
-// The stakeholder wrote the brief in Japanese, so their first real document
+// The maintainer wrote the brief in Japanese, so their first real document
 // will contain Japanese. Content-Length is a BYTE count while String.length is
 // a UTF-16 unit count, so any layer that confuses the two truncates here and
 // nowhere in an ASCII test.

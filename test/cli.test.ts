@@ -275,9 +275,8 @@ for (const runtime of runtimes) {
      *
      * TWO ARMS AND TWO DIFFERENT FIXES, which is why they are rows rather than
      * one `invalid customMethods` -- and there are two rather than four because a
-     * handler declaring a KIND and a GATE was what sprint 96 was cancelled for:
-     * a bare function has neither to get wrong, so those refusals have no subject
-     * left to refuse.
+     * handler is a BARE FUNCTION: it has neither a KIND nor a GATE to get wrong,
+     * so those refusals have no subject left to refuse.
      *
      * THE COLLISION IS THE ONE WITH A GOOD HANDLER IN IT. Nothing about that
      * handler is malformed; the NAME is not the author's to take, because upstream

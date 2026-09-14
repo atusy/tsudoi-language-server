@@ -151,9 +151,9 @@ applySuiteDeadline();
  * first is refused in the paragraph above, and the second buys a fact about the
  * suite's own machinery rather than about a handler's declarations.
  *
- * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED in
- * sprint 62 on bun test v1.3.13, AT BASE 0ddae74 AND RUN ALONE -- the base is
- * named because `this file as it stands` was written here first and the file's
+ * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED on
+ * bun test v1.3.13, AT BASE 0ddae74 AND RUN ALONE -- the base is named because
+ * `this file as it stands` was written here first and the file's
  * executable code moved twice afterwards, so the phrase pinned nothing a reader
  * could return to. Unperturbed it reads 3 pass / 0 fail.
  *
@@ -282,7 +282,7 @@ test("the same read opens declarations in every handler, so a silent artifact is
 
 /**
  * THE DISCRIMINATION THE TWO ARMS ABOVE CLAIM, ASSERTED RATHER THAN LEFT AS THE
- * PROSE READING IN THE HEADER. This dashboard's rule is that a perturbation
+ * PROSE READING IN THE HEADER. This repository's rule is that a perturbation
  * relied on later is written as something the suite RE-RUNS, or as an assertion
  * beside the arm whose behaviour it reads -- and this reader is cheap enough
  * that the second is available: no build, no spawn, three directories written

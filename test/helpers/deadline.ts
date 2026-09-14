@@ -45,19 +45,19 @@ import { setDefaultTimeout } from "bun:test";
  * accepted because the alternative is a value below the floor, which leaves the
  * whole class this exists to remove.
  *
- * ONE ARM HAS BEEN SEEN AT 25007ms AGAINST THIS VALUE, sprint 81, under a
- * PERTURBED full suite -- `a published subpath with no artifact at all is
- * refused`. It did not reproduce in six further runs, clean and perturbed, alone
- * and in the suite, so it read as a boundary reading rather than a defect.
+ * ONE ARM HAS BEEN SEEN AT 25007ms AGAINST THIS VALUE, under a PERTURBED full
+ * suite -- `a published subpath with no artifact at all is refused`. It did not
+ * reproduce in six further runs, clean and perturbed, alone and in the suite, so
+ * it read as a boundary reading rather than a defect.
  *
- * THE SECOND OCCURRENCE ARRIVED AND IT IS FILED, WHICH IS WHY THE PARAGRAPH
- * ABOVE IS IN THE PAST TENSE. Sprint 87 measured the three records re-running
- * test/definition-of-done.test.ts timing out against this value on some
- * whole-suite runs and not others, and MEASURED that file at 14.17s ALONE --
- * against a 25s ceiling, on a suite bun runs in ONE process. That is PBI-93.
- * It is not the same arm as sprint 81's, and it is the same cause: this value
- * bounds a hang, and it is also all the room a slow-but-correct arm has.
- * LOWERING IT REMAINS THE OTHER FILING TRIGGER.
+ * THE SECOND OCCURRENCE ARRIVED, WHICH IS WHY THE PARAGRAPH ABOVE IS IN THE
+ * PAST TENSE. The three records re-running test/definition-of-done.test.ts were
+ * measured timing out against this value on some whole-suite runs and not
+ * others, and that file MEASURED at 14.17s ALONE -- against a 25s ceiling, on a
+ * suite bun runs in ONE process. It is not the same arm as the one above, and
+ * it is the same cause: this value bounds a hang, and it is also all the room a
+ * slow-but-correct arm has. A SECOND OCCURRENCE WAS ONE TRIGGER FOR FILING AN
+ * ISSUE, AND LOWERING THIS VALUE REMAINS THE OTHER.
  */
 export const suiteDeadlineMs = 25_000;
 
@@ -137,7 +137,7 @@ if (raw !== undefined && (!Number.isInteger(deadlineMs) || deadlineMs <= 0)) {
  * CALLED AT THE TOP OF EVERY ROOT TEST FILE, AND IT HAS TO BE A CALL RATHER
  * THAN AN IMPORT SIDE EFFECT.
  *
- * WHY NOT A PRELOAD, WHICH IS WHAT THIS SPRINT SET OUT TO BUILD: MEASURED on
+ * WHY NOT A PRELOAD, WHICH WAS THE FIRST PLAN: MEASURED on
  * bun 1.3.13, `setDefaultTimeout` from a preload REACHES THE FIRST TEST FILE AND
  * NOTHING AFTER IT -- three files, one 6000ms sleep each, preload setting
  * 20_000, nothing else in the tree, 1 pass / 2 fail with the later two at `timed

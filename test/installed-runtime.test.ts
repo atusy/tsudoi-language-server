@@ -55,7 +55,7 @@ const route = {
 } as const;
 
 /**
- * The stakeholder-facing example's own bytes, read at test time -- the config
+ * The user-facing example's own bytes, read at test time -- the config
  * author's artifact, not a fixture copy of it. BOTH files: the config imports
  * its path-completion module by relative specifier, so a consumer given only
  * the config fails at import.
@@ -100,12 +100,12 @@ async function start(command: string): Promise<Started> {
   }
 }
 
-// PBI-13 criteria 1 AND 2, parameterised rather than written twice: the
-// property under test is that ONE artifact and ONE install serve both
-// runtimes, and two hand-written tests could drift into two different routes
-// without either failing. NOTHING IN THE CHECKOUT CAN STAND IN FOR THESE: a
-// checkout is entirely capable of being GREEN throughout while the installed
-// route is broken, which is the finding this whole file is built on.
+// THE INSTALLED ROUTE UNDER BOTH RUNTIMES, parameterised rather than written
+// twice: the property under test is that ONE artifact and ONE install serve
+// both runtimes, and two hand-written tests could drift into two different
+// routes without either failing. NOTHING IN THE CHECKOUT CAN STAND IN FOR
+// THESE: a checkout is entirely capable of being GREEN throughout while the
+// installed route is broken, which is the finding this whole file is built on.
 for (const [runtime, command] of Object.entries(route)) {
   test(`${runtime} completes the handshake against the installed copy`, async () => {
     const started = await start(command);
@@ -166,7 +166,7 @@ for (const [runtime, command] of Object.entries(route)) {
   });
 
   // The FAILURE half of `checkout and installed do not diverge`. A handshake
-  // proves the happy path; PBI-1's contract -- exit 1, a tsudoi:-prefixed
+  // proves the happy path; the failure contract -- exit 1, a tsudoi:-prefixed
   // reason on stderr, zero bytes on stdout -- is what an editor sees when the
   // config author gets it wrong, and a checkout can no more stand in for the
   // installed copy here than it can above. The run command is DERIVED from the
@@ -328,7 +328,7 @@ test("a change to src/ reaches the installed copy with no rebuild step", async (
 });
 
 /**
- * PBI-13 criterion 1's NEGATIVE CONTROL, a PERMANENT test rather than a
+ * THE DENO ROUTE'S NEGATIVE CONTROL, a PERMANENT test rather than a
  * one-time perturbation: shipping .ts sources instead of compiled .js makes the
  * Deno route fail, and it fails by NAME. A tarball whose only entry point is
  * packages/tsudoi-language-server/src/cli.ts is exactly what a Deno user cannot

@@ -4,7 +4,7 @@ import { repoRoot } from "./spawn.ts";
 
 /**
  * Where the entry point sits RELATIVE TO THE DIRECTORY A SESSION STARTS IN, kept
- * relative so sessions run the acceptance criterion's own command form.
+ * relative so sessions run the requirement's own command form.
  *
  * THE PREFIX IS THERE BECAUSE THE DEFAULT CWD IS THE CHECKOUT, with the entry
  * point down inside it.

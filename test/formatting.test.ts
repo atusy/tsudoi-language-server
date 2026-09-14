@@ -62,7 +62,7 @@ const formattableText = "第一行、こんにちは。\n第二行、さよう�
  * unchanged. No fixture in this file reads it, so every assertion below passes
  * against a tsudoi that dropped it on the floor. Asserting it needs a fixture
  * that echoes the value back -- through stderr, as the document-members fixture
- * does -- and none exists here, because no criterion of PBI-36 asks for one.
+ * does -- and none exists here, because no requirement asks for one.
  */
 function formattingParams(): unknown {
   return { textDocument: { uri }, options: { tabSize: 2, insertSpaces: true } };
