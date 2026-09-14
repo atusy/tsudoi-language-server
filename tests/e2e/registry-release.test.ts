@@ -50,7 +50,7 @@ if (args[0] === "view") {
     "dist.integrity": "sha512-" + createHash("sha512").update(bytes).digest("base64"),
     "dist-tags": {
       alpha: version,
-      ...(process.env.ADD_LATEST === "1" ? { latest: version } : {}),
+      latest: process.env.LATEST_VERSION ?? "0.1.0-alpha.1",
     },
     repository: manifest.repository,
     ...(process.env.ADD_ATTESTATIONS === "1" ? {
@@ -106,14 +106,14 @@ process.exit(2);
     expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
     expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.1");
 
-    const latest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+    const movedLatest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, ADD_LATEST: "1" },
+      env: { ...env, LATEST_VERSION: "0.1.0-alpha.2" },
     });
-    expect(latest.status).not.toBe(0);
-    expect(latest.stderr).toContain("not latest");
+    expect(movedLatest.status).not.toBe(0);
+    expect(movedLatest.stderr).toContain("latest must remain at 0.1.0-alpha.1");
 
     const missingProvenance = spawnSync(
       "node",

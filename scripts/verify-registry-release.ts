@@ -14,6 +14,7 @@ const NPM_INSTALL_TIMEOUT_MS = 120_000;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
+const INITIAL_LATEST_VERSION = "0.1.0-alpha.1";
 
 interface PackageManifest {
   readonly name?: unknown;
@@ -224,8 +225,11 @@ for (const [index, entry] of entries.entries()) {
       attestationUrl: attestations.url,
     });
   }
-  if (tags.alpha !== entry.version || Object.hasOwn(tags, "latest")) {
-    fail(`${entry.name} must expose only the intended alpha channel, not latest`);
+  if (tags.alpha !== entry.version) {
+    fail(`${entry.name} alpha must point to ${entry.version}`);
+  }
+  if (tags.latest !== INITIAL_LATEST_VERSION) {
+    fail(`${entry.name} latest must remain at ${INITIAL_LATEST_VERSION}`);
   }
   if (JSON.stringify(metadata.repository) !== JSON.stringify(local.repository)) {
     fail(`registry repository metadata does not match ${packageSpec}`);
