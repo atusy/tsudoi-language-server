@@ -4,16 +4,7 @@ import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";
 import { trailingWhitespaceDiagnostics } from "./diagnostic-trailing-whitespace.ts";
 import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 
-// ANNOTATED, AND THE ANNOTATION IS THE POINT RATHER THAN THE STYLE: it binds
-// this file to the factory type tsudoi declares, so the day that type changes
-// shape THIS FILE is a compile error rather than a config that quietly receives
-// something it does not expect. A config written without the annotation is not
-// wrong -- nothing type-checks an author's own file against it -- but it is
-// undefended, which is why the documented route carries it.
-//
-// It also PAYS FOR ITSELF twice over: the return type and every handler's
-// `context` and `params` are supplied by it, so annotating here is what lets
-// them be annotated nowhere.
+// The factory annotation checks the config and supplies handler parameter types.
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
@@ -27,128 +18,22 @@ const config: TsudoiConfigFactory = () => {
         }
 
         {
-          // Paths from the roots that make sense where the cursor is: the
-          // document's own directory, the working directory, every workspace
-          // folder the editor opened, and the filesystem root when the
-          // fragment starts at one. Each yield here
-          // is another `$/progress` for a client that asked for partial
-          // results, which is why a directory of any size streams.
-          //
-          // WHAT A USER SHOULD KNOW BEFORE TURNING THIS ON, and none of it is
-          // something tsudoi can fix for them:
-          //
-          //  * KEEPING a filesystem completion source alongside this one shows
-          //    the same path TWICE, deduplicated by NEITHER. Cross-source
-          //    dedup is the completion plugin's job -- tsudoi cannot know what
-          //    other sources exist, or what they will insert.
-          //  * REPLACING one is a change to what OPENS the popup. Whether
-          //    typing `/` reaches this handler at all is a property of the
-          //    editor's completion plugin and its settings, not of tsudoi, and
-          //    nothing here should be read as a promise that it does. Check it
-          //    before removing the source you have.
-          //  * A completion plugin may TRANSFORM what it inserts. A filename
-          //    containing a space or shell punctuation can arrive truncated at
-          //    the first one. tsudoi emits the whole path; what the plugin
-          //    does with it afterwards is the plugin's.
-          //  * Items carry an `InsertReplaceEdit` -- an insert range ending at
-          //    the cursor and a replace range covering the whole fragment --
-          //    so a plugin option that chooses between inserting and replacing
-          //    is YOURS to set and does what you set it to. Completing in the
-          //    MIDDLE of a path is where the two differ. THIS DEPENDS ON YOUR
-          //    EDITOR DECLARING `insertReplaceSupport`, which LSP makes the
-          //    condition on a server sending that edit at all: an editor that
-          //    declares it not gets a plain edit ending at the cursor, its
-          //    insert/replace option has nothing to act on, and nothing will say
-          //    so -- the completion simply always inserts.
-          //  * THE WORKSPACE SOURCE IS LIVE ONLY IF YOUR EDITOR SENDS WORKSPACE
-          //    FOLDERS at `initialize`, which is its configuration and not
-          //    tsudoi's behaviour. ONE FIELD COUNTS: `workspaceFolders`, which
-          //    only an editor declaring that capability sends.
-          //    `@atusy/tsudoi-completion-path` reads that field and nothing
-          //    else.
-          //    An editor that names its project in the DEPRECATED `rootUri` or
-          //    `rootPath` instead reaches your handler with both fields filled
-          //    and the folder list EMPTY -- tsudoi mirrors what the client sent
-          //    and reduces nothing -- and this example declines to reduce them
-          //    either, which is a decision its own comments carry. A language
-          //    server whose editor names no project at all has no workspace to
-          //    answer from, and its
-          //    working directory is then wherever the editor itself was
-          //    launched -- which is a root, but not the one you meant. AND
-          //    NOTHING WILL TELL YOU: the workspace
-          //    source contributes nothing, which looks exactly like a working
-          //    source in a project that holds no matches, and NOTHING IS
-          //    WRITTEN ANYWHERE to tell the two apart.
-          //  * AN OPTION THAT RESOLVES ITEMS LAZILY IS LIVE. THIS CONFIG
-          //    supplies a `completionItem/resolve` handler, so tsudoi advertises
-          //    `resolveProvider` inside `completionProvider` and a client that
-          //    resolves lazily gets a file's size and date -- or a directory's
-          //    contents -- when the user
-          //    highlights an item. It is a fact about this file rather than
-          //    about tsudoi -- a config that DROPS that key is advertised no
-          //    flag and receives no such request. The same is true of every
-          //    method this config does not name, and the shape of the rule is
-          //    worth more than the instance: a capability is advertised exactly
-          //    where `methods` below can answer it, so ADDING A KEY IS THE
-          //    WHOLE OF TURNING A FEATURE ON.
-          //
-          // DELEGATED WHOLE: the batches this yields are the delegate's, and
-          // tsudoi decides from the client's `partialResultToken` whether they
-          // leave as `$/progress` or are aggregated into one response. NOTHING
-          // WRITTEN HERE CHOOSES BETWEEN THEM, which is the whole shape of the
-          // API -- a handler that had items of its own would `yield` them and
-          // still choose nothing.
-          //
-          // `return yield*` forwards partial batches, the final result and
-          // cancellation to the delegate. Returning the generator object itself
-          // would not execute it.
+          // return yield* forwards batches, the final result and cancellation.
+          // The client controls popup triggers, insertion/replacement and cross-source
+          // deduplication. Workspace paths require workspaceFolders from the client.
           return yield* completePath(context, params);
         }
       },
 
-      // DELEGATED, exactly as completion is: the handler a config author
-      // writes can be one line when the work has a home of its own. What stays
-      // here is the CHOICE of which method this config answers.
-      //
-      // AND ITS HOME IS A PACKAGE, as the completion above is: both are
-      // INSTALLED, so a fix arrives by reinstalling instead of by diffing your
-      // copy against an example you have already edited. The trade runs the
-      // other way too -- a file you copied is yours to edit, and these are not,
-      // so a language whose words are not whitespace-delimited wants a handler
-      // of its own rather than a setting on this one. THE TWO FILES BELOW ARE
-      // THE OTHER ARRANGEMENT, kept deliberately: they are copied, and reading
-      // them beside these is how the difference is seen.
       "textDocument/hover": hoverWordnet,
 
-      // THE OTHER SHAPE A HANDLER CAN HAVE, and it is here to be read beside
-      // the two above rather than merely to add a method. Completion goes to
-      // the FILESYSTEM for its answer and hover goes to a DICTIONARY; this one
-      // goes NOWHERE -- it computes its answer from the document it was handed.
-      // That is the commoner shape in a real language server, because a parser
-      // does not go anywhere else either.
       "textDocument/diagnostic": trailingWhitespaceDiagnostics,
 
-      // A MATCHED PAIR WITH THE LINE ABOVE, and the pairing is the reason both
-      // are here rather than either alone. This removes exactly what that
-      // reports -- same analysis, same ranges -- so running the demo is a
-      // closed loop: the warnings appear, you format, and they clear. Either
-      // half on its own is half a demonstration: a problem this server cannot
-      // fix, or a fix for a problem it never reports.
+      // Formatting removes the whitespace reported by the diagnostic handler.
       "textDocument/formatting": removeTrailingWhitespace,
 
-      // WHAT THE COMPLETION ABOVE DELIBERATELY DID NOT DO, and the pairing is
-      // the reason it is here: listing a directory offers what is in it, and
-      // asking the disk about every entry is what a large directory cannot
-      // afford. This answers that question for the ONE ITEM THE USER
-      // HIGHLIGHTS -- a file's size and date, and for a directory the names
-      // inside it, which is a question the completion never asked at all. It is
-      // also the only method here whose params are neither a
-      // document nor a position -- it takes the item back and hands it back.
-      //
-      // IT MAY NOT BE HERE ALONE: a config supplying this key without
-      // `textDocument/completion` is refused when it LOADS, since resolving
-      // items nothing can produce is incoherent and would advertise a completion
-      // provider tsudoi cannot answer.
+      // Load file metadata only when the client resolves an item. This requires
+      // the completion handler above.
       "completionItem/resolve": resolvePathStat,
     },
   });
