@@ -4,17 +4,16 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
-import { setTimeout as sleep } from "node:timers/promises";
 import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
+import { runNpmViewWithRetries } from "./src/retry-npm-view.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";
 const NPM_TIMEOUT_MS = 30_000;
 const NPM_INSTALL_TIMEOUT_MS = 120_000;
-const NPM_VIEW_RETRY_DELAYS_MS = [0, 1_000, 2_000, 5_000, 10_000, 20_000, 30_000, 30_000] as const;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
@@ -47,33 +46,32 @@ function readJson(path: string): unknown {
 }
 
 async function npmJson(args: readonly string[], subject: string): Promise<unknown> {
-  for (let attempt = 0; ; attempt += 1) {
-    const result = spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
+  const invoke = () =>
+    spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
       encoding: "utf8",
       timeout: NPM_TIMEOUT_MS,
     });
-    if (result.error !== undefined) {
-      if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
-        fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
-      }
-      fail(
-        `npm ${args[0] ?? "command"} could not complete for ${subject}: ${result.error.message}`,
-      );
+  const result =
+    args[0] === "view"
+      ? await runNpmViewWithRetries(invoke, {
+          onRetry: (delay) => {
+            console.log(`npm view has not propagated ${subject}; retrying in ${delay}ms`);
+          },
+        })
+      : invoke();
+  if (result.error !== undefined) {
+    if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
+      fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
     }
-    if (result.status !== 0) {
-      const retryDelay = NPM_VIEW_RETRY_DELAYS_MS[attempt];
-      if (args[0] === "view" && /\bE404\b/.test(result.stderr) && retryDelay !== undefined) {
-        console.log(`npm view has not propagated ${subject}; retrying in ${retryDelay}ms`);
-        await sleep(retryDelay);
-        continue;
-      }
-      fail(`npm ${args[0] ?? "command"} failed for ${subject}: ${result.stderr.trim()}`);
-    }
-    try {
-      return JSON.parse(result.stdout);
-    } catch (cause) {
-      fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
-    }
+    fail(`npm ${args[0] ?? "command"} could not complete for ${subject}: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    fail(`npm ${args[0] ?? "command"} failed for ${subject}: ${result.stderr.trim()}`);
+  }
+  try {
+    return JSON.parse(result.stdout);
+  } catch (cause) {
+    fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
   }
 }
 
