@@ -22,43 +22,16 @@ test "$(deno --version | awk 'NR == 1 { print $2 }')" = "2.9.4"
 Only `oxlint` and `oxfmt` deliberately float to their latest versions. Stop before packing if a
 pinned tool differs; do not silently produce the bootstrap tarballs with another npm implementation.
 
-## First release: maintainer bootstrap
+## Bootstrap record (completed)
 
 `v0.1.0-alpha.0` is intentionally not reused: its tag CI exposed a nondeterministic test and failed
 before any package was published. The tag remains an immutable failure record, so the first npm
-version is `0.1.0-alpha.1`.
+version is `0.1.0-alpha.1`. That bootstrap has been completed for all seven packages with the
+maintainer's interactive, 2FA-protected npm session. This section records the resulting policy; it
+is not a procedure to run again. Use **Later alpha releases** below for every subsequent alpha and
+do not manually publish the current workspace artifacts.
 
-Run the bootstrap only after the release pull request is merged. Start from the merged commit on a
-clean `main`, not from the pull-request branch:
-
-```sh
-git switch main
-git pull --ff-only origin main
-git status --short
-test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
-npm whoami --registry=https://registry.npmjs.org/
-bun install --frozen-lockfile
-bun add --global oxlint@latest oxfmt@latest
-bun run check
-release_dir="$(mktemp -d)"
-bun run scripts/pack-release.ts "$release_dir"
-git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
-git push origin v0.1.0-alpha.1
-```
-
-`git status --short` must print nothing. Wait for the tag's CI run to pass before continuing. Keep
-`release_dir` and the same terminal: those are the tarballs that passed locally. The release
-manifest lists the framework first and records every tarball's SHA-256.
-
-Publishing is the maintainer's explicit, 2FA-protected action:
-
-```sh
-bun run scripts/publish-release.ts "$release_dir"
-node scripts/verify-registry-release.ts "$release_dir"
-node scripts/smoke-registry-release.ts "$release_dir"
-```
-
-The publisher checks every local SHA-256 before contacting npm. It also checks the SHA-512
+The bootstrap publisher checked every local SHA-256 before contacting npm. It also checked the SHA-512
 integrity of any version already in the registry. A retry skips an already-published package only
 when its registry artifact is byte-for-byte the same; a mismatch or a registry error stops the run
 before another package is published. The read-only verifier then checks all seven registry
