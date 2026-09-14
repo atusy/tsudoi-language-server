@@ -659,7 +659,7 @@ so your `finally` does not begin until the batch you were producing settles. A h
 ignores `context.signal` and awaits something that never settles never reaches its own cleanup.
 
 What tsudoi does not promise is that your cleanup **completes**. A `finally` that awaits
-something which never settles never finishes, and no server can change that; the request is
+something which never settles never finishes, and no server can change that; the request has
 already failed or been cancelled by then. Cleanup cannot change that response.
 
 ## Where to look next
