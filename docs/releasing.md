@@ -123,6 +123,11 @@ release_tag="v${release_version}"
 git tag -a "$release_tag" -m "$release_tag"
 git push origin "$release_tag"
 gh release create "$release_tag" --verify-tag --prerelease --latest=false --generate-notes
+release_commit="$(git rev-parse "$release_tag^{commit}")"
+# Repeat gh run list if the release workflow has not appeared yet.
+run_id="$(gh run list --workflow publish.yml --event release --commit "$release_commit" --limit 1 --json databaseId --jq '.[0].databaseId')"
+test -n "$run_id"
+gh run watch "$run_id" --exit-status
 ```
 
 Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is
@@ -146,7 +151,17 @@ prerelease published from a draft; that is why the workflow also checks the even
 field instead of relying on the activity type alone. See GitHub's
 [release event documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
 
-If a publish run fails after changing some packages, rerun that same tag immediately and verify the
-registry before preparing another version. The fixed workflow concurrency group prevents two
-release runs from publishing at the same time, and the publisher refuses to move an `alpha`
-dist-tag to the same or an older version.
+If a publish run fails after changing some packages, do not move or delete the tag, and do not
+unpublish or recreate the GitHub Release. Rerun the failed jobs from that exact workflow run while
+its one-day release bundle is retained, then watch the new attempt:
+
+```sh
+gh run rerun "$run_id" --failed
+gh run watch "$run_id" --exit-status
+```
+
+If the artifact has expired, `gh run rerun "$run_id"` reruns the whole workflow from the original
+release ref and rebuilds it; the publisher will resume only where registry artifact integrity
+matches. Verify the registry before preparing another version. The fixed workflow concurrency
+group serializes up to GitHub's maximum queue of release runs, and the publisher refuses to move an
+`alpha` dist-tag to the same or an older version.
