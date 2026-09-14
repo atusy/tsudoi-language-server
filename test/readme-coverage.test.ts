@@ -359,8 +359,8 @@ test("the enumeration refuses a directory that is not a checkout, rather than an
  * NOT COVER THE BLOCK IT WAS POINTED AT.
  *
  * THIS ARM EXISTS BECAUSE THE CLAIM WAS ALREADY WRITTEN DOWN -- in the table's
- * own docstring and in the skill -- and asserted by nothing, which is the exact defect this arm exists for: a coverage
- * claim taken on recollection. The subject is a marked `ts` block with no
+ * own docstring -- and asserted by nothing, which is the exact defect this arm
+ * exists for: a coverage claim taken on recollection. The subject is a marked `ts` block with no
  * import, which the snippet row's projection answers `[]` about.
  *
  * THE TWO REFUSALS MUST NOT PRINT ALIKE, and that is what the second assertion

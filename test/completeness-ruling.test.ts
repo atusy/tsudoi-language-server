@@ -23,14 +23,13 @@ applySuiteDeadline();
  *
  * WHAT THIS CANNOT CHECK, said plainly rather than left to be discovered: it
  * cannot check that a ruling is CORRECT. A marker with a wrong sentence after it
- * passes here. What it converts from a Review recollection into a RED is
+ * passes here. What it converts from a reviewer's recollection into a RED is
  * narrower and still worth having -- A NEW COMPLETION HANDLER ARRIVING WITH NO
  * RULING AT ALL, which is exactly how the unchosen default got in the first
  * time.
  *
- * THE RULINGS ARE AT THE SITES AND NOT HERE, per the Lifetime Rule: the
- * violating edit is a change to what that config returns, and it is made in that
- * file.
+ * THE RULINGS ARE AT THE SITES AND NOT HERE: the violating edit is a change to
+ * what that config returns, and it is made in that file.
  */
 const rulingMarker = "COMPLETENESS RULING:";
 

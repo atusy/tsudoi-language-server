@@ -12,9 +12,9 @@ import { fileURLToPath } from "node:url";
  * WHY IT EXISTS AT ALL, MEASURED RATHER THAN ASSUMED: this project has five
  * recorded occurrences of a commit taken while a check was red, across two
  * people, one of them recurring -- every one of them a reader
- * taking the LAST command's status, or a grep's, for the run's. A skill
- * forbidding exactly that exists, is specific, carries its own recidivism count
- * and matched on description, AND THE DEFECT HAPPENED ANYWAY. What is left after
+ * taking the LAST command's status, or a grep's, for the run's. A written rule
+ * forbidding exactly that existed, was specific, carried its own recidivism
+ * count, AND THE DEFECT HAPPENED ANYWAY. What is left after
  * that is not another sentence: it is an exit code.
  *
  * AND IT TAKES `--only <substring>` FOR THAT SAME REASON, WHICH MAKES THE OPTION
