@@ -660,7 +660,7 @@ ignores `context.signal` and awaits something that never settles never reaches i
 
 What tsudoi does not promise is that your cleanup **completes**. A `finally` that awaits
 something which never settles never finishes, and no server can change that; the request is
-already answered `RequestCancelled` by then, and nothing there can be watched succeeding.
+already failed or been cancelled by then. Cleanup cannot change that response.
 
 ## Where to look next
 

@@ -269,9 +269,9 @@ export function reportHandlerFailure(method: ReportedMethod, error: unknown): ne
 }
 
 /**
- * Reports a config handler's CLEANUP failure -- and stops there. Cleanup fails
- * only once the client already holds its -32800, so there is no response left to
- * correct and a rethrow could only take down a session still able to serve.
+ * Reports cleanup failures without replacing the original request failure or
+ * cancellation. Cleanup runs independently of the response, so rethrowing here
+ * could take down a session that is still able to serve.
  */
 function reportCleanupFailure(method: ReportedMethod, error: unknown): void {
   process.stderr.write(`tsudoi: ${method} cleanup failed: ${failureDetail(error)}\n`);
