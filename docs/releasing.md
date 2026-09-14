@@ -20,7 +20,7 @@ test "$(deno --version | awk 'NR == 1 { print $2 }')" = "2.9.4"
 ```
 
 Only `oxlint` and `oxfmt` deliberately float to their latest versions. Stop before packing if a
-pinned tool differs; do not silently produce the bootstrap tarballs with another npm implementation.
+pinned tool differs; do not silently produce the release tarballs with another npm implementation.
 
 ## Bootstrap record (completed)
 
