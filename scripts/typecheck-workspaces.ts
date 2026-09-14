@@ -13,7 +13,7 @@ import {
 } from "./workspaces.ts";
 
 /**
- * THE FIFTH DEFINITION-OF-DONE CHECK: every workspace member type-checks under
+ * Every workspace member type-checks under
  * ITS OWN tsconfig, because the root check must not and now cannot.
  *
  * WHY THE ROOT CHECK IS WITHDRAWN RATHER THAN KEPT AS A SECOND OPINION, AND NOT
@@ -54,7 +54,7 @@ import {
  * they cover every file some config INCLUDES and are silent about the rest, so a
  * file dropped beside a member's source -- or under a directory whose name
  * begins with a dot, where no default include reaches -- is run by whatever runs
- * it and graded by nobody, with all five commands exit 0. `refuseUncoveredFiles`
+ * it and graded by nobody, with all checks exiting 0. `refuseUncoveredFiles`
  * refuses that, deciding membership by reading THE COMPILERS' OWN FILE LISTS
  * rather than the globs in the JSON, and keeping the package-shaped sentence for
  * the package-shaped case.

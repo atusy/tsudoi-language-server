@@ -357,7 +357,7 @@ test("a name the subpath does not export is TS2305 in every member, with no TS23
     }
   }
   // The tree is left as it was found, asserted rather than trusted: a probe left
-  // behind would fail the fifth Definition-of-Done check for every later run.
+  // behind would fail the workspace type check for every later run.
   for (const member of members) {
     expect(existsSync(join(member, "src", "__reach-probe.ts"))).toBe(false);
   }

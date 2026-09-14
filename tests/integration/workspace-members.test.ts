@@ -21,7 +21,7 @@ applySuiteDeadline();
  * AND THE CLAIM UNDER ALL OF THEM IS AN ABSENCE OF COVERAGE, which nothing
  * observes by looking: the root type check EXCLUDES these paths, so a member
  * this script fails to reach is checked by nothing and every command in the
- * Definition of Done exits 0. A green from this script means something only if
+ * `bun run check` exits 0. A green from this script means something only if
  * a red is reachable, which is what each pair below measures.
  */
 
@@ -49,7 +49,7 @@ const memberTsconfig = JSON.stringify({
   include: ["src"],
 });
 
-/** Runs the fifth Definition-of-Done check over a throwaway workspace. */
+/** Runs the workspace type check over a throwaway workspace. */
 async function checkWorkspace(files: Record<string, string>): Promise<CliResult> {
   const root = workspace(files);
   try {

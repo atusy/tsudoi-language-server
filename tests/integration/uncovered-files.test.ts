@@ -86,7 +86,7 @@ const memberBuildTsconfig = JSON.stringify({
   include: ["src"],
 });
 
-/** Runs the fifth Definition-of-Done check over a root that already exists. */
+/** Runs the workspace type check over a root that already exists. */
 function check(root: string): Promise<CliResult> {
   return runCommand("bun run scripts/typecheck-workspaces.ts", repoRoot, [root]);
 }
@@ -827,7 +827,7 @@ test("a config that is not staged does not mark the tree covered", async () => {
  * the root check and every member check take, reports NOTHING about a type error
  * in `lib/x.ts` -- only `-p` on the referenced config, or `tsc -b` on the parent,
  * names it. Following the reference would therefore mark covered a file no
- * command in the Definition of Done reads.
+ * command in the `bun run check` reads.
  *
  * SO THE ARM ASSERTS BOTH SENTENCES. Naming the file alone is what the check
  * already did; naming `lib/project.json` and the RENAME is the part that stops a

@@ -351,9 +351,9 @@ test("the stage is the tracked tree, and the weakening never reaches the working
   const stage = stageCheckout();
   staged.push(stage.root);
   const weakening: Weakening = {
-    file: "scripts/definition-of-done.ts",
-    from: "const failed = results.filter",
-    to: "const failed = results.slice(0, 0).filter",
+    file: "scripts/typecheck-workspaces.ts",
+    from: "let failed = false;",
+    to: "let failed = true;",
   };
   const trackedBefore = readFileSync(join(repoRoot, weakening.file), "utf8");
   applyWeakening(stage.root, weakening);
@@ -515,9 +515,9 @@ test("a record naming an arm in a file that RE-RUNS perturbations is refused, ne
       name: "the report names the arm each record weakened, and no other",
     },
     weakening: {
-      file: "scripts/definition-of-done.ts",
-      from: "const failed = results.filter",
-      to: "const failed = results.slice(0, 0).filter",
+      file: "scripts/typecheck-workspaces.ts",
+      from: "let failed = false;",
+      to: "let failed = true;",
     },
     alsoReddens: [],
   };
@@ -603,14 +603,7 @@ test("the report names the arm each record weakened, and no other", async () => 
  *   framework as an INSTALLED dependency, its realpath being outside the stage,
  *   and hands a probe a SECOND ROUTE -- so a weakening that removes the first
  *   reads DISARMED.
- *
- * AND `THE ARM FILE STAGES A TREE OF ITS OWN` IS NOT THE PREDICATE, measured
- * because it is the one a reader reaches for: it holds of many root test files,
- * and tests/integration/definition-of-done.test.ts is one of them while its records re-run
- * and report HELD below.
  */
-const dodArms = "tests/integration/definition-of-done.test.ts";
-const dodRunner = "scripts/definition-of-done.ts";
 
 // THE MEMBER ARM FILE AND THE MODULE THE BLOCK IS COMPOSED IN, spelled once
 // because the path-completion requirements land almost entirely on the two:
@@ -623,49 +616,6 @@ const memberArms = "tests/integration/tsudoi-completion-path/resolve.test.ts";
 const composer = "packages/tsudoi-completion-path/src/completion.ts";
 
 const records: readonly PerturbationRecord[] = [
-  {
-    // THE GATE NARROWED BY ONE WORD: `not passed` to `failed` leaves outcome,
-    // reason and every byte of the report unchanged and moves only the exit
-    // code, so nothing but a tree of passes around one missing binary sees it.
-    arm: {
-      file: dodArms,
-      name: "a check that never started GATES the run, with every other check green",
-    },
-    weakening: {
-      file: dodRunner,
-      from: 'const failed = results.filter((result) => result.outcome !== "passed");',
-      to: 'const failed = results.filter((result) => result.outcome === "failed");',
-    },
-    alsoReddens: ["a `run` this runner cannot execute FAITHFULLY is refused, never misread"],
-  },
-  {
-    // THE TOTAL TAKEN FROM THE FIRST ELEMENT, which is invisible wherever the
-    // aggregate and its first element are one value.
-    arm: { file: dodArms, name: "a warning is counted and reported, and does NOT gate the run" },
-    weakening: {
-      file: dodRunner,
-      from: "const warnings = results.reduce((total, result) => total + result.warnings, 0);",
-      to: "const warnings = results[0]?.warnings ?? 0;",
-    },
-    alsoReddens: [],
-  },
-  {
-    // THE REFUSAL MOVED ONE NOUN, WHICH IS THE ADJACENT READING A REVIEWER
-    // NODS AT: guard the CHECKS being empty instead of the MATCHES being empty.
-    // `readChecks` already refuses an empty scripts/definition-of-done.json, so
-    // the moved guard never fires again -- and a filter matching nothing runs no
-    // check and reports green, which is the degenerate both refusals exist for.
-    arm: {
-      file: dodArms,
-      name: "a filter matching NO check is refused, where the same tree unfiltered is green",
-    },
-    weakening: {
-      file: dodRunner,
-      from: "  if (matching.length === 0) {",
-      to: "  if (checks.length === 0) {",
-    },
-    alsoReddens: [],
-  },
   {
     // THE ADJACENT WEAKER READING IS THE ONE A REVIEWER WOULD ACCEPT WITHOUT
     // NOTICING: read THAT the subpath resolved rather than WHICH FILE answered.
@@ -1121,13 +1071,6 @@ const records: readonly PerturbationRecord[] = [
     // `memberArms` above says the others deliberately do not. It is not avoidable
     // for this one: an advertised capability exists only in a handshake, so there
     // is no cheaper statement of it to point at.
-    //
-    // AND IT IS NOT WHAT MAKES THE THREE `dodArms` RECORDS INTERMITTENT, MEASURED
-    // RATHER THAN ARGUED, because that is what a reader meeting them will blame:
-    // with this record stashed out, the same two runs of this file reported the
-    // same three REFUSED and then all of them HELD. Those arms re-run a file
-    // measured at fourteen seconds alone against a twenty-five second budget, and
-    // nothing in this change touched either number.
     arm: {
       file: "tests/e2e/code-action.test.ts",
       name: "a config supplying a codeAction handler advertises the provider and no kinds (bun)",

@@ -493,7 +493,7 @@ const facts: readonly ReadmeFact[] = [
   {
     // THE ENTRY ABOVE IS ABOUT WHAT THE BUILD COVERS; THIS ONE IS ABOUT WHAT IT
     // DOES NOT, and they are separate because a reader who takes the first at
-    // its word runs a Definition-of-Done command and gets a failure the document
+    // its word runs a check command and gets a failure the document
     // never mentioned.
     //
     // THE REMEDY IS A TOKEN AND THE DIAGNOSTIC IS A TOKEN, both, because either

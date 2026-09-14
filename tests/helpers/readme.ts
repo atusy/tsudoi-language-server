@@ -886,7 +886,7 @@ function resolvesFrom(specifier: string, dir: string): boolean {
  * hashes, which is the approximate detector whose failure mode is a green
  * certifying a class as watched, and which as a hash list is a rubber stamp with
  * one extra step; an exemption written in the document whose only consumer is
- * the sweep; and a sixth Definition-of-Done check, since the sweep belongs where
+ * the sweep; and a separate check, since the sweep belongs where
  * the extraction already lives.
  *
  * THE INFO STRING DECIDES NOTHING, and an exempt tag list was settled on and

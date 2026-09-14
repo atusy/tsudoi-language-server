@@ -61,8 +61,8 @@ jobs:
         run: |
           oxlint --version
           oxfmt --version
-      - name: Run the Definition of Done
-        run: bun run scripts/definition-of-done.ts
+      - name: Run checks
+        run: bun run check
 
   prepare:
     if: inputs.mode == 'publish'

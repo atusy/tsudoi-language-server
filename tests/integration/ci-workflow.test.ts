@@ -87,15 +87,13 @@ function commandLinesOf(steps: WorkflowStep[]): string[] {
   );
 }
 
-test("the CI workflow is a hardened reading of the Definition of Done", () => {
+test("the CI workflow is configured to run all checks", () => {
   const workflow = parseWorkflow(readWorkflow());
   const checks = workflow.jobs?.checks;
   const steps = checks?.steps ?? [];
   const uses = steps.flatMap((step) => (typeof step.uses === "string" ? [step.uses] : []));
   const commands = commandLinesOf(steps);
-  const definitionOfDoneSteps = steps.filter(
-    (step) => step.run?.trim() === "bun run scripts/definition-of-done.ts",
-  );
+  const checkSteps = steps.filter((step) => step.run?.trim() === "bun run check");
 
   expect(workflow.on).toHaveProperty("pull_request");
   expect(workflow.on?.push?.branches).toEqual(["main"]);
@@ -125,9 +123,9 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
   expect(commands).toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(commands).toContain("oxlint --version");
   expect(commands).toContain("oxfmt --version");
-  expect(definitionOfDoneSteps).toHaveLength(1);
-  expect(definitionOfDoneSteps[0]?.if).toBeUndefined();
-  expect(definitionOfDoneSteps[0]?.["continue-on-error"]).toBeUndefined();
+  expect(checkSteps).toHaveLength(1);
+  expect(checkSteps[0]?.if).toBeUndefined();
+  expect(checkSteps[0]?.["continue-on-error"]).toBeUndefined();
 
   const pinnedOxDeclarations = [repoRoot, ...declaredMembers(repoRoot)].flatMap((dir) => {
     const manifestPath = join(dir, "package.json");
@@ -148,28 +146,21 @@ test("the CI workflow is a hardened reading of the Definition of Done", () => {
 });
 
 test("the release lint command rejects warnings and stale suppressions", () => {
-  const checks = JSON.parse(
-    readFileSync(join(repoRoot, "scripts", "definition-of-done.json"), "utf8"),
-  ) as Array<{ name?: unknown; run?: unknown }>;
-  const lintChecks = checks.filter((check) => check.name === "Lint passes");
-  expect(lintChecks).toEqual([
-    {
-      name: "Lint passes",
-      run: "oxlint --format unix --deny-warnings --report-unused-disable-directives-severity error",
-    },
-  ]);
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+    scripts: Record<string, string>;
+  };
+  expect(manifest.scripts.lint).toBe(
+    "oxlint --format unix --deny-warnings --report-unused-disable-directives-severity error",
+  );
 });
 
-test("a commented Definition of Done command does not satisfy the workflow contract", () => {
+test("a commented check command does not satisfy the workflow contract", () => {
   const source = readWorkflow();
-  const commented = source.replace(
-    "        run: bun run scripts/definition-of-done.ts",
-    "        # run: bun run scripts/definition-of-done.ts",
-  );
+  const commented = source.replace("        run: bun run check", "        # run: bun run check");
   expect(commented).not.toBe(source);
 
   const commands = commandLinesOf(parseWorkflow(commented).jobs?.checks?.steps ?? []);
-  expect(commands).not.toContain("bun run scripts/definition-of-done.ts");
+  expect(commands).not.toContain("bun run check");
 });
 
 test("publishing is a manually approved OIDC job for one exact alpha tag", () => {
@@ -314,7 +305,7 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(qualityCommands).toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(qualityCommands).toContain("oxlint --version");
   expect(qualityCommands).toContain("oxfmt --version");
-  expect(qualityCommands).toContain("bun run scripts/definition-of-done.ts");
+  expect(qualityCommands).toContain("bun run check");
   expect(prepareCommands).toContain("bun install --frozen-lockfile");
   expect(prepareCommands).not.toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(prepareCommands).toContain('test "$(npm --version)" = "11.19.0"');

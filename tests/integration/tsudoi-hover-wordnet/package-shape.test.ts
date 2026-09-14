@@ -38,7 +38,7 @@ const manifest = JSON.parse(
  * WHAT IT COSTS, so the next reader does not undo it looking for a quick fix:
  * everything resolves this package through dist/, so a checkout nothing has
  * built fails at `tsc --noEmit` naming it. Loud, and any other check clears it,
- * because both the test preload and the fifth Definition-of-Done check run one
+ * because both the test preload and the workspace type check run one
  * shared builder in scripts/workspaces.ts. THAT LOUDNESS IS EXACTLY WHAT
  * TSUDOI'S THIRD ARM COSTS IT, MEASURED: with every dist/ removed,
  * the root check names THIS package and the other handler and says nothing at
@@ -76,8 +76,7 @@ test("the package publishes one entry point, built, with no arm reaching source"
  * What reads the artifact is tests/integration/packed-members.test.ts at the repository root
  * -- the exact packed file list, and every packed declaration searched for the
  * statement -- and it lives there rather than beside this file because a member
- * test reaching root helpers becomes a new input to the fifth Definition-of-Done
- * check.
+ * test reaching root helpers becomes a new input to the workspace type check.
  */
 test("only the built output ships, which is what keeps the ambient declaration internal", () => {
   expect(manifest.files).toEqual(["dist"]);
@@ -231,9 +230,9 @@ test("tsudoi is a peer this package cannot install, and the dictionary is its ow
  * rather than as `nothing fires`, because the warrant is two routes and not a
  * census.
  * THE TWO ARE RULED OUT BY THEIR OWN ORDER: an arm under `bun test` runs after a
- * preload that has just rebuilt every package, and the fifth Definition-of-Done
- * check calls `prepareWorkspace` before it reads anything. Both stand after a
- * build; this state is before one. The thing that meets whoever produces it is
+ * preload that has just rebuilt every package, and the workspace type check
+ * calls `prepareWorkspace` before it reads anything. Both stand after a build;
+ * this state is before one. The thing that meets whoever produces it is
  * this paragraph.
  */
 test("packing this package builds it first, into a cleared directory", () => {

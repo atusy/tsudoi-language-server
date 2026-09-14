@@ -17,8 +17,8 @@ applySuiteDeadline();
  * TYPE CHECK CAN. `prepareWorkspace` compiles every package through
  * `execFileSync`, which throws on a non-zero exit, so a type error in a member's
  * own source arrives as the BUILD's diagnostic and the per-member check never
- * runs. That same call is reached by TWO Definition-of-Done checks -- it is the
- * `bun test` preload as well as the fifth check -- so one invocation decides
+ * runs. That same call is reached by tests and type checking -- it is the
+ * `bun test` preload as well as the workspace type check -- so one invocation decides
  * what both of them print.
  *
  * AND A BARE `src/index.ts` IDENTIFIES NOTHING IN A REPOSITORY HOLDING MORE THAN

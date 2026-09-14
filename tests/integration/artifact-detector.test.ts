@@ -161,7 +161,7 @@ const complete = {
   [module_]: "export {};\n",
 };
 
-/** Runs the fifth Definition-of-Done check over a throwaway workspace. */
+/** Runs the workspace type check over a throwaway workspace. */
 async function checkWorkspace(files: Record<string, string>): Promise<CliResult> {
   const root = workspace(files);
   try {

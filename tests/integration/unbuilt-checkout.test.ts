@@ -83,14 +83,8 @@ applySuiteDeadline();
  * (1) It stages the all-absent cell. Because every export targets dist/, the
  * framework and handlers all fail loudly in this state.
  *
- * (2) IT SAYS NOTHING ABOUT THE REAL FOURTH CHECK. That command is `tsc
- * --noEmit` at the checkout root; what runs here is a staged copy, and a staged
- * copy is a claim about a stage. AND `NOTHING OWNS ITS INVOCATION` IS TOO WIDE,
- * QUALIFIED RATHER THAN DROPPED: scripts/definition-of-done.ts spawns exactly
- * that command from the list in scripts/definition-of-done.json -- but only
- * AFTER the first check has built every artifact, which is the ordering that
- * runner's own one-step reading leans on. What nothing here owns is the BARE, PRE-BUILD invocation,
- * and that is the one this arm's subject is about.
+ * (2) This probes bare `tsc --noEmit` before a build. The `typecheck` package
+ * script builds and checks workspace members before invoking the root compiler.
  *
  * (3) It does not pin which package is named first. All workspace exports now
  * target dist/, so an unbuilt stage stays non-zero as members are added.
@@ -348,11 +342,11 @@ test("an unbuilt checkout's root type check is non-zero and names a workspace pa
     // reddens THIS line with `examples/tsudoi.config.ts(...): error TS2322`, the
     // staging entirely intact. So the honest name for this is DUPLICATED SIGNAL
     // WITH A MISLEADING FAILURE STORY, and not a state nothing else sees: ANY
-    // tracked type error reddens both the fourth Definition-of-Done check and
+    // tracked type error reddens both the root type check and
     // this line, and this line reports it under a test name about unresolved
     // workspace packages. Measured on the other half too, by a review:
     // `tsc --noEmit --listFiles` over the tree and over the stage read
-    // IDENTICAL file sets, so there is no state here that the fourth check
+    // IDENTICAL file sets, so there is no state here that the root type check
     // misses.
     //
     // IT IS KEPT FOR THE ORDER AND THE STORY, WHICH IS THE WHOLE OF WHAT IT BUYS
@@ -363,7 +357,7 @@ test("an unbuilt checkout's root type check is non-zero and names a workspace pa
     // rather than to the apparatus, in the same run and on the same tree.
     //
     // SO A READER WHO MEETS THIS LINE RED SHOULD READ THE DIAGNOSTIC BEFORE
-    // TOUCHING THE STAGER: if it names a tracked file, the fourth check is
+    // TOUCHING THE STAGER: if it names a tracked file, the root type check is
     // already saying the same thing and the staging is not the fault.
     buildStage(stage);
     const built = await runTsc(stage.root);

@@ -120,7 +120,7 @@ test("preparedResult is reachable from the initialize handler's context, and may
 /**
  * THE DEFAULT WAS NOT DROPPED. `RequestContext` is published, and sites outside
  * src/ write it BARE -- including the hand-built object literals in both handler
- * packages, which Definition of Done check 5 compiles -- so a generic without a
+ * packages, which the workspace type check compiles -- so a generic without a
  * default breaks every one of them by arity.
  *
  * WHAT THIS ARM DOES NOT SAY, MEASURED RATHER THAN ASSUMED: it does not pin

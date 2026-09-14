@@ -7,6 +7,15 @@
     "packages/*"
   ],
   "type": "module",
+  "scripts": {
+    "test:unit": "bun test packages scripts/src",
+    "test:integration": "bun test tests/integration",
+    "test:e2e": "bun test tests/e2e",
+    "lint": "oxlint --format unix --deny-warnings --report-unused-disable-directives-severity error",
+    "fmt:check": "oxfmt --check .",
+    "typecheck": "bun run scripts/typecheck-workspaces.ts && tsc --noEmit",
+    "check": "bun run test:unit && bun run test:integration && bun run test:e2e && bun run lint && bun run fmt:check && bun run typecheck"
+  },
   "devDependencies": {
     "@atusy/tsudoi-adapter-efm-config": "0.1.0-alpha.1",
     "@atusy/tsudoi-completion-dictionary": "0.1.0-alpha.1",

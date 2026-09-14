@@ -1,7 +1,7 @@
 import { setDefaultTimeout } from "bun:test";
 
 /**
- * THE SUITE'S OWN TIME LIMIT, SO A RED IN THE FIRST DEFINITION-OF-DONE CHECK IS
+ * THE SUITE'S OWN TIME LIMIT, SO A TEST FAILURE IS
  * A STATEMENT ABOUT tsudoi RATHER THAN ABOUT THE MACHINE IT RAN ON.
  *
  * `bun test --timeout N` ON THE COMMAND LINE IS INERT FOR EVERY SWEPT FILE --
@@ -50,14 +50,6 @@ import { setDefaultTimeout } from "bun:test";
  * reproduce in six further runs, clean and perturbed, alone and in the suite, so
  * it read as a boundary reading rather than a defect.
  *
- * THE SECOND OCCURRENCE ARRIVED, WHICH IS WHY THE PARAGRAPH ABOVE IS IN THE
- * PAST TENSE. The three records re-running tests/integration/definition-of-done.test.ts were
- * measured timing out against this value on some whole-suite runs and not
- * others, and that file MEASURED at 14.17s ALONE -- against a 25s ceiling, on a
- * suite bun runs in ONE process. It is not the same arm as the one above, and
- * it is the same cause: this value bounds a hang, and it is also all the room a
- * slow-but-correct arm has. A SECOND OCCURRENCE WAS ONE TRIGGER FOR FILING AN
- * ISSUE, AND LOWERING THIS VALUE REMAINS THE OTHER.
  */
 export const suiteDeadlineMs = 25_000;
 

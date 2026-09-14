@@ -49,7 +49,7 @@ interface PathShape {
  * is that a file under `packages/` lints exactly as src/ does. A shape naming the
  * one package that exists today would leave the second one unpinned with nothing
  * anywhere saying so -- and would have to be edited for every package added,
- * which is the same defect the fifth Definition-of-Done check avoids by
+ * which is the same defect the workspace type check avoids by
  * enumerating members from the workspace configuration.
  *
  * IT IS `src/` INSIDE THE MEMBER AND NOT ITS TESTS, deliberately: the overrides

@@ -12,7 +12,7 @@ import type { Runtime } from "./lsp.ts";
  * this name has to say which of them it means.
  *
  * THIS ONE IS THE CHECKOUT, AND ONLY THAT. What it answers: where a command is
- * run from (the five Definition-of-Done checks are spelled from here, which is
+ * run from (the package scripts are spelled from here, which is
  * how bunfig.toml is found at all), whose node_modules a probe borrows, and
  * which workspace the member enumerators read. It is NOT what stages a copy of
  * the tsudoi package; the three helpers that do that take `frameworkRoot`.

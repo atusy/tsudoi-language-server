@@ -115,7 +115,7 @@ function stageThisCheckout(): { readonly root: string; dispose: () => void } {
   };
 }
 
-/** Runs the fifth Definition-of-Done check over a staged copy of this checkout. */
+/** Runs the workspace type check over a staged copy of this checkout. */
 async function checkStage(perturb: (root: string) => void = (): void => {}): Promise<CliResult> {
   const stage = stageThisCheckout();
   try {

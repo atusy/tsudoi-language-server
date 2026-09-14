@@ -656,7 +656,7 @@ export interface InitializeRequestContext extends BaseRequestContext {
  * IT DEFAULTS, AND WHAT THE DEFAULT BUYS IS THAT `RequestContext` STAYS WRITABLE
  * BARE: the name is published, and sites outside src/ write it with no argument
  * -- including the hand-built context literals in both handler packages, which
- * Definition of Done check 5 compiles. Dropping the default breaks all of them
+ * the workspace type check compiles. Dropping the default breaks all of them
  * by arity.
  *
  * `= Method` AND NOT `= ConfigMethod`, AND THE DIFFERENCE WAS MEASURED RATHER

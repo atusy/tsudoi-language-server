@@ -541,7 +541,7 @@ test("the identity probe reddens on a near-miss where mutual assignability sees 
  * perturbing the repo itself, which the two tests above exist to avoid.
  *
  * NO TEST HERE MAY CALL runTsc(repoRoot), and this is the trap to refuse: that IS
- * the `tsc --noEmit` the Definition of Done already runs, so it cannot fail
+ * the `tsc --noEmit` the `bun run check` already runs, so it cannot fail
  * unless the DoD has already failed. A control that cannot fail is not one.
  */
 
