@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, test } from "bun:test";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
@@ -12,24 +12,27 @@ applySuiteDeadline();
 
 const SPAWN_TIMEOUT_MS = 30_000;
 
-test("the registry verifier binds metadata and channels to the retained release", () => {
-  const parent = mkdtempSync(join(tmpdir(), "tsudoi-registry-release-"));
-  const release = join(parent, "release");
+let parent: string;
+let release: string;
+let env: NodeJS.ProcessEnv;
+
+beforeAll(() => {
+  parent = mkdtempSync(join(tmpdir(), "tsudoi-registry-release-"));
+  release = join(parent, "release");
   const bin = join(parent, "bin");
-  try {
-    const packed = spawnSync("node", ["scripts/pack-release.ts", release], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      timeout: SPAWN_TIMEOUT_MS,
-    });
-    expect(packed.status).toBe(0);
-    mkdirSync(bin);
-    const fakeNpm = join(bin, "npm");
-    writeFileSync(
-      fakeNpm,
-      `#!/usr/bin/env node
+  const packed = spawnSync("node", ["scripts/pack-release.ts", release], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
+  });
+  expect(packed.status).toBe(0);
+  mkdirSync(bin);
+  const fakeNpm = join(bin, "npm");
+  writeFileSync(
+    fakeNpm,
+    `#!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { appendFileSync, readFileSync, readdirSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 const args = process.argv.slice(2);
 appendFileSync(process.env.NPM_LOG, JSON.stringify(args) + "\\n");
@@ -38,6 +41,17 @@ const manifests = readdirSync(join(process.env.REPO_ROOT, "packages"), { withFil
   .filter((entry) => entry.isDirectory())
   .map((entry) => JSON.parse(readFileSync(join(process.env.REPO_ROOT, "packages", entry.name, "package.json"), "utf8")));
 if (args[0] === "view") {
+  let propagationStep = -1;
+  if (process.env.PROPAGATION_SEQUENCE_FILE !== undefined) {
+    propagationStep = existsSync(process.env.PROPAGATION_SEQUENCE_FILE)
+      ? Number(readFileSync(process.env.PROPAGATION_SEQUENCE_FILE, "utf8"))
+      : 0;
+    writeFileSync(process.env.PROPAGATION_SEQUENCE_FILE, String(propagationStep + 1));
+  }
+  if (propagationStep === 0) {
+    process.stderr.write("npm error code E404\\n");
+    process.exit(1);
+  }
   const separator = args[1].lastIndexOf("@");
   const name = args[1].slice(0, separator);
   const version = args[1].slice(separator + 1);
@@ -49,15 +63,25 @@ if (args[0] === "view") {
     version,
     "dist.integrity": "sha512-" + createHash("sha512").update(bytes).digest("base64"),
     "dist-tags": {
-      ...(process.env.OMIT_ALPHA === "1"
+      ...(propagationStep === 1
         ? {}
-        : { alpha: process.env.ALPHA_VERSION ?? version }),
+        : {
+            alpha: propagationStep === 2
+              ? "0.1.0-alpha.1"
+              : process.env.ALPHA_VERSION ?? version,
+          }),
       ...(process.env.OMIT_LATEST === "1"
         ? {}
         : { latest: process.env.LATEST_VERSION ?? "0.1.0-alpha.1" }),
     },
-    repository: manifest.repository,
-    ...(process.env.ADD_ATTESTATIONS === "1" ? {
+    repository: process.env.REORDER_REPOSITORY === "1"
+      ? {
+          url: manifest.repository.url,
+          type: manifest.repository.type,
+          directory: manifest.repository.directory,
+        }
+      : manifest.repository,
+    ...(process.env.ADD_ATTESTATIONS === "1" && propagationStep !== 3 ? {
       "dist.attestations": {
         url: process.env.BAD_ATTESTATION_URL === "1"
           ? "https://example.invalid/attestations/" + name + "@" + version
@@ -89,121 +113,157 @@ if (args[0] === "audit" && args[1] === "signatures") {
 }
 process.exit(2);
 `,
-    );
-    chmodSync(fakeNpm, 0o755);
-    const env = {
-      ...process.env,
-      PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
-      RELEASE_DIR: release,
-      REPO_ROOT: repoRoot,
-      NPM_LOG: join(parent, "npm.log"),
-      NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "tests/helpers/fake-attestation-fetch.ts")).href}`,
-      GITHUB_REF: "refs/tags/v0.1.0-alpha.2",
-      GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
-    };
-    const verified = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+  );
+  chmodSync(fakeNpm, 0o755);
+  env = {
+    ...process.env,
+    PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+    RELEASE_DIR: release,
+    REPO_ROOT: repoRoot,
+    NPM_LOG: join(parent, "npm.log"),
+    NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "tests/helpers/fake-attestation-fetch.ts")).href}`,
+    GITHUB_REF: "refs/tags/v0.1.0-alpha.2",
+    GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
+  };
+});
+
+afterAll(() => {
+  rmSync(parent, { recursive: true, force: true });
+});
+
+test("the registry verifier accepts matching and reordered release metadata", () => {
+  const verified = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
+    env,
+  });
+  expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
+  expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.2");
+
+  const reorderedRepository = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
+    env: { ...env, REORDER_REPOSITORY: "1" },
+  });
+  expect(`${String(reorderedRepository.status)} ${reorderedRepository.stderr}`).toBe("0 ");
+});
+
+test("the provenance verifier shares one retry budget across registry propagation states", () => {
+  const propagationLog = join(parent, "propagation-npm.log");
+  const propagation = spawnSync(
+    "node",
+    ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+    {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env,
-    });
-    expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
-    expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.2");
+      env: {
+        ...env,
+        NPM_LOG: propagationLog,
+        PROPAGATION_SEQUENCE_FILE: join(parent, "propagation-sequence"),
+        ADD_ATTESTATIONS: "1",
+        BAD_PREDICATE: "1",
+      },
+    },
+  );
+  expect(propagation.status).not.toBe(0);
+  expect(propagation.stderr).toContain("does not expose npmjs SLSA provenance");
+  const firstPackageViews = readFileSync(propagationLog, "utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as string[])
+    .filter(
+      (args) => args[0] === "view" && args[1] === "@atusy/tsudoi-language-server@0.1.0-alpha.2",
+    );
+  expect(firstPackageViews).toHaveLength(5);
+});
 
-    for (const [name, override, error] of [
-      ["missing alpha", { OMIT_ALPHA: "1" }, "alpha must point to 0.1.0-alpha.2"],
-      ["wrong alpha", { ALPHA_VERSION: "0.1.0-alpha.999" }, "alpha must point to 0.1.0-alpha.2"],
-      ["missing latest", { OMIT_LATEST: "1" }, "latest must remain at 0.1.0-alpha.1"],
-    ] as const) {
-      const invalidTag = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
-        cwd: repoRoot,
-        encoding: "utf8",
-        timeout: SPAWN_TIMEOUT_MS,
-        env: { ...env, ...override },
-      });
-      expect(invalidTag.status, name).not.toBe(0);
-      expect(invalidTag.stderr, name).toContain(error);
-    }
-
-    const movedLatest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+test("the verifier refuses unsafe alpha and latest tag movement", () => {
+  for (const [name, override, error] of [
+    ["wrong alpha", { ALPHA_VERSION: "0.1.0-alpha.999" }, "alpha must point to 0.1.0-alpha.2"],
+    ["missing latest", { OMIT_LATEST: "1" }, "latest must remain at 0.1.0-alpha.1"],
+  ] as const) {
+    const invalidTag = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, LATEST_VERSION: "0.1.0-alpha.2" },
+      env: { ...env, ...override },
     });
-    expect(movedLatest.status).not.toBe(0);
-    expect(movedLatest.stderr).toContain("latest must remain at 0.1.0-alpha.1");
-
-    const missingProvenance = spawnSync(
-      "node",
-      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-        timeout: SPAWN_TIMEOUT_MS,
-        env,
-      },
-    );
-    expect(missingProvenance.status).not.toBe(0);
-    expect(missingProvenance.stderr).toContain("registry attestations");
-
-    for (const invalid of [
-      { BAD_ATTESTATION_URL: "1", error: "does not expose npmjs SLSA provenance" },
-      { BAD_PREDICATE: "1", error: "does not expose npmjs SLSA provenance" },
-    ]) {
-      const result = spawnSync(
-        "node",
-        ["scripts/verify-registry-release.ts", release, "--require-provenance"],
-        {
-          cwd: repoRoot,
-          encoding: "utf8",
-          timeout: SPAWN_TIMEOUT_MS,
-          env: { ...env, ADD_ATTESTATIONS: "1", ...invalid },
-        },
-      );
-      expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain(invalid.error);
-    }
-    const preflightCalls = readFileSync(join(parent, "npm.log"), "utf8")
-      .trim()
-      .split("\n")
-      .map((line) => JSON.parse(line) as string[]);
-    expect(preflightCalls.some((args) => args[0] === "install" || args[0] === "audit")).toBeFalse();
-
-    const provenance = spawnSync(
-      "node",
-      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-        timeout: SPAWN_TIMEOUT_MS,
-        env: { ...env, ADD_ATTESTATIONS: "1" },
-      },
-    );
-    expect(provenance.status).not.toBe(0);
-    expect(provenance.stderr).toContain("provenance policy verification failed");
-    const calls = readFileSync(join(parent, "npm.log"), "utf8")
-      .trim()
-      .split("\n")
-      .map((line) => JSON.parse(line) as string[]);
-    const install = calls.find((args) => args[0] === "install");
-    expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
-    expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.2"))).toHaveLength(7);
-    expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
-
-    const failedAudit = spawnSync(
-      "node",
-      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-        timeout: SPAWN_TIMEOUT_MS,
-        env: { ...env, ADD_ATTESTATIONS: "1", FAIL_AUDIT: "1" },
-      },
-    );
-    expect(failedAudit.status).not.toBe(0);
-    expect(failedAudit.stderr).toContain("signature verification failed");
-  } finally {
-    rmSync(parent, { recursive: true, force: true });
+    expect(invalidTag.status, name).not.toBe(0);
+    expect(invalidTag.stderr, name).toContain(error);
   }
+
+  const movedLatest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    timeout: SPAWN_TIMEOUT_MS,
+    env: { ...env, LATEST_VERSION: "0.1.0-alpha.2" },
+  });
+  expect(movedLatest.status).not.toBe(0);
+  expect(movedLatest.stderr).toContain("latest must remain at 0.1.0-alpha.1");
+});
+
+test("the verifier rejects invalid provenance before installation", () => {
+  const preflightLog = join(parent, "invalid-provenance-npm.log");
+  for (const invalid of [
+    { BAD_ATTESTATION_URL: "1", error: "does not expose npmjs SLSA provenance" },
+    { BAD_PREDICATE: "1", error: "does not expose npmjs SLSA provenance" },
+  ]) {
+    const result = spawnSync(
+      "node",
+      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: { ...env, NPM_LOG: preflightLog, ADD_ATTESTATIONS: "1", ...invalid },
+      },
+    );
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(invalid.error);
+  }
+  const preflightCalls = readFileSync(preflightLog, "utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as string[]);
+  expect(preflightCalls.some((args) => args[0] === "install" || args[0] === "audit")).toBeFalse();
+});
+
+test("the verifier installs exact packages and audits signatures", () => {
+  const auditLog = join(parent, "audit-npm.log");
+  const provenance = spawnSync(
+    "node",
+    ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: { ...env, NPM_LOG: auditLog, ADD_ATTESTATIONS: "1" },
+    },
+  );
+  expect(provenance.status).not.toBe(0);
+  expect(provenance.stderr).toContain("provenance policy verification failed");
+  const calls = readFileSync(auditLog, "utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as string[]);
+  const install = calls.find((args) => args[0] === "install");
+  expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
+  expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.2"))).toHaveLength(7);
+  expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
+
+  const failedAudit = spawnSync(
+    "node",
+    ["scripts/verify-registry-release.ts", release, "--require-provenance"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: { ...env, NPM_LOG: auditLog, ADD_ATTESTATIONS: "1", FAIL_AUDIT: "1" },
+    },
+  );
+  expect(failedAudit.status).not.toBe(0);
+  expect(failedAudit.stderr).toContain("signature verification failed");
 });

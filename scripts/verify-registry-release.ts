@@ -4,8 +4,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
+import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
+import { shouldRetryRegistryMetadata } from "./src/registry-metadata-retry.ts";
+import { runWithRetries } from "./src/retry-npm-view.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
@@ -43,11 +46,18 @@ function readJson(path: string): unknown {
   }
 }
 
-function npmJson(args: readonly string[], subject: string): unknown {
-  const result = spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
+function invokeNpmJson(args: readonly string[]) {
+  return spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
     encoding: "utf8",
     timeout: NPM_TIMEOUT_MS,
   });
+}
+
+function parseNpmJson(
+  result: ReturnType<typeof invokeNpmJson>,
+  args: readonly string[],
+  subject: string,
+): unknown {
   if (result.error !== undefined) {
     if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
       fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
@@ -62,6 +72,10 @@ function npmJson(args: readonly string[], subject: string): unknown {
   } catch (cause) {
     fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
   }
+}
+
+function npmJson(args: readonly string[], subject: string): unknown {
+  return parseNpmJson(invokeNpmJson(args), args, subject);
 }
 
 function npmRun(
@@ -89,6 +103,24 @@ function object(value: unknown, subject: string): Record<string, unknown> {
     fail(`${subject} is not an object`);
   }
   return value as Record<string, unknown>;
+}
+
+async function npmRegistryMetadata(
+  args: readonly string[],
+  packageSpec: string,
+  expectedVersion: string,
+  requireProvenance: boolean,
+): Promise<Record<string, unknown>> {
+  const result = await runWithRetries(
+    () => invokeNpmJson(args),
+    (candidate) => shouldRetryRegistryMetadata(candidate, { expectedVersion, requireProvenance }),
+    {
+      onRetry: (delay) => {
+        console.log(`registry metadata has not propagated ${packageSpec}; retrying in ${delay}ms`);
+      },
+    },
+  );
+  return object(parseNpmJson(result, args, packageSpec), `registry metadata for ${packageSpec}`);
 }
 
 const [directoryArgument, provenanceArgument, ...unexpected] = process.argv.slice(2);
@@ -178,23 +210,22 @@ for (const [index, entry] of entries.entries()) {
   const sha512 = createHash("sha512").update(tarball).digest("hex");
   const integrity = `sha512-${Buffer.from(sha512, "hex").toString("base64")}`;
   const packageSpec = `${entry.name}@${entry.version}`;
-  const metadata = object(
-    npmJson(
-      [
-        "view",
-        packageSpec,
-        "name",
-        "version",
-        "dist.integrity",
-        "dist.attestations",
-        "dist-tags",
-        "repository",
-        "peerDependencies",
-        "peerDependenciesMeta",
-      ],
+  const metadata = await npmRegistryMetadata(
+    [
+      "view",
       packageSpec,
-    ),
-    `registry metadata for ${packageSpec}`,
+      "name",
+      "version",
+      "dist.integrity",
+      "dist.attestations",
+      "dist-tags",
+      "repository",
+      "peerDependencies",
+      "peerDependenciesMeta",
+    ],
+    packageSpec,
+    entry.version,
+    requireProvenance,
   );
   const tags = object(metadata["dist-tags"], `registry dist-tags for ${packageSpec}`);
   if (
@@ -230,7 +261,7 @@ for (const [index, entry] of entries.entries()) {
   if (tags.latest !== INITIAL_LATEST_VERSION) {
     fail(`${entry.name} latest must remain at ${INITIAL_LATEST_VERSION}`);
   }
-  if (JSON.stringify(metadata.repository) !== JSON.stringify(local.repository)) {
+  if (!isDeepStrictEqual(metadata.repository, local.repository)) {
     fail(`registry repository metadata does not match ${packageSpec}`);
   }
   if (entry.name === FRAMEWORK) {

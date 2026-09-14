@@ -106,7 +106,14 @@ if (runtimeName === "bun" && args[0] === "add") {
     );
   }
 } else if (runtimeName === "deno" && args[0] === "add") {
-  writeFileSync(join(process.cwd(), "deno.json"), "{}\n");
+  const config = JSON.parse(readFileSync(join(process.cwd(), "deno.json"), "utf8")) as {
+    readonly minimumDependencyAge?: unknown;
+  };
+  record({
+    runtime: runtimeName,
+    phase: "add",
+    minimumDependencyAge: config.minimumDependencyAge,
+  });
 } else if (runtimeName === "deno" && args[0] === "info") {
   const specifier = args.at(-1);
   if (specifier === undefined) process.exit(4);

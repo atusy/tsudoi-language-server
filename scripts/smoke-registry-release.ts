@@ -260,9 +260,18 @@ async function smokeDeno(
     DENO_DIR: join(root, "deno-cache"),
     NPM_CONFIG_REGISTRY: NPM_REGISTRY,
   };
+  writeFileSync(
+    join(directory, "deno.json"),
+    `${JSON.stringify({
+      minimumDependencyAge: {
+        age: "PT24H",
+        exclude: entries.map(({ name }) => `npm:${name}`),
+      },
+    })}\n`,
+  );
   run(
     "deno",
-    ["add", "--save-exact", ...entries.map(({ name }) => `npm:${name}@alpha`)],
+    ["add", "--save-exact", ...entries.map(({ name, version }) => `npm:${name}@${version}`)],
     directory,
     env,
   );
@@ -299,7 +308,7 @@ async function smokeDeno(
   run("deno", ["check", "--frozen", "--node-modules-dir=none", "tsudoi.config.ts"], directory, env);
   await smokeLsp(
     "Deno",
-    `deno run -A --frozen --node-modules-dir=none ${FRAMEWORK}/cli --config ./tsudoi.config.ts`,
+    `deno run --cached-only -A --frozen --node-modules-dir=none ${FRAMEWORK}/cli --config ./tsudoi.config.ts`,
     directory,
     env,
   );
