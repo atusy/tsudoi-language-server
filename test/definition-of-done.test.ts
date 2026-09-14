@@ -18,7 +18,7 @@ applySuiteDeadline();
 
 /**
  * THE ONE FORM FOR TAKING THE DEFINITION OF DONE, driven against throwaway
- * dashboards rather than against this repository's own.
+ * lists rather than against this repository's own.
  *
  * WHY NOT AGAINST THIS REPOSITORY: every arm below hands it a checkout whose
  * checks are shell scripts that report a chosen exit code, which is what
@@ -26,17 +26,17 @@ applySuiteDeadline();
  * instrument whose witness cannot fail measures nothing.
  *
  * WHAT IS DELIBERATELY NOT ASSERTED HERE: that the five real checks are those
- * five. The dashboard is where that list lives, and an arm pinning it here would
+ * five. scripts/definition-of-done.json is where that list lives, and an arm pinning it here would
  * be the second enumeration this runner exists to refuse.
  */
 
-/** A dashboard entry, spelled as the dashboard spells one. */
+/** An entry of the list, spelled as the list spells one. */
 interface Check {
   name: string;
   run: string;
 }
 
-/** A throwaway checkout carrying its own dashboard, and the runner's view of it. */
+/** A throwaway checkout carrying its own list, and the runner's view of it. */
 interface Tree {
   root: string;
   /**
@@ -61,7 +61,7 @@ interface Tree {
   cwdProbe: () => string;
   /** A command naming a binary this machine does not have. */
   missingBinary: () => string;
-  /** Writes the dashboard this tree's run will read its checks out of. */
+  /** Writes the list this tree's run will read its checks out of. */
   declare: (checks: readonly Check[]) => void;
   /** What actually ran, in the order it ran, as the checks themselves recorded it. */
   invocations: () => string[];
@@ -152,29 +152,9 @@ function stageTree(): Tree {
     cwdProbe: () => wherever,
     missingBinary: () => "tsudoi-no-such-binary-anywhere --check",
     declare: (checks) => {
-      // THE DASHBOARD IS EXECUTED AND ITS JSON PARSED, so a throwaway one need
-      // only print the same shape -- which is the whole reason the runner cannot
-      // hold a list of its own.
-      //
-      // IT COMPUTES THE SHAPE INSTEAD OF SPELLING IT, AND THAT IS WHAT MAKES
-      // `EXECUTED` MEASURABLE HERE. A fixture that wrote the object out inline
-      // has its OUTPUT SITTING IN ITS TEXT, so every arm in this file would be
-      // satisfied by a runner that sliced the file from its first brace to its
-      // last and never ran it -- while dying on the real dashboard, which is a
-      // TypeScript program. The pairs below are declared FLAT and the
-      // `{ definition_of_done: { checks } }` shape is assembled at run time, so
-      // NO SUBSTRING OF THIS FILE IS THE JSON IT PRINTS.
-      const pairs = checks.map((check) => [check.name, check.run]);
-      writeFileSync(
-        join(root, "scrum.ts"),
-        [
-          `const declared = ${JSON.stringify(pairs)};`,
-          "const checks = [];",
-          "for (const [name, run] of declared) checks.push({ name, run });",
-          "console.log(JSON.stringify({ definition_of_done: { checks } }));",
-          "",
-        ].join("\n"),
-      );
+      // WHERE THE RUNNER LOOKS WITH OR WITHOUT A ROOT, beside the tree's own
+      // copy of it, so the standalone reading finds the same list.
+      writeFileSync(join(root, "scripts", "definition-of-done.json"), JSON.stringify(checks));
     },
     invocations: () =>
       readFileSync(log, "utf8")
@@ -224,7 +204,7 @@ test("the VERDICT WORD is the run's own, in BOTH directions", async () => {
   // BOTH DIRECTIONS IN ONE ARM, AND THE PAIR IS THE POINT: `contains PASSED on a
   // green run` is satisfied by a constant, and so is `contains FAILED on a red
   // one`. Only the two together make the word a function of the run. Two trees
-  // rather than two dashboards, so neither run can influence the other's report.
+  // rather than two lists, so neither run can influence the other's report.
   //
   // THE EXIT CODE IS DELIBERATELY NOT READ HERE: it is what every other arm in
   // this file reads, and it is exactly the reading this hazard slips past.
@@ -279,7 +259,7 @@ test("two failing checks are both named", async () => {
   expect(report(result)).toContain("[FAILED] gamma");
 });
 
-test("what ran is the dashboard's list, as a SEQUENCE and not as a set", async () => {
+test("what ran is the declared list, as a SEQUENCE and not as a set", async () => {
   const tree = stageTree();
   // DECLARED OUT OF ALPHABETICAL ORDER ON PURPOSE. Order here is load-bearing --
   // the first real check builds every artifact the fourth reads -- and `all of
@@ -319,10 +299,10 @@ test("a FAILING run reports each check's name, its command as run, and its own e
   expect(report(result)).toContain(`[PASSED] beta -- exit 0 -- $ ${tree.logged("beta", 0)}`);
 });
 
-test("a SIXTH check on the dashboard runs, with no edit to the runner", async () => {
+test("a SIXTH check on the list runs, with no edit to the runner", async () => {
   const tree = stageTree();
   // SIX, BECAUSE FIVE IS THE NUMBER A RUNNER HOLDING ITS OWN COPY WOULD HOLD: a
-  // green run that never executed a check the dashboard lists is green and
+  // green run that never executed a check the list names is green and
   // silent, and lets the Definition of Done shrink unnoticed.
   const names = ["one", "two", "three", "four", "five", "six"];
   tree.declare(names.map((name) => ({ name, run: tree.logged(name, 0) })));
@@ -532,7 +512,7 @@ test("a tree with nothing to say counts no warnings", async () => {
   expect(report(result)).toContain("warnings: 0");
 });
 
-test("a dashboard listing no checks is refused rather than reported green", async () => {
+test("a list naming no checks is refused rather than reported green", async () => {
   const tree = stageTree();
   tree.declare([]);
   const result = await tree.run();
@@ -606,9 +586,9 @@ test("a filter matching NO check is refused, where the same tree unfiltered is g
   const ran = tree.invocations();
   const result = await tree.run({ only: "gamma" });
   // THE COLOUR IS ATTRIBUTABLE TO THE FILTER AND TO NOTHING ELSE, which is what
-  // the control above buys: the same dashboard, the same checks, the same tree.
+  // the control above buys: the same list, the same checks, the same tree.
   expect(result.code).not.toBe(0);
-  // THE TEXT AND NOT ONLY THE COLOUR, for the reason the empty-dashboard arm
+  // THE TEXT AND NOT ONLY THE COLOUR, for the reason the empty-list arm
   // above gives: everything that goes wrong here exits non-zero, a runner that
   // does not exist at all included.
   expect(report(result)).toContain("gamma");
@@ -635,7 +615,7 @@ test("a filtered green cannot be read as the Definition of Done's own green", as
   expect(filtered.code).toBe(0);
   expect(whole.code).toBe(0);
   // THE VERDICT LINE IS WHERE THIS HAS TO LAND, AND THE HEADER IS NOT ENOUGH:
-  // the reader this sprint is about is the one who took the LAST lines of a run,
+  // the reader this option is for is the one who took the LAST lines of a run,
   // and a marker at the top is exactly what that reading loses. So the filtered
   // run's summary is not a superstring of the whole run's -- the bytes a reader
   // greps for, `Definition of Done: PASSED`, are absent from it.
@@ -697,7 +677,7 @@ test("an argument this runner cannot read is refused, never guessed at", async (
     // wearing a marker that says a subset of it was taken.
     { args: [tree.root, "--only", ""], mentions: "--only" },
     // AN OPTION NOBODY SHIPPED, `--only=lint` AMONG THEM: guessed at, it is a
-    // positional root, and the reader is told there is no dashboard at
+    // positional root, and the reader is told there is no list at
     // `--only=lint` -- a message about the tree for a mistake in the argument.
     { args: [tree.root, "--only=lint"], mentions: "--only=lint" },
     // A SECOND ROOT. Taking the last silently runs the Definition of Done of a
@@ -718,17 +698,17 @@ test("an argument this runner cannot read is refused, never guessed at", async (
     expect(report(result)).not.toContain("PASSED");
   }
   // AND NOT ONE CHECK RAN ON ANY OF THEIR ACCOUNT. The refusal is read before
-  // the dashboard is, so this is the order as much as the colour.
+  // the list is, so this is the order as much as the colour.
   expect(tree.invocations()).toEqual(ran);
 });
 
 /**
  * THE TREE A READING WAS TAKEN ON, PRINTED, AND THE THREE STATES IT HAS.
  *
- * WHY THE RUNNER SAYS THIS AT ALL: this project requires a sprint's closing
- * reading to name the commit it graded, and sprint 87 measured that rule failing
- * TWICE IN ONE SPRINT -- each reading named a tree the repairs after it
- * overtook, and a reviewer caught it both times. The rule was never missing; the
+ * WHY THE RUNNER SAYS THIS AT ALL: a recorded reading has to name the commit it
+ * graded, and that rule was measured failing TWICE IN ONE CHANGE -- each reading
+ * named a tree the repairs after it overtook, and a reviewer caught it both
+ * times. The rule was never missing; the
  * hash was not to hand when the sentence was written.
  *
  * THE DIRTY ARM IS THE ONE THAT EARNS THE FEATURE. A hash alone is WORSE than

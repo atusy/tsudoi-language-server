@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -10,7 +11,7 @@ import { fileURLToPath } from "node:url";
  *
  * WHY IT EXISTS AT ALL, MEASURED RATHER THAN ASSUMED: this project has five
  * recorded occurrences of a commit taken while a check was red, across two
- * people, one of them persisting nine sprints -- every one of them a reader
+ * people, one of them recurring -- every one of them a reader
  * taking the LAST command's status, or a grep's, for the run's. A skill
  * forbidding exactly that exists, is specific, carries its own recidivism count
  * and matched on description, AND THE DEFECT HAPPENED ANYWAY. What is left after
@@ -19,7 +20,7 @@ import { fileURLToPath } from "node:url";
  * AND IT TAKES `--only <substring>` FOR THAT SAME REASON, WHICH MAKES THE OPTION
  * A CORRECTION AND NOT A CONVENIENCE. Twice in one session a maintainer re-ran a
  * single check BY HAND and read it through `tail`, which showed a summary line
- * and hid the verdict above it, and a red check went out as the next sprint's
+ * and hid the verdict above it, and a red check went out as the next change's
  * baseline. The habit is not inattention: the sanctioned route had no answer for
  * `I only want that one check again`, so the unsanctioned one was the only one.
  * A FILTERED RUN THEREFORE REPORTS WHOLE -- every part an unfiltered one prints,
@@ -32,29 +33,19 @@ import { fileURLToPath } from "node:url";
  * `run` stays a line a maintainer can type at a prompt when debugging one of
  * them, which is what keeps that list honest as documentation.
  *
- * THE LIST IS OBTAINED BY EXECUTING THE DASHBOARD AND PARSING THE JSON IT
- * PRINTS, AND THAT IS THE LOAD-BEARING DECISION HERE. A copy of the five in this
- * file would satisfy every arm about failing loudly and would still permit the
- * one failure the product owner refused: a GREEN RUN THAT NEVER EXECUTED A CHECK
- * THE DASHBOARD LISTS, silently, because a sixth entry was added over there and
- * nobody remembered to edit this. There is no second list to drift. THE COST,
- * stated rather than discovered: this cannot report anything at all when the
- * dashboard does not RUN -- and A TYPE ERROR IN scrum.ts IS NOT THAT CASE.
- * MEASURED on a throwaway whose dashboard's only unusual property is a type
- * error: `tsc --noEmit` there is exit 1, `bun run scrum.ts` is exit 0 and prints
- * its JSON, and this runner pointed at that tree reads the checks, runs them and
- * prints PASSED at exit 0. The runtime strips types without checking them, so
- * that failure is one the fourth check catches AFTERWARDS and this runner never
- * sees. NOT BY THIS RUNNER AND NOT BY THE ARMS THAT GRADE IT, which is the
- * widest claim this file may make -- `and by nothing else` is MEASURED FALSE, a
- * planted type error reddening `bun test` too, through
- * test/unbuilt-checkout.test.ts comparing a staged tsc's output against `exit 0`
- * exactly. The order is what makes the gap safe rather than a hole: the fourth
- * check runs in the same invocation, so nothing reaches a reader as green.
+ * THE LIST LIVES IN scripts/definition-of-done.json, AND THAT IS THE
+ * LOAD-BEARING DECISION HERE. The failure it refuses is a GREEN RUN THAT NEVER
+ * EXECUTED A CHECK THE LIST NAMES, silently, because an entry was added to one
+ * copy and not to another. This file holds no copy, so a sixth entry runs with
+ * no edit here. It is a file of its own rather than a constant in this one for
+ * the reason the root argument below exists: test/definition-of-done.test.ts
+ * grades this exact runner against throwaway lists. It is JSON because it is
+ * data -- nothing runs to produce it, so a list that does not parse is refused
+ * by name.
  *
  * THE CHECKS RUN SEQUENTIALLY IN THE DECLARED ORDER, WHICH IS NOT COSMETIC: the
  * first builds every artifact the fourth reads. Nothing here parallelises them,
- * and the order is the dashboard's, never this file's.
+ * and the order is the list's, never this file's.
  *
  * AND THAT ORDER IS WHAT LETS A READER DECIDE, IN ONE STEP, WHAT A GREEN FOURTH
  * CHECK MEANT. Every framework export points into dist/, so a missing artifact
@@ -69,7 +60,7 @@ import { fileURLToPath } from "node:url";
  * covers -- as against an artifact that survived a build, which is the fifth
  * check's half.
  *
- * MEASURED AT SPRINT 61, base 6d1c85d, tsc 7.0.2, each cell taken with dist/
+ * MEASURED at base 6d1c85d, tsc 7.0.2, each cell taken with dist/
  * MOVED ASIDE rather than deleted: with nothing built the fourth check is exit 1
  * naming THE TWO HANDLER PACKAGES at examples/tsudoi.config.ts and the framework
  * silent; with the framework's dist/ ALONE absent it is EXIT 0 AND SILENT, every
@@ -103,7 +94,7 @@ import { fileURLToPath } from "node:url";
  * five declared today carry no shell syntax at all.
  *
  * NOTHING HERE TOUCHES THE ENVIRONMENT OR RESOLVES A BINARY ITSELF. The
- * dashboard says `tsc --noEmit`, so `tsc` is what is spawned, found the way the
+ * list says `tsc --noEmit`, so `tsc` is what is spawned, found the way the
  * reader's own shell would find it -- measured at planning: running the checks
  * through one script does not change what any of them sees.
  *
@@ -112,11 +103,11 @@ import { fileURLToPath } from "node:url";
  * finds its configuration only in the directory it is run from, so a runner
  * inheriting a subdirectory would report five greens over a suite that built
  * nothing. The argument is also what lets test/definition-of-done.test.ts drive
- * this against throwaway dashboards -- an instrument whose only subject is a
+ * this against throwaway lists -- an instrument whose only subject is a
  * five-green repository can be measured in exactly one state.
  */
 
-/** A dashboard entry: the two fields `definition_of_done.checks` carries. */
+/** An entry of the list: the two fields each one carries. */
 interface Check {
   name: string;
   run: string;
@@ -125,7 +116,7 @@ interface Check {
 /**
  * The four states a check can be in, and they are four rather than two because
  * WHAT A READER MUST DO NEXT DIFFERS: fix the code, install a tool, or fix the
- * dashboard. `refused` is this runner's own decision and the other three are
+ * list. `refused` is this runner's own decision and the other three are
  * the machine's.
  */
 type Outcome = "passed" | "failed" | "unrunnable" | "refused";
@@ -185,43 +176,35 @@ function readCommand(run: string): Command {
 const warningLine = /^.+:\d+:\d+: .+ \[Warning\/[\w-]+\([\w-]+\)\]$/;
 
 /**
- * Reads the checks by RUNNING the dashboard, refusing anything it cannot use.
+ * Reads the checks out of the list, refusing anything it cannot use.
  *
  * AN EMPTY LIST IS REFUSED RATHER THAN SATISFIED, which is the one degenerate
  * this cannot report honestly: zero failures out of zero checks is green by
- * every rule below, and it is precisely the state a mangled dashboard produces.
+ * every rule below, and it is precisely the state a mangled list produces.
  */
-function readChecks(root: string): Check[] {
-  const dashboard = join(root, "scrum.ts");
-  const printed = spawnSync("bun", ["run", dashboard], { cwd: root, encoding: "utf8" });
-  if (printed.error !== undefined) {
-    throw new Error(`the dashboard at ${dashboard} could not be run: ${printed.error.message}`);
-  }
-  if (printed.status !== 0) {
-    throw new Error(
-      `the dashboard at ${dashboard} exited ${printed.status}, so its checks could not be read:\n${printed.stderr}`,
-    );
+function readChecks(list: string): Check[] {
+  let text: string;
+  try {
+    text = readFileSync(list, "utf8");
+  } catch (cause) {
+    throw new Error(`the list at ${list} could not be read: ${String(cause)}`);
   }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(printed.stdout);
+    parsed = JSON.parse(text);
   } catch (cause) {
+    throw new Error(`the list at ${list} is not JSON: ${String(cause)}`);
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error(
-      `the dashboard at ${dashboard} printed something other than JSON: ${String(cause)}`,
+      `the list at ${list} lists no checks, so a green run here would mean nothing was verified.`,
     );
   }
-  const checks = (parsed as { definition_of_done?: { checks?: unknown } })?.definition_of_done
-    ?.checks;
-  if (!Array.isArray(checks) || checks.length === 0) {
-    throw new Error(
-      `the dashboard at ${dashboard} lists no checks, so a green run here would mean nothing was verified.`,
-    );
-  }
-  return checks.map((entry: unknown) => {
+  return parsed.map((entry: unknown) => {
     const check = entry as { name?: unknown; run?: unknown };
     if (typeof check.name !== "string" || typeof check.run !== "string") {
       throw new Error(
-        `the dashboard at ${dashboard} lists a check that is not a { name, run } pair: ${JSON.stringify(entry)}`,
+        `the list at ${list} lists a check that is not a { name, run } pair: ${JSON.stringify(entry)}`,
       );
     }
     return { name: check.name, run: check.run };
@@ -238,12 +221,12 @@ function readChecks(root: string): Check[] {
  * milder. The declared names are printed because the repair is to type one of
  * them.
  */
-function selection(checks: readonly Check[], only: string, dashboard: string): Check[] {
+function selection(checks: readonly Check[], only: string, list: string): Check[] {
   const wanted = only.toLowerCase();
   const matching = checks.filter((check) => check.name.toLowerCase().includes(wanted));
   if (matching.length === 0) {
     throw new Error(
-      `no check declared by the dashboard at ${dashboard} has \`${only}\` in its name, so a green run here would mean nothing was verified. It declares: ${checks.map((check) => check.name).join(", ")}`,
+      `no check declared by the list at ${list} has \`${only}\` in its name, so a green run here would mean nothing was verified. It declares: ${checks.map((check) => check.name).join(", ")}`,
     );
   }
   return matching;
@@ -327,7 +310,7 @@ function verdict(result: CheckResult): string {
     case "failed":
       return `[FAILED] ${result.check.name} -- exit ${result.exit}`;
     // NEVER STARTED AND NOT RUN ARE PRINTED DIFFERENTLY BECAUSE THE READER'S
-    // NEXT MOVE DIFFERS: one is a tool to install, the other is a dashboard
+    // NEXT MOVE DIFFERS: one is a tool to install, the other is a list
     // entry to rewrite. Two states printing the same text are one state.
     case "unrunnable":
       return `[UNRUNNABLE] ${result.check.name} -- never started: ${result.reason}`;
@@ -348,7 +331,7 @@ const usage = "usage: bun run scripts/definition-of-done.ts [<root>] [--only <su
  *
  * WALKED RATHER THAN INDEXED, because a reader types the two in whichever order
  * they think of them, and a runner reading the root at a FIXED POSITION takes
- * `--only` for a directory in one of those orders -- failing as `no dashboard
+ * `--only` for a directory in one of those orders -- failing as `no list
  * there`, a message about the tree for a mistake in the argument.
  *
  * EVERY ARGUMENT IT CANNOT READ IS REFUSED RATHER THAN GUESSED AT, and the three
@@ -397,9 +380,10 @@ try {
   const given = readArguments(process.argv.slice(2));
   only = given.only;
   root = resolve(given.root ?? fileURLToPath(new URL("../", import.meta.url)));
-  checks = readChecks(root);
+  const list = join(root, "scripts", "definition-of-done.json");
+  checks = readChecks(list);
   if (only !== null) {
-    checks = selection(checks, only, join(root, "scrum.ts"));
+    checks = selection(checks, only, list);
   }
 } catch (cause) {
   process.stderr.write(`tsudoi: ${cause instanceof Error ? cause.message : String(cause)}\n`);
@@ -443,10 +427,9 @@ for (const result of results) {
 process.stdout.write(`warnings: ${warnings} (reported; check exit codes decide the verdict)\n`);
 /**
  * THE TREE THIS READING WAS TAKEN ON, PRINTED SO A RECORD OF IT CANNOT BE
- * WRITTEN FROM MEMORY. This project requires a sprint's closing reading to name
- * the commit it graded, and MEASURED IN SPRINT 87 that rule failed TWICE IN ONE
- * SPRINT -- each reading named a tree the repairs that followed it overtook, and
- * a REVIEWER caught it both times. What was missing was never the rule; it was
+ * WRITTEN FROM MEMORY. A recorded reading has to name the commit it graded, and
+ * MEASURED, that rule failed TWICE IN ONE CHANGE -- each reading named a tree the
+ * repairs that followed it overtook, and a REVIEWER caught it both times. What was missing was never the rule; it was
  * the hash being to hand at the moment the sentence is written.
  *
  * DIRTY IS PART OF THE READING AND NOT A WARNING ABOUT IT: a green taken on a
