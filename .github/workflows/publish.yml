@@ -1,20 +1,8 @@
 name: Publish npm alpha
 
 on:
-  workflow_dispatch:
-    inputs:
-      mode:
-        description: Bootstrap tag dispatching, or publish an alpha release
-        required: true
-        default: bootstrap
-        type: choice
-        options:
-          - bootstrap
-          - publish
-      release-tag:
-        description: Exact v*-alpha.* tag; required in publish mode
-        required: false
-        type: string
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -24,15 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  bootstrap:
-    if: inputs.mode == 'bootstrap'
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - run: echo "Tag-scoped workflow dispatching is now enabled; nothing was published."
-
   quality:
-    if: inputs.mode == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -65,7 +45,6 @@ jobs:
         run: bun run check
 
   prepare:
-    if: inputs.mode == 'publish'
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -86,8 +65,10 @@ jobs:
           bun-version: 1.3.13
       - name: Validate the release tag
         env:
-          RELEASE_TAG: ${{ inputs.release-tag }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
+          test "$RELEASE_PRERELEASE" = "true"
           case "$RELEASE_TAG" in
             v*-alpha.*) ;;
             *) echo "release tag must match v*-alpha.*" >&2; exit 1 ;;
@@ -138,7 +119,6 @@ jobs:
           retention-days: "1"
 
   publish:
-    if: inputs.mode == 'publish'
     needs: prepare
     environment: npm
     runs-on: ubuntu-latest
@@ -167,7 +147,6 @@ jobs:
           node scripts/publish-release.js "$RUNNER_TEMP/npm-release-bundle/release" --provenance
 
   verify:
-    if: inputs.mode == 'publish'
     needs: [prepare, publish]
     runs-on: ubuntu-latest
     timeout-minutes: 35

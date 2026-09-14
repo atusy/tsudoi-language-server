@@ -9,6 +9,7 @@ import { applySuiteDeadline } from "../helpers/deadline.ts";
 applySuiteDeadline();
 
 interface WorkflowStep {
+  env?: Record<string, string>;
   if?: unknown;
   "continue-on-error"?: unknown;
   name?: string;
@@ -34,23 +35,11 @@ interface Workflow {
     pull_request?: unknown;
     push?: { branches?: string[]; tags?: string[] };
     schedule?: Array<{ cron?: string }>;
-    workflow_dispatch?: {
-      inputs?: Record<
-        string,
-        {
-          default?: string;
-          description?: string;
-          options?: string[];
-          required?: boolean;
-          type?: string;
-        }
-      >;
-    };
+    release?: { types?: string[] };
   };
   permissions?: { contents?: string; "id-token"?: string };
   concurrency?: { group?: string; "cancel-in-progress"?: boolean };
   jobs?: {
-    bootstrap?: WorkflowJob;
     checks?: WorkflowJob;
     quality?: WorkflowJob;
     prepare?: WorkflowJob;
@@ -163,10 +152,9 @@ test("a commented check command does not satisfy the workflow contract", () => {
   expect(commands).not.toContain("bun run check");
 });
 
-test("publishing is a manually approved OIDC job for one exact alpha tag", () => {
+test("a published GitHub prerelease drives an approved OIDC job for one exact alpha tag", () => {
   const source = readFileSync(publishWorkflowPath, "utf8");
   const workflow = parseWorkflow(source);
-  const bootstrap = workflow.jobs?.bootstrap;
   const quality = workflow.jobs?.quality;
   const prepare = workflow.jobs?.prepare;
   const publish = workflow.jobs?.publish;
@@ -187,64 +175,37 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
     (step) => (typeof step.uses === "string" ? [step.uses] : []),
   );
 
-  expect(workflow.on).toEqual({
-    workflow_dispatch: {
-      inputs: {
-        mode: {
-          description: "Bootstrap tag dispatching, or publish an alpha release",
-          required: true,
-          default: "bootstrap",
-          type: "choice",
-          options: ["bootstrap", "publish"],
-        },
-        "release-tag": {
-          description: "Exact v*-alpha.* tag; required in publish mode",
-          required: false,
-          type: "string",
-        },
-      },
-    },
-  });
+  expect(workflow.on).toEqual({ release: { types: ["published"] } });
   expect(workflow.permissions).toEqual({ contents: "read" });
   expect(workflow.concurrency).toEqual({
     group: "npm-alpha-publish",
     "cancel-in-progress": false,
   });
-  expect(bootstrap).toMatchObject({
-    if: "inputs.mode == 'bootstrap'",
-    "runs-on": "ubuntu-latest",
-    "timeout-minutes": 1,
-  });
-  expect(bootstrap?.permissions?.["id-token"]).toBeUndefined();
-  expect(bootstrap?.environment).toBeUndefined();
-  expect(bootstrap?.steps).toEqual([
-    { run: 'echo "Tag-scoped workflow dispatching is now enabled; nothing was published."' },
-  ]);
   expect(quality).toMatchObject({
-    if: "inputs.mode == 'publish'",
     "runs-on": "ubuntu-latest",
     "timeout-minutes": 60,
   });
+  expect(quality?.if).toBeUndefined();
   expect(quality?.permissions?.["id-token"]).toBeUndefined();
   expect(quality?.environment).toBeUndefined();
   expect(prepare?.permissions?.["id-token"]).toBeUndefined();
   expect(prepare?.environment).toBeUndefined();
   expect(prepare?.["runs-on"]).toBe("ubuntu-latest");
-  expect(prepare?.if).toBe("inputs.mode == 'publish'");
+  expect(prepare?.if).toBeUndefined();
   expect(prepare?.needs).toBe("quality");
   expect(prepare?.["continue-on-error"]).toBeUndefined();
   expect(publish?.environment).toBe("npm");
   expect(publish?.needs).toBe("prepare");
   expect(publish?.permissions).toEqual({ contents: "read", "id-token": "write" });
   expect(publish?.["runs-on"]).toBe("ubuntu-latest");
-  expect(publish?.if).toBe("inputs.mode == 'publish'");
+  expect(publish?.if).toBeUndefined();
   expect(publish?.["continue-on-error"]).toBeUndefined();
   expect(verify?.needs).toEqual(["prepare", "publish"]);
   expect(verify?.permissions).toEqual({ contents: "read" });
   expect(verify?.permissions?.["id-token"]).toBeUndefined();
   expect(verify?.environment).toBeUndefined();
   expect(verify?.["runs-on"]).toBe("ubuntu-latest");
-  expect(verify?.if).toBe("inputs.mode == 'publish'");
+  expect(verify?.if).toBeUndefined();
   expect(verify?.["continue-on-error"]).toBeUndefined();
   expect(
     [...qualitySteps, ...prepareSteps, ...publishSteps, ...verifySteps].every(
@@ -342,6 +303,11 @@ test("publishing is a manually approved OIDC job for one exact alpha tag", () =>
   expect(checksumIndex).toBeGreaterThan(downloadIndex);
   expect(publishIndex).toBeGreaterThan(checksumIndex);
   expect(validationCommands).toContain('test "$RELEASE_TAG" = "v${release_version}"');
+  expect(validationCommands).toContain('test "$RELEASE_PRERELEASE" = "true"');
+  expect(validationStep?.env).toEqual({
+    RELEASE_PRERELEASE: "${{ github.event.release.prerelease }}",
+    RELEASE_TAG: "${{ github.event.release.tag_name }}",
+  });
   expect(validationCommands).toContain(
     'tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")"',
   );
