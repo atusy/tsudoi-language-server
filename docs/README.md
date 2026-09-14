@@ -24,10 +24,10 @@ Handlers declare that exact framework version as a
 required peer rather than bundling their own copy; Bun and npm may auto-install required peers, but
 installing the matching framework explicitly keeps the chosen set visible.
 
-The first release keeps the untagged `latest` channel untouched. The registry commands are
-**unverified** until the first publication: nothing can run them before the package exists, and installing a tarball and
-resolving `npm:` through deno's own cache are different mechanisms, so one of them working says
-little about the other.
+The registry requires a `latest` tag, so it remains frozen at the bootstrap `0.1.0-alpha.1` while
+the opt-in `alpha` tag advances. The bootstrap set is published and verified against npm: all seven
+registry artifacts were checked, then installed into fresh Bun and Deno consumers and exercised
+through a complete LSP session.
 
 For developing tsudoi itself, the checkout route below builds a tarball and installs that exact
 artifact. For a shorter Deno-only route, use the

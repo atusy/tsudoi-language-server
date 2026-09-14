@@ -36,7 +36,6 @@ git switch main
 git pull --ff-only origin main
 git status --short
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
-gh workflow run publish.yml --ref main -f mode=bootstrap
 npm whoami --registry=https://registry.npmjs.org/
 bun install --frozen-lockfile
 bun add --global oxlint@latest oxfmt@latest
@@ -47,11 +46,9 @@ git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
 git push origin v0.1.0-alpha.1
 ```
 
-`git status --short` must print nothing. Wait for the bootstrap-only `publish.yml` run to succeed;
-it exists solely to enable future tag-scoped API/CLI dispatches and has no checkout, environment, or
-OIDC permission. Then wait for the tag's CI run to pass before continuing. Keep `release_dir` and
-the same terminal: those are the tarballs that passed locally. The release manifest lists the
-framework first and records every tarball's SHA-256.
+`git status --short` must print nothing. Wait for the tag's CI run to pass before continuing. Keep
+`release_dir` and the same terminal: those are the tarballs that passed locally. The release
+manifest lists the framework first and records every tarball's SHA-256.
 
 Publishing is the maintainer's explicit, 2FA-protected action:
 
@@ -66,11 +63,19 @@ integrity of any version already in the registry. A retry skips an already-publi
 when its registry artifact is byte-for-byte the same; a mismatch or a registry error stops the run
 before another package is published. The read-only verifier then checks all seven registry
 identities and versions, each retained tarball's integrity, public access, repository and exact peer
-metadata, the synchronized `alpha` tags, and the absence of an accidental `latest` tag. The smoke
+metadata, the synchronized `alpha` tags, and the bootstrap `latest` tags. The smoke
 test then installs all seven packages through `alpha` into isolated, empty Bun and Deno consumers,
 checks that every resolved version matches the retained release manifest, and completes an LSP
 initialize, document completion, shutdown, and clean exit under both runtimes. The first release
 cannot be verified this way beforehand because the package names do not yet exist in the registry.
+
+The npm registry's
+[package metadata contract](https://github.com/npm/registry/blob/main/docs/responses/package-metadata.md)
+requires every package to expose a `latest` dist-tag. Even though bootstrap explicitly published
+with `--tag alpha`, the registry assigned `latest` to `0.1.0-alpha.1` because no previous version
+existed; it cannot be left absent. Registry verification therefore requires `alpha` to name the
+release being checked and `latest` to remain frozen at `0.1.0-alpha.1` throughout the alpha phase.
+An unqualified install gets that bootstrap version; use `@alpha` for the current alpha.
 
 ## Enable Trusted Publishing
 
@@ -88,7 +93,7 @@ In the GitHub repository, create or review the `npm` environment, require an app
 and set **Deployment branches and tags** to **Selected branches and tags** with only the
 `v*-alpha.*` tag pattern and no branch pattern. Add a repository ruleset that restricts creation and
 update of those tags to release maintainers. These controls are separate: the ruleset protects the
-tag, while the environment policy prevents a workflow dispatched from an ordinary branch from
+tag, while the environment policy prevents a release ref outside the allowed tag pattern from
 requesting npm deployment approval and OIDC credentials. Do not add an npm token to repository or
 environment secrets. The workflow requests `id-token: write` and uses npm Trusted Publishing's
 short-lived OIDC credential. See npm's
@@ -105,7 +110,8 @@ the package setting explicitly disables it.
 ## Later alpha releases
 
 Prepare a synchronized version bump in a pull request and merge it. From the clean merged `main`,
-create and push the matching tag, wait for CI, then dispatch the publishing workflow from that tag:
+create and push the matching tag, wait for its CI run to pass, then publish the matching GitHub
+prerelease:
 
 ```sh
 git switch main
@@ -116,13 +122,14 @@ release_version="$(node -p "require('./packages/tsudoi-language-server/package.j
 release_tag="v${release_version}"
 git tag -a "$release_tag" -m "$release_tag"
 git push origin "$release_tag"
-gh workflow run publish.yml --ref "$release_tag" -f mode=publish -f release-tag="$release_tag"
+gh release create "$release_tag" --verify-tag --prerelease --latest=false --generate-notes
 ```
 
 Approve the `npm` environment deployment after inspecting the requested tag. The workflow itself is
-dispatched from that tag so npm's provenance names the release ref and commit. The job checks that
-the event ref, event commit, checked-out commit, tag, and package version agree. An unprivileged
-runner checks out the immutable dispatch commit, installs the latest `oxlint` and `oxfmt`, and runs
+triggered by the GitHub `release.published` event so npm's provenance names the release ref and
+commit. The job requires the release to be a prerelease and checks that the event ref, event commit,
+checked-out commit, tag, and package version agree. An unprivileged
+runner checks out the immutable release commit, installs the latest `oxlint` and `oxfmt`, and runs
 `bun run check`, including tests under Bun and Deno. After that succeeds, a fresh runner checks out
 the same commit and uses locked dependencies to pack a checksummed release; no floating Ox
 executable runs on the filesystem that produces the release bundle. The OIDC job publishes only
@@ -133,6 +140,11 @@ cryptographically checks the exact installed release with `npm audit signatures`
 the signed subject, repository, workflow path, tag ref, and commit before running the same fresh Bun
 and Deno consumer smoke test. The verification job has neither the `npm` environment nor OIDC
 permission.
+
+GitHub documents that `release.published` covers both stable releases and prereleases, including a
+prerelease published from a draft; that is why the workflow also checks the event's `prerelease`
+field instead of relying on the activity type alone. See GitHub's
+[release event documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
 
 If a publish run fails after changing some packages, rerun that same tag immediately and verify the
 registry before preparing another version. The fixed workflow concurrency group prevents two
