@@ -38,7 +38,7 @@ interface Workflow {
     release?: { types?: string[] };
   };
   permissions?: { contents?: string; "id-token"?: string };
-  concurrency?: { group?: string; "cancel-in-progress"?: boolean };
+  concurrency?: { group?: string; queue?: string; "cancel-in-progress"?: boolean };
   jobs?: {
     checks?: WorkflowJob;
     quality?: WorkflowJob;
@@ -179,6 +179,7 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
   expect(workflow.permissions).toEqual({ contents: "read" });
   expect(workflow.concurrency).toEqual({
     group: "npm-alpha-publish",
+    queue: "max",
     "cancel-in-progress": false,
   });
   expect(quality).toMatchObject({
