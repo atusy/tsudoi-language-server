@@ -26,8 +26,8 @@ await Promise.all(runtimes.map(requireRuntime));
  * by name as a timeout rather than stalling the whole suite with no diagnostic.
  *
  * THIS FILE IS WHERE THE MARGIN MATTERS MOST: at load 100-160 two of these arms
- * failed at 4008ms against this very constant, which is the reading that made
- * the ambient deadline a backlog item.
+ * failed at 4008ms against this very constant, which is the reading that led to
+ * the ambient deadline.
  */
 const hangTimeoutMs = 4000;
 
@@ -376,7 +376,7 @@ for (const runtime of runtimes) {
       hangTimeoutMs,
     );
 
-    // Harm-proportionality, the same ruling PBI-2 made for an unopened URI: a
+    // Harm-proportionality, the same ruling already made for an unopened URI: a
     // notification produces no response, so a client cannot be told anything
     // about it, and there is nothing for it to have got wrong that it could
     // act on. Dropping it changes nothing observable, so it stays SILENT --
@@ -458,9 +458,9 @@ for (const runtime of runtimes) {
       hangTimeoutMs,
     );
 
-    // The other side of the same drop, and what makes subtask 1's carve-out
+    // The other side of the same drop, and what makes the carve-out
     // load-bearing: LSP drops notifications sent before initialize too, with
-    // `exit` the one exception. No acceptance criterion asks for this, so it
+    // `exit` the one exception. No requirement asks for this, so it
     // is pinned here rather than left to be discovered by a client.
     test(
       "didOpen before initialize is dropped, and the session still serves afterwards",
@@ -490,7 +490,7 @@ for (const runtime of runtimes) {
       hangTimeoutMs,
     );
 
-    // The defect this PBI exists for, and it is NOT `streaming fails`: null
+    // The defect this test exists for, and it is NOT `streaming fails`: null
     // survives connection.sendProgress, so today's server addresses every
     // chunk to a `$/progress` with token null that no client can correlate --
     // silent misdelivery. The remedy is normalise-and-report: the token is

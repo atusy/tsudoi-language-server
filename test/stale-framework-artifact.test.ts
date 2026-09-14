@@ -48,7 +48,7 @@ applySuiteDeadline();
  * GREEN: a handler answering `@atusy/tsudoi-language-server/types` from the REAL
  * checkout instead of from the copy below reads the same code in both cells, and
  * this fails. No resolution trace is taken here, deliberately -- the disagreement
- * is the discriminator, and a trace would claim a reading this sprint left
+ * is the discriminator, and a trace would claim a reading this file leaves
  * UNREAD.
  *
  * WHY NEITHER NEIGHBOURING ARM WOULD DO, so this is not read as a third spelling

@@ -284,8 +284,8 @@ function reportedAgainst(path: string): RegExp {
 // written, so the three paths are named here instead, each absence sharing its
 // run with a file the ban really flags.
 //
-// Why a lint at all, when PBI-22 already makes
-// packages/tsudoi-language-server/src/server.ts unable to CALL onNotification:
+// Why a lint at all, when packages/tsudoi-language-server/src/server.ts is
+// already unable to CALL onNotification:
 // it can still IMPORT the factory, build its own wide connection and register
 // beside the table. MEASURED with this rule taken out -- THE WHOLE SUITE green,
 // tsc 0, oxlint 0, with nothing objecting.

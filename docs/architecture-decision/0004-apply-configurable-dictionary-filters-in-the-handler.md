@@ -4,7 +4,7 @@
 | ------------------- | ------------------------------------------ |
 | **Status**          | accepted                                   |
 | **Date**            | 2026-08-13                                 |
-| **Decision-makers** | Project stakeholder and maintainers        |
+| **Decision-makers** | Project maintainers                        |
 | **Consulted**       | tsudoi-completion-document filter pipeline |
 | **Informed**        | Dictionary completion config authors       |
 

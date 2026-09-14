@@ -41,7 +41,7 @@ const mtime = new Date("2001-02-03T04:05:06.000Z");
  * consistently broken one produce the same observation.
  *
  * THE STAMP CARRIES NO FRACTIONAL PART though `mtime` above is written with one:
- * the composer reports a modification time TO THE SECOND, and the stakeholder was
+ * the composer reports a modification time TO THE SECOND, and the maintainer was
  * shown the spelling that keeps the milliseconds and declined it. These bytes are
  * the answer's, not the fixture's.
  */

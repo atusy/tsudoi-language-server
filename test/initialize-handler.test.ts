@@ -217,7 +217,7 @@ for (const runtime of runtimes) {
     /**
      * THE SAME ENDING FOR THE OTHER FAILURE, which is what says the two are one
      * disposition and not two that resemble each other: the arm above and this
-     * one read the same list. What this path did before the stakeholder ruled on
+     * one read the same list. What this path did before the maintainer ruled on
      * it is at the serialize check in packages/tsudoi-language-server/src/server.ts.
      *
      * ITS DISCRIMINATOR IS THE DEATH NOBODY ASKED FOR, since the answer no longer

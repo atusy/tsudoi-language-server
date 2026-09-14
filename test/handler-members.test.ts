@@ -25,8 +25,8 @@ applySuiteDeadline();
 
 test("the framework is a member of this workspace and is not one of its handlers", () => {
   // THIS ARM READ `byte for byte equal to the member enumeration` UNTIL THE
-  // FRAMEWORK MOVED UNDER packages/, which is what the split was written a
-  // sprint ahead of. It is rewritten to the new reading rather than relaxed: the
+  // FRAMEWORK MOVED UNDER packages/, which is what the split was written ahead
+  // of. It is rewritten to the new reading rather than relaxed: the
   // whole value of the enumerator is that these two answers DIFFER here, and an
   // arm that had been widened to a subset relation would be green on a
   // `handlerMembers` that had quietly gone back to returning everything.

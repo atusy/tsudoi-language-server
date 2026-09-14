@@ -449,7 +449,7 @@ export async function* itemsFrom(
  *
  * TWO JOINS AND THEY ANSWER TO DIFFERENT THINGS. The PART join is a blank line
  * in BOTH formats, which separates a markdown block as completely as a thematic
- * rule would and is what the stakeholder's own drawing shows. The FACT join is
+ * rule would and is what the maintainer's own drawing shows. The FACT join is
  * the one that differs: bare newlines in plaintext, a bullet list in markdown,
  * because a bare newline between facts is not a break in CommonMark at all. THE
  * PREFIX RELATION IS WHY `source` GOES THROUGH THE FACT JOIN and not into a part
@@ -555,11 +555,11 @@ function listingText(listing: DirectoryListing, markdown: boolean): string {
  * reports NO SIZE: a directory's `size` is its own directory ENTRY's -- 64 on one
  * machine and 4096 on the next for the same children -- so showing it would put a
  * number in front of a user that means nothing about what is inside. THE WORDS
- * `file` AND `directory` ARE GONE FROM THE BLOCK BY THE STAKEHOLDER'S RULING, so
+ * `file` AND `directory` ARE GONE FROM THE BLOCK BY THE MAINTAINER'S RULING, so
  * that absence is now the ONLY thing saying which kind this is -- which is why
  * the arms about it carry the present case beside the absent one.
  *
- * THE LABELS ARE THE STAKEHOLDER'S OWN SPELLING, `lastModified` in camelCase
+ * THE LABELS ARE THE MAINTAINER'S OWN SPELLING, `lastModified` in camelCase
  * beside lowercase `source` and `size`: it is theirs, and consistency is not
  * worth a silent edit to a thing they wrote out.
  */
@@ -579,7 +579,7 @@ export function statLine(stats: FileStats): readonly string[] {
  * EDITS RATHER THAN TWO SPELLINGS OF ONE -- which is the thing this project got
  * wrong once and is written here so it is not got wrong again. Flooring the
  * VALUE renders `...T04:05:06.000Z`: the file's own milliseconds are gone and a
- * constant fraction stays, which is the option the stakeholder was shown and
+ * constant fraction stays, which is the option the maintainer was shown and
  * DECLINED. What they chose reads `...T04:05:06Z`. The floor was shipped for one
  * commit because it made a perturbation cheap -- it is a no-op on every
  * whole-second fixture here -- and that is the instrument deciding the product,

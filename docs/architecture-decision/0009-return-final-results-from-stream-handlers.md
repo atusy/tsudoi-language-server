@@ -4,7 +4,7 @@
 | ------------------- | -------------------------------------------- |
 | **Status**          | accepted                                     |
 | **Date**            | 2026-09-10                                   |
-| **Decision-makers** | Project stakeholder and maintainers          |
+| **Decision-makers** | Project maintainers                          |
 | **Consulted**       | Completion and code-action handler contracts |
 | **Informed**        | Config and handler package authors           |
 

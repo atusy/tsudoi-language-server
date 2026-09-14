@@ -4,7 +4,7 @@
 | ------------------- | -------------------------------------------------------------------------- |
 | **Status**          | accepted                                                                   |
 | **Date**            | 2026-08-13                                                                 |
-| **Decision-makers** | Project stakeholder and maintainers                                        |
+| **Decision-makers** | Project maintainers                                                        |
 | **Consulted**       | tsudoi-language-server implementation and vscode-jsonrpc dispatch behavior |
 | **Informed**        | Config authors                                                             |
 

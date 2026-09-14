@@ -18,7 +18,7 @@ applySuiteDeadline();
  * `@atusy/tsudoi-completion-path` is a workspace member, and what its modules
  * produce is asserted inside that package against ITS OWN SOURCE. Nothing at the
  * repository root may import a member's source, and THE REASON THIS SENTENCE
- * GAVE IS THE THIRD COPY OF ONE SUPERSEDED IN SPRINT 61 -- it said the root type
+ * GAVE IS THE THIRD COPY OF ONE SUPERSEDED EARLIER -- it said the root type
  * check excludes the members precisely so it cannot answer their imports through
  * its own `paths` mapping. There is no mapping anywhere in this repository, so
  * that is not what the exclusion buys.
@@ -67,7 +67,7 @@ for (const runtime of runtimes) {
       const count = batchSize * 2 + 1;
       const names = Array.from({ length: count }, (_, index) => `entry-${String(index)}.txt`);
       const fixture = tree(names);
-      // startCommand, not start: `start` runs the acceptance criterion's own
+      // startCommand, not start: `start` runs the requirement's own
       // command form, whose CLI path is relative to the repo -- and the whole
       // point here is a cwd that is NOT the repo. The route is otherwise
       // identical, spelled absolutely.

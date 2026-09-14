@@ -62,10 +62,10 @@
 # WHAT THIS DOES NOT REACH, AND IT IS WHY STALENESS IS HANDLED HERE RATHER
 # THAN IMPOSSIBLE. Measured across every invocation form:
 # `bun test`, `bun test <path>`, `bun test <filter>` and `bun test -t <name>`
-# all preload this ONCE, so the single-file bypass the PBI named does not
-# exist. But bun discovers bunfig.toml relative to the CURRENT WORKING
-# DIRECTORY and does NOT search upward, so `cd test && bun test` runs with no
-# build at all. IT ALSO RUNS A DIFFERENT SUITE, which is a second reason that
+# all preload this ONCE, so no single-file bypass exists. But bun discovers
+# bunfig.toml relative to the CURRENT WORKING DIRECTORY and does NOT search
+# upward, so `cd test && bun test` runs with no build at all. IT ALSO RUNS A
+# DIFFERENT SUITE, which is a second reason that
 # route is not the suite and is easy to miss: bun discovers test FILES relative
 # to that directory too, so every workspace member's own tests -- which live
 # under packages/, not under test/ -- are outside that walk and NONE of them runs.
@@ -79,9 +79,9 @@
 # as `initialize failed` from a server whose config could not load. A COUNT OF
 # THE OTHERS IS DELIBERATELY NOT CARRIED: it is a size, it moves whenever the
 # suite grows, and what makes the comparison worth keeping is which failure
-# names the cause. That is why the comparison is still there and was NOT deleted under
-# the authorisation the PBI carried. Adding a second bunfig.toml under test/
-# would not close this: the set of directories someone can stand in has no end.
+# names the cause. That is why the comparison is still there and was NOT deleted.
+# Adding a second bunfig.toml under test/ would not close this: the set of
+# directories someone can stand in has no end.
 #
 # ONE THING A READER STANDING HERE NEEDS AND WILL NOT FIND HERE: THE SUITE'S TIME
 # LIMIT IS NOT SET IN THIS FILE, AND `bun test --timeout N` NO LONGER REACHES ANY
@@ -90,9 +90,9 @@
 # THE FLAG IS INERT FOR EVERY SWEPT FILE, MEASURED IN BOTH DIRECTIONS: a file
 # calling that function with 20_000 passes a 6000ms test under `--timeout 3000`,
 # and the same file calling it with 2000 FAILS the same test at 2002ms under
-# `--timeout 30000`. That retires the `--timeout 30000` idiom this project used
-# through four sprints to tell a machine's red from the code's; the knob that
-# still works is TSUDOI_TEST_TIMEOUT_MS.
+# `--timeout 30000`. That retires the `--timeout 30000` idiom this project
+# once used to tell a machine's red from the code's; the knob that still works
+# is TSUDOI_TEST_TIMEOUT_MS.
 #
 # WHAT `EVERY SWEPT FILE` LEAVES OUT, SAID HERE IN PLAIN WORDS BECAUSE THE
 # PARAGRAPH ABOVE READS LIKE A CLAIM ABOUT THE WHOLE RUN AND IS NOT ONE: NO

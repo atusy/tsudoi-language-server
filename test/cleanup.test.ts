@@ -61,8 +61,8 @@ await Promise.all(runtimes.map(requireRuntime));
 const uri = "file:///workspace/a.txt";
 
 /**
- * The one difference between the two dispatch modes, and the reason this PBI
- * needed two criteria: with a token the chunks stream as `$/progress`, without
+ * The one difference between the two dispatch modes, and the reason the close
+ * is tested under both: with a token the chunks stream as `$/progress`, without
  * one they are aggregated, and the close under test sits above that split.
  */
 function completionParams(token: string | undefined): unknown {

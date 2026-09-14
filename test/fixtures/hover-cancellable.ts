@@ -31,7 +31,7 @@ export function hoverFor(tag: string): Hover {
 }
 
 /**
- * Stopping on abort is the whole user story: work nobody will read is abandoned.
+ * Stopping on abort is the whole point: work nobody will read is abandoned.
  */
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({

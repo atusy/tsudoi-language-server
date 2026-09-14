@@ -72,12 +72,12 @@ import type {
  * `Promise<Hover>` handler into `textDocument/completion` and watching it fail.
  *
  * THE REASON THEY STAY THAT WAY IS RECORDED HERE BECAUSE OTHERWISE THE NEXT
- * PERSON MEASURES THE SAME ZERO AND FILES THE SAME PBI. Defending them means
+ * PERSON MEASURES THE SAME ZERO AND FILES THE SAME ISSUE. Defending them means
  * one test per method asserting what a handler that exists only to be routed to
  * happens to return: ONE NEAR-IDENTICAL TEST PER METHOD, a set that grows with
  * the table, each of which would redden on any legitimate change to this file
- * while defending no requirement of tsudoi's -- the pin-everything pressure S7
- * exists to bound. THE FIXTURE'S JOB IS TO EXIST AND TO ROUTE, NOT TO ANSWER.
+ * while defending no requirement of tsudoi's, which is pin-everything
+ * pressure. THE FIXTURE'S JOB IS TO EXIST AND TO ROUTE, NOT TO ANSWER.
  * And the risk this file actually carries was never a wrong answer: it is this
  * file SILENTLY STOPPING SHORT OF A METHOD, so tests that believe they exercise
  * the whole table exercise all but one of it and stay green. THAT is what the

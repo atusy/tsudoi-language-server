@@ -53,8 +53,8 @@ function frame(message: unknown): string {
  * 25s budget, and this file alone takes about that on its own -- a weakened run
  * spends the whole `waitForExit` bound on each runtime, by construction, because
  * the server it is waiting for never leaves. Registering it would put a timing
- * arm into the instrument this project has ALREADY filed as timing out under
- * load (PBI-93), which is the one change guaranteed to make that worse. WHAT
+ * arm into the instrument this project has ALREADY recorded as timing out
+ * under load, which is the one change guaranteed to make that worse. WHAT
  * THAT COSTS is stated rather than hidden: if these arms ever stop
  * discriminating, nothing here will say so.
  */

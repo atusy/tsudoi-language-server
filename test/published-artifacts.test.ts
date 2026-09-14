@@ -460,7 +460,7 @@ function assignabilityProbe(from: string): string {
 
 /**
  * TSUDOI'S OWN INTERFACE, WIDENED BY HAND to every structural promise the
- * published one makes -- the increment someone would ship who stopped at shape.
+ * published one makes -- the change someone would ship who stopped at shape.
  */
 const handWrittenSuperset = [
   'import type { Position, Range } from "vscode-languageserver-textdocument";',

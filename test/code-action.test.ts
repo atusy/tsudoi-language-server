@@ -170,7 +170,7 @@ for (const runtime of runtimes) {
 
     /**
      * THE SAME ACTIONS UNDER A TOKEN, WHICH IS THE WHOLE OF WHY THIS ROW IS
-     * STREAM-DRIVEN. The stakeholder ruled the generator shape so partial
+     * STREAM-DRIVEN. The maintainer ruled the generator shape so partial
      * results stay reachable, and the arm above -- driving the identical handler
      * with NO token -- is what says the aggregate answer did not change to buy
      * it. Here the batch leaves as its own `$/progress` and the response is

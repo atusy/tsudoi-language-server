@@ -56,8 +56,8 @@ async function sessionState(session: LspSession): Promise<unknown> {
 
 const runtimes = [bunRuntime, denoRuntime];
 
-// PBI-1 is accepted only by spawning both runtimes for real, so an absent one
-// fails this file rather than quietly reducing its coverage.
+// `Starts under both runtimes` is verified only by spawning both for real, so
+// an absent one fails this file rather than quietly reducing its coverage.
 await Promise.all(runtimes.map(requireRuntime));
 
 for (const runtime of runtimes) {
@@ -145,7 +145,7 @@ for (const runtime of runtimes) {
     });
 
     test("a --config path relative to the working directory resolves", async () => {
-      // Exactly the acceptance criterion's command form, run from the repo root:
+      // Exactly the requirement's own command form, run from the repo root:
       //   <runtime> packages/tsudoi-language-server/src/cli.ts --config examples/tsudoi.config.ts
       const session = LspSession.start(runtime, "examples/tsudoi.config.ts");
       try {

@@ -147,11 +147,10 @@ export function runTsc(cwd: string, args: readonly TscReportFlag[] = []): Promis
  * probe-using test would be an error about node_modules rather than about the
  * probe. THE STATE IS THIS REPOSITORY'S ROUTINE ONE: the root's workspace links
  * are RELATIVE and dangle the instant a member directory is renamed or moved,
- * until `bun install` runs again -- which is precisely the next sprint's work.
- * Dropped rather than reported, on this repository's existing ruling that an
- * entry resolving to nothing PROVIDES nothing; a package a probe actually needs
- * going missing is caught by the green half of the pair in
- * test/probe-routes.test.ts.
+ * until `bun install` runs again. Dropped rather than reported, on this
+ * repository's existing ruling that an entry resolving to nothing PROVIDES
+ * nothing; a package a probe actually needs going missing is caught by the
+ * green half of the pair in test/probe-routes.test.ts.
  */
 function isInstalledDependency(entry: string): boolean {
   if (!existsSync(entry)) {

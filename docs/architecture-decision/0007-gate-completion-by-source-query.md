@@ -4,7 +4,7 @@
 | ------------------- | ------------------------------------ |
 | **Status**          | accepted                             |
 | **Date**            | 2026-08-31                           |
-| **Decision-makers** | Project stakeholder and maintainers  |
+| **Decision-makers** | Project maintainers                  |
 | **Consulted**       | Completion package request pipelines |
 | **Informed**        | Completion config authors            |
 

@@ -12,7 +12,7 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  * TWO SUITES MUST NOT RUN AT ONCE ON ONE CHECKOUT, and it is written here
  * because this preload is the mechanism: every run REBUILDS every dist/ in
  * place, so a second run's pack or import reads a dist/ this one is midway
- * through replacing. MEASURED sprint 81, two full suites started together:
+ * through replacing. MEASURED, two full suites started together:
  * `bun pm pack (@atusy/tsudoi-hover-wordnet) failed with exit code 2 while
  * building the installed consumer`, TS2307 on both published subpaths, and
  * three arms down with it -- while the twin run beside it went green, which is
@@ -133,9 +133,9 @@ const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
  *
  * AND `tsc --noEmit` DOES NOT SPARE THE ARTIFACT, which is the reading the
  * refusal below rests on.
- * MEASURED at sprint 63 on the real tree: root `tsc --noEmit --listFiles` lists
- * FOUR of this package's dist/*.d.ts -- the four published subpaths -- beside
- * nine of its src/*.ts, which arrive by relative import from this suite. THE
+ * MEASURED on the real tree: root `tsc --noEmit --listFiles` lists FOUR of this
+ * package's dist/*.d.ts -- the four published subpaths -- beside nine of its
+ * src/*.ts, which arrive by relative import from this suite. THE
  * COMPILER READS THE ARTIFACT. What spares it is `skipLibCheck`, measured both
  * ways: a SYNTAX error injected into dist/types.d.ts fails the root check with
  * TS1110, while a TYPE error in the same file leaves it at exit 0.

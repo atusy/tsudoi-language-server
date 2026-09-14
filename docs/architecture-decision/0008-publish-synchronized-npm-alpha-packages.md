@@ -4,7 +4,7 @@
 | ------------------- | ------------------------------------- |
 | **Status**          | accepted                              |
 | **Date**            | 2026-09-05                            |
-| **Decision-makers** | Project stakeholder and maintainers   |
+| **Decision-makers** | Project maintainers                   |
 | **Consulted**       | npm publication and package contracts |
 | **Informed**        | Package consumers                     |
 

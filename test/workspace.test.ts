@@ -133,7 +133,7 @@ const remoteRootUri = "vscode-remote://ssh-remote%2Bexample/home/me/rooted";
  * What the handler observed ON ITS OWN RequestContext, whole.
  *
  * EVERY KEY IS OPTIONAL AND NOTHING IS DEFAULTED AWAY: `undefined` is what a
- * field that never arrived looks like, and it is the state these criteria exist
+ * field that never arrived looks like, and it is the state these requirements exist
  * to tell apart from an empty list.
  */
 interface Observation {
@@ -933,8 +933,8 @@ for (const runtime of runtimes) {
     // WHAT THIS DOES NOT DEFEND, MEASURED and recorded so nobody reads two
     // tests as two defences: it is BLIND TO THE cwd SUBSTITUTION its
     // sibling names. Under a cwd fallback this test stays GREEN, because
-    // PBI-14's dedup-by-inserted-text collapses the identical item a cwd root
-    // produces. THE CONTEXT-LEVEL TEST CARRIES THAT CRITERION ALONE -- one of
+    // the dedup-by-inserted-text collapses the identical item a cwd root
+    // produces. THE CONTEXT-LEVEL TEST CARRIES THAT REQUIREMENT ALONE -- one of
     // this project's own rules blinding one of its own controls.
     test("with no workspace sent, no item is attributed to a workspace root", async () => {
       const fixture = tree(["notes/cwd-only.txt"]);
@@ -956,7 +956,7 @@ for (const runtime of runtimes) {
 
     // THE HAZARD IS UNOWNED BY CODE AND IS ASSERTED HERE AS THE BEHAVIOUR IT
     // IS: an author reading `workspaceFolders` alone is handed `[]` where a
-    // root exists, and THIS REPOSITORY'S OWN STAKEHOLDER-FACING EXAMPLE is such
+    // root exists, and THIS REPOSITORY'S OWN USER-FACING EXAMPLE is such
     // an author.
     //
     // IT ASSERTS WHAT `@atusy/tsudoi-completion-path` CLAIMS IN PROSE at its

@@ -28,9 +28,9 @@ applySuiteDeadline();
 
 /**
  * A CHECKOUT NOBODY HAS BUILT, STAGED AND READ -- AND IT IS DECLARED NOT TO MEET
- * THE CRITERION IT COMES FROM, WHICH IS WHY IT MAY SHIP AT ALL.
+ * THE REQUIREMENT IT COMES FROM, WHICH IS WHY IT MAY SHIP AT ALL.
  *
- * The criterion asks that a bare `tsc --noEmit` on an unbuilt checkout not
+ * The requirement asks that a bare `tsc --noEmit` on an unbuilt checkout not
  * answer THE FRAMEWORK'S own published subpaths from source at exit 0, or that
  * the fact it does be carried by something that stops holding the day it stops
  * being true. THIS ARM SATISFIES NEITHER DISJUNCT, and the disclaimers below say
@@ -76,7 +76,7 @@ applySuiteDeadline();
  */
 
 /**
- * WHAT THIS ARM DOES NOT WATCH, disclaimer by disclaimer, because sprint 9's
+ * WHAT THIS ARM DOES NOT WATCH, disclaimer by disclaimer, because this project's
  * rule deletes a control that cannot say what it is blind to -- and every one of
  * these is a thing a reader would otherwise assume from a green.
  *
@@ -87,9 +87,9 @@ applySuiteDeadline();
  * --noEmit` at the checkout root; what runs here is a staged copy, and a staged
  * copy is a claim about a stage. AND `NOTHING OWNS ITS INVOCATION` IS TOO WIDE,
  * QUALIFIED RATHER THAN DROPPED: scripts/definition-of-done.ts spawns exactly
- * that command from the dashboard's own list -- but only AFTER the first check
- * has built every artifact, which is the ordering that runner's own one-step
- * reading leans on. What nothing here owns is the BARE, PRE-BUILD invocation,
+ * that command from the list in scripts/definition-of-done.json -- but only
+ * AFTER the first check has built every artifact, which is the ordering that
+ * runner's own one-step reading leans on. What nothing here owns is the BARE, PRE-BUILD invocation,
  * and that is the one this arm's subject is about.
  *
  * (3) It does not pin which package is named first. All workspace exports now
@@ -350,8 +350,8 @@ test("an unbuilt checkout's root type check is non-zero and names a workspace pa
     // WITH A MISLEADING FAILURE STORY, and not a state nothing else sees: ANY
     // tracked type error reddens both the fourth Definition-of-Done check and
     // this line, and this line reports it under a test name about unresolved
-    // workspace packages. Measured on the other half too, by the sprint 61
-    // review: `tsc --noEmit --listFiles` over the tree and over the stage read
+    // workspace packages. Measured on the other half too, by a review:
+    // `tsc --noEmit --listFiles` over the tree and over the stage read
     // IDENTICAL file sets, so there is no state here that the fourth check
     // misses.
     //

@@ -16,7 +16,7 @@ await Promise.all(runtimes.map(requireRuntime));
 
 const uri = "file:///workspace/a.txt";
 
-// Japanese for the reason test/sync.test.ts uses it -- the stakeholder's first
+// Japanese for the reason test/sync.test.ts uses it -- the maintainer's first
 // real document will contain it -- and TWO lines so that a line index exists to
 // be wrong about at all.
 const openedText = "こんにちは、世界。\n二行目も日本語です。";

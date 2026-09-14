@@ -89,7 +89,7 @@ function blockOf(item: CompletionItem): string {
  * a fixture writes is EMPTY, which is where the zero comes from.
  *
  * SPELLED WITH NO FRACTIONAL PART, because that is what the composer renders --
- * the stakeholder was shown a stamp keeping its milliseconds and declined it.
+ * the maintainer was shown a stamp keeping its milliseconds and declined it.
  *
  * THE FOUR BYTES ARE NAMED RATHER THAN MATCHED BY THE COMPOSER'S OWN PATTERN,
  * which is what keeps this an oracle: it says the fixture's stamp is EXACTLY
@@ -218,7 +218,7 @@ describe("the fixture's stamps come from a constant, not from the clock", () => 
  * REASON THIS ARM EXISTS. Both stamp constants here are WHOLE SECONDS by design
  * -- filesystems disagree about sub-second precision -- and truncating a whole
  * second to the second is a NO-OP down to the byte. So an untruncated composer
- * passes every other arm in both suites, and the stakeholder's ruling would ship
+ * passes every other arm in both suites, and the maintainer's ruling would ship
  * with nothing at all standing over it.
  *
  * THE STAMP IS THIS ARM'S OWN AND IS SET AFTER `tree` HAS STAMPED EVERYTHING,
@@ -259,7 +259,7 @@ describe("a modification time is reported to the second, whatever the disk kept"
       // separates the two truncations this project once conflated: a composer
       // that FLOORED THE VALUE satisfies the first two here -- the file's own
       // milliseconds really are gone -- and renders `...06.000Z`, which is the
-      // spelling the stakeholder was shown and declined.
+      // spelling the maintainer was shown and declined.
       const rendered = factsSection(blockOf(answered));
       expect(rendered).toContain(`lastModified: ${stamp}`);
       expect(blockOf(answered)).not.toContain(kept.toISOString());
@@ -293,7 +293,7 @@ describe("the block is rebuilt out of what the handler read", () => {
    * unreachable in exactly the run that is supposed to report it.
    *
    * THE RULE BETWEEN PARTS IS GONE FROM BOTH FORMATS -- the blank line separates
-   * them now, as the stakeholder's own block shows -- so what this arm compares
+   * them now, as the maintainer's own block shows -- so what this arm compares
    * is the fact join and the heading, which is where the two formats now differ.
    */
   test("the markup a block is built in follows the session, not the item", async () => {
@@ -676,7 +676,7 @@ describe("what the path is decides the answer, and never what the item claims", 
    * absence only means something beside the presence.
    *
    * THE OBJECTION IS RECORDED AND NOT RE-RAISED: that these two arms read the
-   * word `file`/`directory` was put to the stakeholder and OVERRULED, and this is
+   * word `file`/`directory` was put to the maintainer and OVERRULED, and this is
    * the consequence being paid rather than argued again.
    */
   test("a file whose item claims to be a folder is still answered as a file", async () => {

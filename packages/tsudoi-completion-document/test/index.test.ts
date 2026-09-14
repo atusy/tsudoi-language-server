@@ -16,8 +16,8 @@ import * as surface from "../src/index.ts";
  * imports src/index.ts, so it grades THE DECISION and not THE ARTIFACT. A name
  * that survives here and is lost between `tsc` and the tarball is invisible to it,
  * and so is one lost from the `exports` map. Grading the published route is
- * PBI-99, which is drafted over exactly this hole and not yet refined -- this arm
- * is deliberately narrower than that item rather than a substitute for it.
+ * an open follow-up over exactly this hole -- this arm is deliberately narrower
+ * than that follow-up rather than a substitute for it.
  *
  * A LIST AND NOT A SHAPE CHECK. `expect(Object.keys(surface))` would pin the
  * surface closed, and a package that grows a handler would then redden here for

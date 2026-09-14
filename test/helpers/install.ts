@@ -41,7 +41,7 @@ function run(command: string, args: readonly string[], cwd: string): Promise<Typ
 }
 
 /**
- * The stakeholder-facing example's own bytes, keyed by the path each must be
+ * The user-facing example's own bytes, keyed by the path each must be
  * written to in a consumer project.
  *
  * THE INSTALLED HANDLERS ARE DELIBERATELY NOT IN IT, and that absence is a
@@ -229,7 +229,7 @@ function fail(step: string, result: TypeCheckResult): never {
   throw new Error(
     [
       `${step} failed with exit code ${String(result.code)} while building the installed consumer.`,
-      "PBI-13 accepts `a deno user obtains and runs tsudoi` only from a packed-and-installed copy,",
+      "`A deno user obtains and runs tsudoi` is verified only from a packed-and-installed copy,",
       "so this fails the suite instead of falling back to the checkout -- everything passes from",
       "inside the repo while a stranger still cannot resolve, or run, what they were sent.",
       "`bun pm pack` runs prepack, so a build failure in tsconfig.build.json surfaces here too.",

@@ -249,7 +249,7 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
   // that as the package being broken.
   //
   // AND IT IS THE ONE MEMBER WITH A SECOND BOUND, which is here because a
-  // stakeholder hit it: this package OFFERS NOTHING AT ALL from a language that
+  // maintainer hit it: this package OFFERS NOTHING AT ALL from a language that
   // does not space its words, and a user writing Japanese sees an empty popup
   // where every other source still answers. The window's absence is at least
   // explicable from the option's name; this one is explicable from nowhere but

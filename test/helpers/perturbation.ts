@@ -45,9 +45,9 @@ export interface Arm {
 /**
  * A perturbation recorded as something the suite RE-RUNS.
  *
- * IT DELIBERATELY DOES NOT ATTACH TO THE ACT OF CLOSING A SUBTASK: a field
- * required of every completed subtask forces a record to be INVENTED AT PLANNING
- * TIME, before any arm exists, and reddens every historical completed subtask on
+ * IT DELIBERATELY DOES NOT ATTACH TO THE ACT OF CLOSING A STEP: a field
+ * required of every completed step forces a record to be INVENTED AT PLANNING
+ * TIME, before any arm exists, and reddens every historical completed step on
  * the day it lands.
  */
 export interface PerturbationRecord {
@@ -71,7 +71,7 @@ export interface PerturbationRecord {
    * the record says nothing about where in its arm the red lands.
    *
    * A FRAGMENT OF THE SOURCE LINE AND NEVER A LINE NUMBER: this repository has
-   * measured line numbers going stale inside the sprint that wrote them, and a
+   * measured line numbers going stale inside the change that wrote them, and a
    * record pinned to one would report a moved assertion as a moved subject.
    *
    * WHAT IT BUYS, WHICH `alsoReddens` DOES NOT: in a file whose arms compare a

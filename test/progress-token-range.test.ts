@@ -126,7 +126,7 @@ for (const runtime of runtimes) {
 
     /**
      * ONE SESSION, EVERY STREAM-DRIVEN ROW, AND THE DIAGNOSTIC BELONGS TO
-     * WHICHEVER ROW EARNED IT. This is the arm the sprint that made a SECOND
+     * WHICHEVER ROW EARNED IT. This is the arm the change that made a SECOND
      * stream-driven row owed and did not write: both defects it guards shipped,
      * were found by review rather than by anything here, and the suite was green
      * across both.

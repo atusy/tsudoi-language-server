@@ -133,10 +133,10 @@ for (const runtime of runtimes) {
     /**
      * THE PROLOGUE'S REJECTION STEP, FOR EVERY METHOD, BY CONSTRUCTION.
      *
-     * THIS IS WHAT THE READINESS GATE FOUND MISSING. Deleting formatting's
+     * THIS IS WHAT WAS MISSING. Deleting formatting's
      * hand-written rejection check left THE WHOLE SUITE green, and so did
-     * deleting completion's: only hover's was defended. The remedy the PBI
-     * chose is the router rather than two more hand-written assertions, so
+     * deleting completion's: only hover's was defended. The remedy chosen
+     * is the router rather than two more hand-written assertions, so
      * this test iterates the TABLE -- a method is covered the moment it is
      * declared, which is the property, and hand-copying an assertion per
      * method would have been the convention this work exists to retire.
@@ -211,9 +211,9 @@ for (const runtime of runtimes) {
     });
 
     /**
-     * THE SAME STEP FOR A CONFIG THAT SUPPLIES NOTHING, and it is the whole of
-     * PBI-40: a cancelled request is answered -32800 WHICHEVER DRIVE its method
-     * uses, whether or not the config can answer it.
+     * THE SAME STEP FOR A CONFIG THAT SUPPLIES NOTHING, and it is the whole
+     * requirement: a cancelled request is answered -32800 WHICHEVER DRIVE its
+     * method uses, whether or not the config can answer it.
      *
      * IT IS NOT A SECOND COPY OF THE TEST ABOVE. That one runs against a config
      * supplying a handler for every entry; this one supplies NO handler at all,
@@ -267,8 +267,8 @@ for (const runtime of runtimes) {
      * error code up there is attributable to CANCELLATION rather than to a
      * fixture that failed to load or a method that refused.
      *
-     * IT IS ALSO WHAT BOUNDS PBI-40 TO ONE ANSWER AND NOT TWO. Making the
-     * cancelled answer agree across the drives must leave the UNCANCELLED
+     * IT IS ALSO WHAT BOUNDS THAT REQUIREMENT TO ONE ANSWER AND NOT TWO. Making
+     * the cancelled answer agree across the drives must leave the UNCANCELLED
      * no-handler answer where it is -- `null`, on both drives -- and answering
      * `[]` for the stream-driven rows instead reddens here.
      *
