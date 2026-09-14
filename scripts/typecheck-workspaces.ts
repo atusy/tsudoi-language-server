@@ -13,7 +13,7 @@ import {
 } from "./workspaces.ts";
 
 /**
- * THE FIFTH DEFINITION-OF-DONE CHECK: every workspace member type-checks under
+ * Every workspace member type-checks under
  * ITS OWN tsconfig, because the root check must not and now cannot.
  *
  * WHY THE ROOT CHECK IS WITHDRAWN RATHER THAN KEPT AS A SECOND OPINION, AND NOT
@@ -30,7 +30,7 @@ import {
  * check does not answer for those members, it never opens them. What of a
  * member DOES arrive comes by two routes that are not the member's own, and
  * neither is a route a stranger takes: the framework's own `src/` enters
- * through RELATIVE imports from this suite's own `test/*.test.ts`, and each
+ * through RELATIVE imports from this suite's own `tests/*.test.ts`, and each
  * package's `dist/*.d.ts` enters BY PACKAGE NAME from `examples/`. So the root
  * green is still not a second opinion on a member -- not because it answers
  * wrongly, but because for two of three members it is silent, and for the third
@@ -40,7 +40,7 @@ import {
  * coverage over. NEITHER HALF WORKS ALONE: without the exclusion this check is
  * shadowed by a root green, and without this check the exclusion means nothing
  * type-checks a member at all. The exclusion's reason is asserted in
- * test/package-shape.test.ts, since a tsconfig cannot carry one.
+ * tests/integration/package-shape.test.ts, since a tsconfig cannot carry one.
  *
  * AND NEITHER HALF SURVIVES A MAPPING ONE DIRECTORY DOWN. Withdrawing the root's
  * answer buys nothing if a MEMBER may write the same mapping into its own
@@ -54,7 +54,7 @@ import {
  * they cover every file some config INCLUDES and are silent about the rest, so a
  * file dropped beside a member's source -- or under a directory whose name
  * begins with a dot, where no default include reaches -- is run by whatever runs
- * it and graded by nobody, with all five commands exit 0. `refuseUncoveredFiles`
+ * it and graded by nobody, with all checks exiting 0. `refuseUncoveredFiles`
  * refuses that, deciding membership by reading THE COMPILERS' OWN FILE LISTS
  * rather than the globs in the JSON, and keeping the package-shaped sentence for
  * the package-shaped case.
@@ -66,12 +66,12 @@ import {
  *
  * ENUMERATED FROM `workspaces` by scripts/workspaces.ts, which the build shares,
  * so adding a package under `packages/` costs no edit here.
- * test/workspace-members.test.ts drives that by construction, and
- * test/uncovered-files.test.ts drives the file refusal the same way.
+ * tests/integration/workspace-members.test.ts drives that by construction, and
+ * tests/integration/uncovered-files.test.ts drives the file refusal the same way.
  *
  * WHAT IS RUN IS `tsc`, NOT A REIMPLEMENTATION OF ONE, and the binary is reached
  * through node_modules/.bin rather than by bare name: nothing here is a package
- * script and PATH is not this repo's to choose. test/package-shape.test.ts pins
+ * script and PATH is not this repo's to choose. tests/integration/package-shape.test.ts pins
  * that the binary there is the version this repo declares.
  *
  * A ROOT TO CHECK MAY BE PASSED AS THE ONE ARGUMENT, defaulting to the working
@@ -92,7 +92,7 @@ const toolRoot = fileURLToPath(new URL("../", import.meta.url));
  * of a two-member failure cannot tell whose it is.
  *
  * AND NOTHING GRADES THAT HERE. MEASURED: moving this cwd to the member leaves
- * test/build-diagnostics.test.ts green in every form tried, because the line its
+ * tests/integration/build-diagnostics.test.ts green in every form tried, because the line its
  * arm reads is printed by `build` in scripts/workspaces.ts, which runs first.
  * The arm is named for this check and held by that one.
  */
@@ -165,7 +165,7 @@ refuseMemberMappings(root, members);
 // AND THE NARROWING IS A RULING: an undeclared package holding NO TypeScript is
 // left alone, because the file lists find nothing there to refine and this check
 // is not allowed a second opinion about coverage. Nothing about such a package
-// is unchecked. Pinned in test/workspace-members.test.ts.
+// is unchecked. Pinned in tests/integration/workspace-members.test.ts.
 //
 // AND BEFORE ANY MEMBER IS CHECKED, because a member that type-checks green
 // says nothing about the files its config never looked at: printing that green
@@ -175,7 +175,7 @@ refuseUncoveredFiles(root, members);
 // requirement about WHEN and not about what: moving this call below the loop
 // changes no value, leaves this file's own bytes almost identical, and turns the
 // refusal into a report printed after every member has already been checked
-// against a file no consumer receives. test/artifact-detector.test.ts asserts
+// against a file no consumer receives. tests/integration/artifact-detector.test.ts asserts
 // the position by driving THIS command and reading what it did NOT print.
 //
 // LAST AMONG THE REFUSALS AND NOT FIRST. The three above are questions about

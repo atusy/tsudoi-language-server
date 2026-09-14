@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { initializeParams, LspSession } from "../test/helpers/lsp.ts";
+import { initializeParams, LspSession } from "../tests/helpers/lsp.ts";
 import { buildOrder } from "./workspaces.ts";
 
 const NPM_REGISTRY = "https://registry.npmjs.org/";

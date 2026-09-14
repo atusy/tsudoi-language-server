@@ -254,13 +254,13 @@ export function registerNotifications<P extends readonly unknown[]>(
  *   AND NOT BREADTH.
  *
  * The claim is bounded to what is ON THIS TYPE; what the VALUE carries beyond it
- * is at `ProtocolConnectionHasTheseMembers` in test/notifications.test.ts.
+ * is at `ProtocolConnectionHasTheseMembers` in tests/integration/notifications.test.ts.
  *
  * A MISSPELLED KEY HERE IS A SILENT NO-OP: `Omit<T, K>` tolerates a key outside
  * `keyof T` where `Pick`'s `K extends keyof T` refuses one. SO `Pick` IS THE
  * BETTER INSTRUMENT FOR THIS BOUNDARY -- a PREFERENCE AND NOT A MANDATE,
  * because a change with no defect to fix is churn and THIS hazard is already
- * caught: MEASURED, the spawned probes in test/notifications.test.ts redden on
+ * caught: MEASURED, the spawned probes in tests/integration/notifications.test.ts redden on
  * a misspelled key with `BoundaryIsTheObservingMembers` deleted, and
  * `ProtocolConnectionHasTheseMembers` is silent under one. THOSE TWO PINS EARN
  * THEIR PLACE ELSEWHERE -- a SURPLUS key, and a member NAME arriving, going or
@@ -325,7 +325,7 @@ export type RequestOnlyConnection = Omit<
  * onto it would therefore hand back a type UNCHANGED IN TWO OF ITS FOUR KEYS --
  * the silent no-op that type already documents as a misspelling hazard, arriving
  * STRUCTURALLY rather than by typo. And it would arrive unseen: the two probes
- * in test/notifications.test.ts that name those members assert
+ * in tests/integration/notifications.test.ts that name those members assert
  * `Property 'X' does not exist`, and that diagnostic STILL APPEARS under
  * `Connection` -- not because the `Omit` removed anything but because the member
  * was never there. TWO OF THE FOUR PROBES DEFENDING THIS BOUNDARY WOULD GO GREEN
@@ -393,11 +393,11 @@ export type RequestOnlyConnection = Omit<
  * WHAT THE OTHER COLUMN COSTS, so it is not read as an unpriced win. Taking that
  * exit path requires DELETING the `exit` entry from the gated table, and that
  * entry is the only inhabitant of the `always` arm -- what follows from that is
- * written at the test which asserts it, in test/notifications.test.ts. AND ONE
+ * written at the test which asserts it, in tests/integration/notifications.test.ts. AND ONE
  * FINDING IS STILL FILED: `watchDog.initialize(params)` starts an un-`unref`ed
  * three-second interval when `processId` is numeric -- exactly the hazard
  * src/server.ts's unref requirement is about -- which the suite cannot observe
- * because test/helpers/lsp.ts sends `processId: null`.
+ * because tests/helpers/lsp.ts sends `processId: null`.
  *
  * THE RULING, AND IT IS A CHOICE RATHER THAN A DEDUCTION: the gate is kept, so
  * the framework's server layer is not taken. Five and six say the price is real

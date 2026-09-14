@@ -23,9 +23,9 @@
  * reference, or one consumer whose own `include` reaches the file.
  *
  * WHAT KEEPS IT OUT, in the order an edit would defeat them: `files: ["dist"]`,
- * asserted in test/package-shape.test.ts; `prepack` clearing dist/ before it
+ * asserted in tests/integration/package-shape.test.ts; `prepack` clearing dist/ before it
  * compiles, so no stray survives the pack; and the packed file list and packed
- * declarations read off the TARBALL in test/packed-members.test.ts, which is the
+ * declarations read off the TARBALL in tests/integration/packed-members.test.ts, which is the
  * only one of the three that observes the artifact rather than an instruction.
  * Declaration emit cannot carry this statement at all -- a string-named ambient
  * module does not parse outside a `.d.ts`, MEASURED.

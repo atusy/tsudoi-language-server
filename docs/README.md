@@ -69,57 +69,39 @@ choosing a framework copy. Bun and npm may still auto-install a required peer.
   `vscode-languageserver-types` with it, and `vscode-languageserver-textdocument`, which brings
   nothing -- unless bun's cache already holds them.
 
-Working on tsudoi itself rather than using it: `bun test` spawns `deno`, so **deno must be on
-PATH or `bun test` fails**. It fails rather than skipping, on purpose -- "starts under both
-runtimes" is a promise the suite must not be able to stop checking quietly.
+Working on tsudoi itself rather than using it: **deno must be on PATH or `bun test` fails**.
+The native-shell integration tests also need fish, xonsh, and zsh on PATH.
 
-**To verify a change, run `bun run scripts/definition-of-done.ts`.** It takes every check
-`scripts/definition-of-done.json` declares, in the order declared, and prints each one's own exit
-status beside the command that produced it -- so a failure cannot be missed by reading the part of the
-output that happened to be on screen, which is how four commits were once taken on a red tree.
-Running one check by hand is debugging; this is verification. **Re-running one check is
-`--only <substring>`** -- matched against the check names, case-insensitively, and composing with
-the optional root in either order. A filtered run prints the same report in the same shape, so
-there is still nothing to pipe; its header and its verdict line both say it was filtered, because
-the declared order is load-bearing and no subset's green is this Definition of Done's green; and a
-substring no check matches is refused rather than reported green over nothing. That option exists
-because the route it replaces cost this project a red format check, run by hand and read through
-`tail`, which showed a summary line and hid the verdict above it. It is named here rather than
-shown as a runnable block on purpose, and the reason is NOT that a block here must be run -- a block
-may instead be accounted for over a named part of it, and a block pairing this command with one
-resolvable import would satisfy that without ever being run. The reason is
-that the consumer which would EXECUTE a command block here is the quickstart's runner, and
-handing it this command runs the suite inside the suite.
+**To verify a change, run `bun run check` from the repository root.**
+It runs unit tests, integration tests, E2E tests, lint, formatting, and type checks
+in sequence, stopping at the first failure. Run individual checks with
+`bun run test:unit`, `bun run test:integration`, `bun run test:e2e`, `bun run lint`,
+`bun run fmt:check`, or `bun run typecheck`. The type check builds and checks
+workspace members before checking the root project, so it also works on an unbuilt checkout.
 
-A fresh checkout needs no build step of its own. `examples/` import `@atusy/tsudoi-language-server/types`
-and, for the protocol's own names, the `deps/` subpaths beside it -- which resolve through
-`node_modules` to files under a `dist/` that is not committed -- so `bun test` builds every
-package **automatically**, through a `bunfig.toml` that compiles them before any test file is
-loaded. An edit to a source file cannot be tested against a `dist/` that has moved on without
-it, because there is no build to forget.
+- Unit tests live beside their implementations as `packages/<package>/src/*.test.ts`.
+  Tooling library tests live under `scripts/src/` beside the library. Run
+  `bun test packages scripts/src`, or target one file such as
+  `bun test packages/tsudoi-language-server/src/documents.test.ts`.
+- Integration tests live in `tests/integration`, with package-specific suites grouped in
+  subdirectories. They exercise filesystem, compiler, packaging, and module interactions.
+  Run `bun test tests/integration`.
+- E2E tests live in `tests/e2e`. They start the server, exchange LSP messages, or exercise
+  installed packages and documented command sequences. Run `bun test tests/e2e`.
+- Shared fixtures and process helpers live in `tests/fixtures` and `tests/helpers`.
+  Package-local unit-test helpers can live in `packages/<package>/tests/helpers`.
 
-**That build belongs to `bun test`, and one command does not get it.** `tsc --noEmit` on a
-checkout nothing has built reports `TS2307` at `examples/tsudoi.config.ts`, naming
-`@atusy/tsudoi-hover-wordnet` and `@atusy/tsudoi-completion-path` -- each handler is a workspace
-member reachable only through the `dist/` its own build writes. Run `bun test` first, or
-`bun run scripts/typecheck-workspaces.ts`, which builds before it checks; both leave the tree
-in a state `tsc --noEmit` reads.
+`bun test` still runs all categories. The `dist/` output is not committed and is built
+automatically. Its test-only preload in `bunfig.toml` builds current
+`dist/` artifacts before tests load: workspace imports resolve through each package's
+exports map. **Run from the repository root**, where Bun reads that configuration. Running
+from another directory changes both test discovery and whether the preload runs.
 
-The framework is named too: all of its export conditions point into `dist/`, so the compiler,
-Bun, and Deno fail instead of silently substituting source that a registry consumer never receives.
-The fifth command additionally refuses a published subpath that answers from anywhere but the
-artifact after the build.
-
-No `paths` mapping stands in for any of this, anywhere: tsudoi is a workspace member like the
-handlers, and a mapping would let a type check answer a package's imports without its own
-`node_modules` and without the `exports` map -- reporting success for a resolution nobody
-checked. For members that refusal is enforced by the fifth command above.
-
-Run it **from the repository root**. bun looks for `bunfig.toml` in the directory you are
-standing in and never searches upward, so a `bun test` started anywhere else runs the whole
-suite with no build -- the one route on which a stale `dist/` is still reachable, and the
-reason `test/package-shape.test.ts` still compares `dist/` against what `packages/tsudoi-language-server/src/types.ts`
-re-exports.
+A bare `tsc --noEmit` on an unbuilt checkout fails with `TS2307` for missing workspace
+artifacts, such as `@atusy/tsudoi-hover-wordnet`. Run `bun test` or `bun run scripts/typecheck-workspaces.ts` first. There is no
+`paths` mapping substituting source for the published artifact. Development tsconfigs
+include colocated tests; build tsconfigs exclude `src/**/*.test.ts` so tests and their
+helpers are not emitted or published. Package tests assert the tarballs' exact file lists.
 
 ## Quickstart
 

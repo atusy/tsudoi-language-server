@@ -2,11 +2,11 @@
 # Keep this test-only: child CLI processes must not rebuild the workspace.
 # Run bun test from the repository root so Bun loads this configuration.
 #
-# Root tests set their deadlines through applySuiteDeadline() and
-# TSUDOI_TEST_TIMEOUT_MS; member tests use Bun's default or --timeout.
+# Integration and E2E tests use applySuiteDeadline() and TSUDOI_TEST_TIMEOUT_MS.
+# Colocated unit tests use Bun's default deadline or --timeout.
 #
 # Match .gitignore at every depth. suite-deadline.test.ts checks that test
 # discovery and its source scans agree on these excluded directories.
 [test]
-preload = ["./test/helpers/build.ts"]
+preload = ["./tests/helpers/build.ts"]
 pathIgnorePatterns = ["**/__ignored/**", "**/dist/**"]
