@@ -72,11 +72,12 @@ choosing a framework copy. Bun and npm may still auto-install a required peer.
 Working on tsudoi itself rather than using it: **deno must be on PATH or `bun test` fails**.
 The native-shell integration tests also need fish, xonsh, and zsh on PATH.
 
-**To verify a change, run `bun run scripts/definition-of-done.ts` from the repository root.**
-The runner reads `scripts/definition-of-done.json` and reports each check separately:
-unit tests, integration tests, E2E tests, lint, formatting, the root type check, and the
-workspace type check. Use `--only <substring>` to rerun matching checks; a filtered run is
-reported as partial, and a filter matching no checks fails.
+**To verify a change, run `bun run check` from the repository root.**
+It runs unit tests, integration tests, E2E tests, lint, formatting, and type checks
+in sequence, stopping at the first failure. Run individual checks with
+`bun run test:unit`, `bun run test:integration`, `bun run test:e2e`, `bun run lint`,
+`bun run fmt:check`, or `bun run typecheck`. The type check builds and checks
+workspace members before checking the root project, so it also works on an unbuilt checkout.
 
 - Unit tests live beside their implementations as `packages/<package>/src/*.test.ts`.
   Tooling library tests live under `scripts/src/` beside the library. Run

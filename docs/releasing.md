@@ -40,7 +40,7 @@ gh workflow run publish.yml --ref main -f mode=bootstrap
 npm whoami --registry=https://registry.npmjs.org/
 bun install --frozen-lockfile
 bun add --global oxlint@latest oxfmt@latest
-bun run scripts/definition-of-done.ts
+bun run check
 release_dir="$(mktemp -d)"
 bun run scripts/pack-release.ts "$release_dir"
 git tag -a v0.1.0-alpha.1 -m "v0.1.0-alpha.1"
@@ -123,7 +123,7 @@ Approve the `npm` environment deployment after inspecting the requested tag. The
 dispatched from that tag so npm's provenance names the release ref and commit. The job checks that
 the event ref, event commit, checked-out commit, tag, and package version agree. An unprivileged
 runner checks out the immutable dispatch commit, installs the latest `oxlint` and `oxfmt`, and runs
-the complete Definition of Done under Bun and Deno. After that succeeds, a fresh runner checks out
+`bun run check`, including tests under Bun and Deno. After that succeeds, a fresh runner checks out
 the same commit and uses locked dependencies to pack a checksummed release; no floating Ox
 executable runs on the filesystem that produces the release bundle. The OIDC job publishes only
 that immutable bundle with provenance. Re-running the job is safe only for registry artifacts whose
