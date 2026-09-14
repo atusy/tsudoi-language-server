@@ -2,7 +2,7 @@
 
 |                     |                                   |
 | ------------------- | --------------------------------- |
-| **Status**          | proposed                          |
+| **Status**          | accepted                          |
 | **Date**            | 2026-09-14                        |
 | **Decision-makers** | Project maintainers               |
 | **Consulted**       | Diagnostic handler API discussion |
