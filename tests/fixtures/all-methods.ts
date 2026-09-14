@@ -117,7 +117,10 @@ export default (): Promise<TsudoiConfig> => {
         yield completionAnswer;
       },
       "textDocument/formatting": (): Promise<TextEdit[]> => Promise.resolve(formattingAnswer),
-      "textDocument/diagnostic": () => Promise.resolve(diagnosticAnswer),
+      // eslint-disable-next-line require-yield -- Return-only diagnostic generators send one report.
+      "textDocument/diagnostic": async function* () {
+        return diagnosticAnswer;
+      },
       // Answers with what it was handed. The by-construction tests drive every
       // method with ONE shared params object, so what arrives here is not a
       // CompletionItem at all -- returning it unchanged is the only answer that

@@ -5,6 +5,7 @@
  * at a time.
  */
 import process from "node:process";
+import { DiagnosticResults } from "./diagnostic-results.ts";
 import {
   type CancellationToken,
   type CodeAction,
@@ -14,6 +15,8 @@ import {
   CompletionRequest,
   CompletionResolveRequest,
   DocumentDiagnosticRequest,
+  type DocumentDiagnosticReport,
+  type DocumentDiagnosticReportPartialResult,
   DocumentFormattingRequest,
   ErrorCodes,
   ExecuteCommandRequest,
@@ -73,7 +76,7 @@ interface AwaitedOnceEntry<M extends Method> {
 }
 
 /**
- * A method whose handler yields partial arrays and returns its final result.
+ * A method whose handler yields partial results and has a method-specific final result.
  * The final result and the partial type are checked independently.
  */
 interface StreamDrivenEntry<M extends Method> {
@@ -134,8 +137,9 @@ export const requestEntries: { [M in Method]: RequestEntry<M> } = {
     },
   },
   "textDocument/diagnostic": {
-    drive: "awaited-once",
+    drive: "stream-driven",
     type: DocumentDiagnosticRequest.type,
+    progress: new ProgressType<DocumentDiagnosticReport | DocumentDiagnosticReportPartialResult>(),
     queue: (params) => params.textDocument.uri,
     // `workspaceDiagnostics` is FORCED by tsudoi not serving
     // `workspace/diagnostic`; `interFileDependencies` is CHOSEN, on the two
@@ -205,7 +209,7 @@ type ErasedAwaitedOnceHandler = (context: RequestContext, params: unknown) => Pr
 type ErasedStreamHandler = (
   context: RequestContext,
   params: unknown,
-) => AsyncGenerator<unknown[], unknown, void>;
+) => AsyncGenerator<unknown, unknown, void>;
 
 function erasedEntries(): readonly (readonly [Method, ErasedEntry])[] {
   return Object.entries(requestEntries) as unknown as readonly (readonly [Method, ErasedEntry])[];
@@ -783,15 +787,15 @@ function finishStream(method: Method, result: unknown, collected: unknown[] | un
 }
 
 /**
- * Drive partial arrays immediately under a valid token; otherwise collect them.
+ * Drive partial results immediately under a valid token; otherwise aggregate them.
  * finishStream combines the collected items with the final return, or leaves
  * that return alone when yields were streamed. See ADR 0009 for the deliberate
  * client-dependent interpretation of a final response after progress.
  *
  * No look-ahead: a yielded batch must not wait for the next pull to finish.
  * A handler with one final result can return it without yielding instead.
- * This drive requires array partials; document diagnostics carry related-document
- * objects and cannot use this array aggregation.
+ * DiagnosticResults validates and aggregates diagnostic objects; array methods
+ * retain their own yield/return contract.
  */
 async function driveStream(run: {
   method: Method;
@@ -818,6 +822,10 @@ async function driveStream(run: {
   });
   const progress = run.entry.progress;
   return answerUnlessCancelled(run.method, context.signal, async () => {
+    const diagnostics =
+      run.method === "textDocument/diagnostic"
+        ? new DiagnosticResults(token !== undefined)
+        : undefined;
     const collected: unknown[] = [];
     let yielded = false;
     const batches = handler(context, run.params);
@@ -859,6 +867,9 @@ async function driveStream(run: {
         const next = settled;
         if (next.done === true) {
           completed = true;
+          if (diagnostics !== undefined) {
+            return diagnostics.finish(next.value);
+          }
           return finishStream(
             run.method,
             next.value,
@@ -872,16 +883,21 @@ async function driveStream(run: {
         if (context.signal.aborted) {
           return null;
         }
-        if (!Array.isArray(next.value)) {
-          throw new TypeError(
-            `${run.method} handler yielded a batch that is not an array: ` +
-              `${JSON.stringify(next.value)}`,
-          );
-        }
-        yielded = true;
-        if (token === undefined) {
-          collected.push(...next.value);
+        if (diagnostics !== undefined) {
+          diagnostics.accept(next.value);
         } else {
+          if (!Array.isArray(next.value)) {
+            throw new TypeError(
+              `${run.method} handler yielded a batch that is not an array: ` +
+                `${JSON.stringify(next.value)}`,
+            );
+          }
+          yielded = true;
+          if (token === undefined) {
+            collected.push(...next.value);
+          }
+        }
+        if (token !== undefined) {
           await run.connection.sendProgress(progress, token, next.value);
         }
       }

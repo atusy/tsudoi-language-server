@@ -92,26 +92,25 @@ export function trailingRuns(text: string): TrailingRun[] {
  * `Diagnostic[]` is an array because a real analysis has several complaints in
  * several places.
  */
-export const trailingWhitespaceDiagnostics: MethodHandler<"textDocument/diagnostic"> = (
-  context,
-  params,
-) => {
-  const document = context.tsudoi.documents.get(params.textDocument.uri);
-  if (document === undefined) {
-    return Promise.resolve({ kind: "full", items: [] });
-  }
-  return Promise.resolve({
-    kind: "full",
-    items: trailingRuns(document.getText()).map((run) => ({
-      range: {
-        start: document.positionAt(run.start),
-        end: document.positionAt(run.end),
-      },
-      // A WARNING RATHER THAN AN ERROR: nothing here stops the file being read,
-      // and an example that shouts is an example whose severity a reader
-      // changes before they have understood what it is for.
-      severity: DiagnosticSeverity.Warning,
-      message: warning,
-    })),
-  });
-};
+export const trailingWhitespaceDiagnostics: MethodHandler<"textDocument/diagnostic"> =
+  // eslint-disable-next-line require-yield -- Return-only diagnostic generators send one report.
+  async function* (context, params) {
+    const document = context.tsudoi.documents.get(params.textDocument.uri);
+    if (document === undefined) {
+      return { kind: "full", items: [] };
+    }
+    return {
+      kind: "full",
+      items: trailingRuns(document.getText()).map((run) => ({
+        range: {
+          start: document.positionAt(run.start),
+          end: document.positionAt(run.end),
+        },
+        // A WARNING RATHER THAN AN ERROR: nothing here stops the file being read,
+        // and an example that shouts is an example whose severity a reader
+        // changes before they have understood what it is for.
+        severity: DiagnosticSeverity.Warning,
+        message: warning,
+      })),
+    };
+  };

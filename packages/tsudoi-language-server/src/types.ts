@@ -18,6 +18,7 @@ import type {
   CompletionParams,
   DocumentDiagnosticParams,
   DocumentDiagnosticReport,
+  DocumentDiagnosticReportPartialResult,
   DocumentFormattingParams,
   ExecuteCommandParams,
   Hover,
@@ -318,8 +319,8 @@ export interface Tsudoi {
  * first-class thing to send rather than a cast.
  *
  * `$/progress` AND `$/cancelRequest` ARE LEFT OUT DELIBERATELY rather than
- * overlooked. Both are protocol machinery tsudoi drives itself -- the completion
- * and code-action drives own the progress channel -- so typing them here would
+ * overlooked. Both are protocol machinery tsudoi drives itself -- the generator
+ * drive owns the partial-result progress channel -- so typing them here would
  * present as ordinary a call that races tsudoi's own. They stay SENDABLE, as any
  * string is; an author reaching for one is doing something this surface declines
  * to make comfortable.
@@ -372,25 +373,20 @@ export interface MethodMap {
   };
 
   /**
-   * Not stream-driven despite `DocumentDiagnosticRequest`
-   * declaring `partialResult`: that drive concatenates chunks and requires
-   * arrays, while `DocumentDiagnosticReportProgress` is a union of two object
-   * types -- and the stream carries RELATED DOCUMENTS, which are out of scope,
-   * so the partial channel would carry nothing at all.
-   *
-   * NO `| null`, which is the protocol's shape rather than a strictness chosen
-   * here. `nothing to say` is `{ kind: "full", items: [] }` -- a report saying
-   * the file is CLEAN -- and the distinction matters, because a client that
-   * receives no report leaves the previous one on screen.
-   *
-   * FULL REPORTS ONLY: `UnchangedDocumentDiagnosticReport` REQUIRES a
-   * `resultId`, so declining result ids makes `unchanged` unreachable by
-   * construction. `previousResultId` arrives in the params and is ignored,
-   * which is conforming.
+   * Yield the requested document report first, then related-document partials.
+   * Finish without a return after yielding, or return one report without yielding.
+   * With a valid token all yields travel as progress and the final response is null;
+   * otherwise related documents are merged into the first report (ADR 0010).
+   * No report, a partial first, or a result returned after yielding is a handler error.
+   * Report contents, result IDs and relatedDocumentSupport are the author's responsibility.
    */
   "textDocument/diagnostic": {
     params: DocumentDiagnosticParams;
-    result: Promise<DocumentDiagnosticReport>;
+    result: AsyncGenerator<
+      DocumentDiagnosticReport | DocumentDiagnosticReportPartialResult,
+      DocumentDiagnosticReport | void,
+      void
+    >;
   };
 
   /**
@@ -450,22 +446,8 @@ export interface MethodMap {
   };
 
   /**
-   * STREAM-DRIVEN BY A RULING WRITTEN DOWN, WHICH IS WHAT SEPARATES THIS ROW
-   * FROM EVERY ROW ABOVE IT -- not that nobody preferred anything for those, but
-   * that no ruling records a drive being WEIGHED for one. Two of them could not
-   * have been: `textDocument/diagnostic` fails the ARRAY condition
-   * -- its partial results are objects carrying OTHER documents -- and
-   * `workspace/executeCommand` fails the TOKEN one, its params carrying none.
-   * MEASURED here: `CodeActionParams extends WorkDoneProgressParams,
-   * PartialResultParams`, and `CodeActionRequest.type`'s partial-result slot is
-   * `(Command | CodeAction)[]`. Both of `driveStream`'s conditions hold, so the
-   * awaited drive was available to this row and was declined.
-   *
-   * THE REASON IS WHAT THE SHAPE KEEPS OPEN AND NOT WHAT IT DOES TODAY. The two
-   * spellings are NOT symmetric in what they foreclose: `Promise<...>` and
-   * `AsyncGenerator<...>` are equally breaking to swap in every config declaring
-   * this key, so a wrong choice costs the same either way -- and only one of them
-   * can ever grow partial results without being swapped.
+   * Code actions yield arrays, as completion does. Diagnostics share the generator
+   * lifecycle but validate and aggregate object reports under their own contract.
    *
    * A code-action menu is usually read and chosen from as a whole; appending an
    * action after it opens can move the row under the user's cursor. A handler

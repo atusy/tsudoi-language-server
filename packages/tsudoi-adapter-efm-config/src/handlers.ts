@@ -233,7 +233,8 @@ export function handlersFor(
         }
       }
     }
-    const diagnostic: MethodHandler<"textDocument/diagnostic"> = async (context, params) => {
+    // eslint-disable-next-line require-yield -- Return-only diagnostic generators send one report.
+    const diagnostic: MethodHandler<"textDocument/diagnostic"> = async function* (context, params) {
       const document = context.tsudoi.documents.get(params.textDocument.uri);
       const path = pathOf(params.textDocument.uri);
       const items: Diagnostic[] = [];

@@ -46,16 +46,17 @@ function scan(text: string): number[] {
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      "textDocument/diagnostic": (context, params) => {
+      // eslint-disable-next-line require-yield -- Return-only diagnostic generators send one report.
+      "textDocument/diagnostic": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         // A FULL REPORT WITH NO ITEMS, NOT `null`, AND THAT IS THE PROTOCOL'S
         // SHAPE RATHER THAN A HOUSE STYLE: this result declares no null arm, and
         // an empty full report is a REPORT SAYING THE FILE IS CLEAN -- which is
         // what makes a client clear the diagnostics it is already showing.
         if (document === undefined) {
-          return Promise.resolve({ kind: "full" as const, items: [] });
+          return { kind: "full" as const, items: [] };
         }
-        return Promise.resolve({
+        return {
           kind: "full" as const,
           items: scan(document.getText()).map((offset) => ({
             range: {
@@ -65,7 +66,7 @@ export default (): Promise<TsudoiConfig> => {
             severity: DiagnosticSeverity.Warning,
             message,
           })),
-        });
+        };
       },
     },
   });

@@ -157,9 +157,10 @@ describe("the handlers a config describes", () => {
 
     const report = await handler?.(contextFor(uri, "a\nb\nc\nd", "plaintext"), {
       textDocument: { uri },
-    });
+    }).next();
 
-    expect(report).toEqual({
+    expect(report?.done).toBe(true);
+    expect(report?.value).toEqual({
       kind: "full",
       items: [
         {
@@ -192,10 +193,13 @@ describe("the handlers a config describes", () => {
     const withheld = stage(yaml("      lint-stdin: false\n"), "only line");
 
     const ask = async (config: string, uri: string) =>
-      (await (loadEfmConfig({ path: config }).methods ?? {})["textDocument/diagnostic"]?.(
-        contextFor(uri, "only line", "plaintext"),
-        { textDocument: { uri } },
-      )) as { items: readonly { message: string }[] };
+      (
+        await (loadEfmConfig({ path: config }).methods ?? {})
+          ["textDocument/diagnostic"]?.(contextFor(uri, "only line", "plaintext"), {
+            textDocument: { uri },
+          })
+          .next()
+      )?.value as { items: readonly { message: string }[] };
 
     expect((await ask(byDefault.config, byDefault.uri)).items.map((one) => one.message)).toEqual([
       "only line",

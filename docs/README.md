@@ -460,6 +460,27 @@ route through tsudoi today. What your editor does with the answer after that is 
 protocol -- LSP contemplates a client applying a workspace edit a command returned, and tsudoi
 neither arranges that nor prevents it.
 
+## Streaming document diagnostics
+
+`textDocument/diagnostic` handlers are async generators. To migrate a promise-returning
+handler, use `async function* (context, params)` and keep its `return report`. Direct callers
+must consume the generator, including its return value, instead of awaiting the handler call.
+
+For partial results, yield a `DocumentDiagnosticReport` first, then yield
+`DocumentDiagnosticReportPartialResult` objects containing `relatedDocuments`. Finish with a
+bare return or fall through. A valid `partialResultToken` sends every yield immediately as
+`$/progress`, followed by a `null` response. Without a valid token, tsudoi merges related-document
+entries into the initial report and sends one response. Later entries for the same related URI
+replace earlier ones; they do not append to the requested document's `items`.
+
+A handler may instead return one report without yielding, even with a token. Returning a result
+after yielding, yielding a partial before the initial report, yielding a second initial report,
+or producing no report is a handler error. To report no diagnostics, produce
+`{ kind: "full", items: [] }`. Both full and unchanged reports are supported; handlers own result
+IDs and must respect `clientCapabilities.textDocument?.diagnostic?.relatedDocumentSupport` when
+producing related reports. Tsudoi checks report envelopes and sequencing, not every diagnostic
+field. See [ADR 0010](architecture-decision/0010-stream-document-diagnostic-reports.md).
+
 ## Actions your editor can offer
 
 `textDocument/codeAction` is the menu your user opens on a diagnostic, a selection or a cursor
@@ -626,12 +647,10 @@ a custom request handler.
 
 ## Cleanup in a handler
 
-A `finally` inside a **completion or code-action handler** runs when the editor abandons the
-request -- which, for completion, it does on every keystroke that supersedes the last one. Both
-handlers ARE async generators, so the body outlives the first batch it yields;
-tsudoi **closes the generator** then, which is what runs the cleanup written there. One drive runs
-both, so this is the same behaviour rather than two -- though what the suite exercises is
-completion.
+Tsudoi closes the generator after cancellation or a failure while consuming yields, running
+the handler's `finally`. Completion, code-action, and diagnostic handlers are async generators;
+their bodies can outlive the first result they yield. All three share the same generator
+lifecycle. Values yielded or returned during cleanup are discarded.
 
 **Closing is requested, not imposed**, and the difference is one your handler controls. If the
 abandonment arrives while tsudoi is waiting on a batch from you, the close queues behind that
