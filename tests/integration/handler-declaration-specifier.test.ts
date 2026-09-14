@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -13,6 +13,7 @@ import { dirname, join, relative } from "node:path";
 import { handlerMembers } from "../../scripts/workspaces.ts";
 import { repoRoot } from "../helpers/spawn.ts";
 import { applySuiteDeadline } from "../helpers/deadline.ts";
+import { packIsolatedPackage } from "../helpers/install.ts";
 
 applySuiteDeadline();
 
@@ -87,69 +88,17 @@ applySuiteDeadline();
  * unavailable and would be red today: each handler's `index.d.ts` re-exports its
  * own modules and names the framework nowhere, correctly.
  *
- * TWO CHEAPER-LOOKING SUBJECTS ARE REFUSED, EACH FOR ITS OWN REASON, because
- * both are the obvious next edit to this file. An arm COMPARING THE TWO BUILDS'
- * OUTPUTS pays a second build per run to re-derive what the `bun test` preload
- * already forces. An arm asserting that the framework's src/ and dist/ AGREE is
- * structurally green under that same preload, and can only redden in a state
- * where the build already failed loudly. Both are the check whose cost
- * re-derives a guarantee.
+ * THE ARTIFACT IS PACKED FROM AN ISOLATED COPY. The full suite also packs the real
+ * members at module load, and every prepack clears `dist` before rebuilding it.
+ * Reading checkout `dist` here therefore raced a delete-and-compile window and
+ * intermittently reported a handler as silent. The isolated copy runs that same
+ * member-owned prepack, retaining the publication-path coverage without sharing
+ * mutable output with another test file. Its copied `dist` is deliberately
+ * absent before prepack, so stale checkout declarations cannot satisfy the arm.
  *
- * NO SECOND BUILD HAPPENS HERE, AND THAT IS THE HALF OF THE OLD SENTENCE THAT
- * SURVIVED BEING MEASURED: this file spawns nothing and compiles nothing, it
- * opens files. WHAT STOOD BESIDE IT WAS PROVENANCE AND WAS FALSE -- `this reads
- * the artifact tests/helpers/build.ts already wrote before any test file loaded`.
- * IT READS THE ARTIFACT AS THE RUN LAST LEFT IT, and under a full `bun test` a
- * PACK left it. The one that cannot be got behind is the TOP-LEVEL AWAIT in
- * tests/integration/packed-members.test.ts: `packPackage` per handler, resolved AT MODULE
- * LOAD, running `bun pm pack` with cwd set to the REAL member, whose `prepack`
- * opens `rm -rf dist`. Both handlers' dist/ is deleted and recompiled before any
- * test body runs, so the preload's output is already gone by the time anything
- * here opens a file. IT IS NOT THE ONLY REBUILDER AND THAT DOES NOT WEAKEN THE
- * POINT: each HANDLER's README carries its own `bun pm pack` and
- * tests/e2e/readme.test.ts executes the pack command it carries, and
- * `installConsumer` in tests/helpers/install.ts packs every handler root it is
- * not asked to withhold, from where it lives -- so which pack this reads depends
- * on order, and every candidate is a PACK rather than the preload. THE THIRD ONE
- * WAS ADDED BY AN ENUMERATION THAT WENT LOOKING, and the two-item version stood
- * here while being the set this paragraph's reasoning runs over: a candidate
- * list is a claim, and this one was written from memory. `EACH MEMBER'S` WAS THE
- * SAME DEFECT ONE WORD WIDE -- three members, two READMEs, the framework's pack
- * line living in the checkout root's README instead.
- *
- * SO THE COVERAGE IS NARROWER THAN THE TRANSFORM NAMED ABOVE, AND THE LINE IS
- * WHICH BUILD WROTE THE FILE. A transform living in a HANDLER'S OWN `prepack`
- * travels into what this reads and IS CAUGHT. A transform in the SHARED BUILD
- * PATH -- `prepareWorkspace` in scripts/workspaces.ts, which is what the preload
- * runs -- is ERASED by that pack before this looks, and this arm goes green over
- * the very thing it is the subject of. MEASURED IN BOTH DIRECTIONS at the base
- * and version above, one rewrite moved between the two sites: from a handler's
- * `prepack`, 933 pass / 5 fail with this arm among them, naming BOTH handlers on
- * the `silent` list, and the checkout's dist/ left carrying the relative path.
- * From `prepareWorkspace`, 938 pass / 0 fail -- NOTHING fires, this arm
- * included -- and the same dist/ is left carrying the SPECIFIER, which is the
- * pack having rebuilt over the preload's output rather than an inference about
- * it.
- *
- * AND THE CONSEQUENCE OF THAT LINE IS WHAT MAKES IT A BOUND RATHER THAN A HOLE,
- * READ OFF THE MANIFESTS AND NOT RECOLLECTED. The erased half is not in the
- * TARBALL'S PRODUCER: each handler declares `files: ["dist"]` and
- * `prepack: "rm -rf dist && tsc -p tsconfig.build.json"`, so what a stranger
- * installs is built by THAT MEMBER'S OWN prepack through THAT MEMBER'S OWN build
- * config, and nothing in `prepareWorkspace` runs when `bun pm pack` produces it.
- * SO THE HALF THIS ARM COVERS IS THE PUBLICATION PATH AND THE HALF IT MISSES IS
- * THE DEVELOPMENT ARTIFACT -- a transform in the shared path corrupts the tree
- * the suite grades, which is a real fault and somebody else's, but it cannot
- * reach what is shipped. The retirement this arm exists to guard is a claim
- * about consumer-facing artifacts, and that is the half read here. The corrected
- * provenance is therefore BETTER aligned with the subject than the sentence it
- * replaced, which is said plainly because a reader meeting a repaired false
- * claim will otherwise assume the repair cost something.
- *
- * THE RESIDUE IS NAMED AND NOT CLOSED. Closing it takes a second build, or a
- * detector for whether a rebuild happened between the preload and this read; the
- * first is refused in the paragraph above, and the second buys a fact about the
- * suite's own machinery rather than about a handler's declarations.
+ * A transform in the SHARED development builder remains outside this arm. The
+ * tarball producer is the handler's own prepack and build config, which is the
+ * consumer-facing boundary this retirement depends on.
  *
  * AND IT WAS BELIEVED ON DEGENERATES RATHER THAN ON ITS OWN GREEN. MEASURED on
  * bun test v1.3.13, AT BASE 0ddae74 AND RUN ALONE -- the base is named because
@@ -177,6 +126,28 @@ applySuiteDeadline();
 
 /** The framework's published name, which is the whole of what travels. */
 const PUBLISHED_NAME = "@atusy/tsudoi-language-server";
+
+const handlerArtifacts = new Map(
+  await Promise.all(
+    handlerMembers(repoRoot).map(
+      async (member) => [member, await packIsolatedPackage(member)] as const,
+    ),
+  ),
+);
+
+afterAll(() => {
+  for (const artifact of handlerArtifacts.values()) {
+    artifact.dispose();
+  }
+});
+
+function artifactRoot(member: string): string {
+  const artifact = handlerArtifacts.get(member);
+  if (artifact === undefined) {
+    throw new Error(`no isolated artifact for ${member}`);
+  }
+  return artifact.dir;
+}
 
 /**
  * The directories a handler's own `exports` map promises declarations in, which
@@ -251,7 +222,8 @@ test("every handler's emitted declarations still name the framework by specifier
   expect(handlerMembers(repoRoot).length).toBeGreaterThan(0);
 
   const silent = handlerMembers(repoRoot).filter(
-    (member) => frameworkReferences(declarationDirectories(member)).naming.length === 0,
+    (member) =>
+      frameworkReferences(declarationDirectories(artifactRoot(member))).naming.length === 0,
   );
 
   expect(silent.map((member) => relative(repoRoot, member))).toEqual([]);
@@ -274,7 +246,7 @@ test("every handler's emitted declarations still name the framework by specifier
  */
 test("the same read opens declarations in every handler, so a silent artifact is not an unread one", () => {
   const unread = handlerMembers(repoRoot).filter(
-    (member) => frameworkReferences(declarationDirectories(member)).read.length === 0,
+    (member) => frameworkReferences(declarationDirectories(artifactRoot(member))).read.length === 0,
   );
 
   expect(unread.map((member) => relative(repoRoot, member))).toEqual([]);
