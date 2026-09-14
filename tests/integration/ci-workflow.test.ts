@@ -215,7 +215,7 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
   ).toBeTrue();
   expect(uses.every((value) => /^[^@\s]+@[0-9a-f]{40}$/.test(value))).toBeTrue();
   expect(verifyCommands).toContain(
-    'node scripts/verify-registry-release.js "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance',
+    'node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance',
   );
   expect(verifyCommands).toContain(
     'node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"',
@@ -224,6 +224,12 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
     "${{ github.sha }}",
   );
   expect(prepareSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
+    "${{ github.sha }}",
+  );
+  expect(publishSteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
+    "${{ github.sha }}",
+  );
+  expect(verifySteps.find((step) => step.uses?.startsWith("actions/checkout@"))?.with?.ref).toBe(
     "${{ github.sha }}",
   );
   expect(qualitySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
@@ -240,6 +246,9 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
     "registry-url": "https://registry.npmjs.org",
     "package-manager-cache": false,
   });
+  expect(
+    publishSteps.find((step) => step.uses?.startsWith("oven-sh/setup-bun@"))?.with?.["bun-version"],
+  ).toBe("1.3.13");
   expect(verifySteps.find((step) => step.uses?.startsWith("actions/setup-node@"))?.with).toEqual({
     "node-version": "24.20.0",
     "registry-url": "https://registry.npmjs.org",
@@ -272,6 +281,8 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
   expect(prepareCommands).not.toContain("bun add --global oxlint@latest oxfmt@latest");
   expect(prepareCommands).toContain('test "$(npm --version)" = "11.19.0"');
   expect(publishCommands).toContain('test "$(npm --version)" = "11.19.0"');
+  expect(publishCommands).toContain("bun install --frozen-lockfile --ignore-scripts");
+  expect(verifyCommands).toContain("bun install --frozen-lockfile --ignore-scripts");
   expect(source).not.toContain("npm@latest");
   expect(prepareCommands).toContain('bun run scripts/pack-release.ts "$RUNNER_TEMP/npm-release"');
   expect(prepareCommands).toContain(
@@ -281,10 +292,10 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
     'cd "$RUNNER_TEMP/npm-release-bundle" && sha256sum --check SHA256SUMS',
   );
   expect(publishCommands).toContain(
-    'node scripts/publish-release.js "$RUNNER_TEMP/npm-release-bundle/release" --provenance',
+    'node scripts/publish-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --provenance',
   );
-  expect(publishCommands).not.toContain("bun install --frozen-lockfile");
-  expect(publishCommands.some((command) => command.startsWith("bun "))).toBeFalse();
+  expect(source).not.toContain("bun build scripts/publish-release.ts");
+  expect(source).not.toContain("bun build scripts/verify-registry-release.ts");
   const publishSetupIndex = publishSteps.findIndex((step) =>
     step.uses?.startsWith("actions/setup-node@"),
   );
@@ -299,8 +310,12 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
     (step) => step.name === "Publish with npm Trusted Publishing",
   );
   expect(publishSetupIndex).toBeGreaterThanOrEqual(0);
+  const publishInstallIndex = publishSteps.findIndex(
+    (step) => step.run?.trim() === "bun install --frozen-lockfile --ignore-scripts",
+  );
   expect(npmVersionIndex).toBeGreaterThan(publishSetupIndex);
-  expect(downloadIndex).toBeGreaterThan(npmVersionIndex);
+  expect(publishInstallIndex).toBeGreaterThan(npmVersionIndex);
+  expect(downloadIndex).toBeGreaterThan(publishInstallIndex);
   expect(checksumIndex).toBeGreaterThan(downloadIndex);
   expect(publishIndex).toBeGreaterThan(checksumIndex);
   expect(validationCommands).toContain('test "$RELEASE_TAG" = "v${release_version}"');
@@ -338,14 +353,9 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
   );
   const bundle = prepareSteps[bundleIndex]?.run ?? "";
   expect(bundleIndex).toBeGreaterThan(packStepIndex);
-  expect(bundle).toContain("scripts/smoke-registry-release.ts");
-  expect(bundle).toContain("bun build scripts/publish-release.ts --target=node");
-  expect(bundle).toContain("scripts/publish-release.js");
-  expect(bundle).toContain("bun build scripts/verify-registry-release.ts --target=node");
-  expect(bundle).toContain("scripts/verify-registry-release.js");
-  expect(bundle).toContain("scripts/workspaces.ts");
-  expect(bundle).toContain("tests/helpers/lsp.ts");
-  expect(bundle).toContain("tests/helpers/spawn.ts");
+  expect(bundle).toContain('mkdir -p "$bundle/release"');
+  expect(bundle).toContain('cp -R "$RUNNER_TEMP/npm-release/." "$bundle/release/"');
+  expect(bundle).not.toContain("repository");
 
   expect(verify?.["timeout-minutes"]).toBe(35);
   const verifySetupIndex = verifySteps.findIndex((step) =>
@@ -362,7 +372,11 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
     (step) => step.name === "Smoke-test fresh Bun and Deno consumers",
   );
   expect(verifySetupIndex).toBeGreaterThanOrEqual(0);
-  expect(verifyDownloadIndex).toBeGreaterThan(verifySetupIndex);
+  const verifyInstallIndex = verifySteps.findIndex(
+    (step) => step.run?.trim() === "bun install --frozen-lockfile --ignore-scripts",
+  );
+  expect(verifyInstallIndex).toBeGreaterThan(verifySetupIndex);
+  expect(verifyDownloadIndex).toBeGreaterThan(verifyInstallIndex);
   expect(verifyChecksumIndex).toBeGreaterThan(verifyDownloadIndex);
   expect(metadataIndex).toBeGreaterThan(verifyChecksumIndex);
   expect(smokeIndex).toBeGreaterThan(metadataIndex);

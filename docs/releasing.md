@@ -137,10 +137,13 @@ checked-out commit, tag, and package version agree. An unprivileged
 runner checks out the immutable release commit, installs the latest `oxlint` and `oxfmt`, and runs
 `bun run check`, including tests under Bun and Deno. After that succeeds, a fresh runner checks out
 the same commit and uses locked dependencies to pack a checksummed release; no floating Ox
-executable runs on the filesystem that produces the release bundle. The OIDC job publishes only
-that immutable bundle with provenance. Re-running the job is safe only for registry artifacts whose
-integrity matches the freshly packed tarballs; any other existing artifact is refused. A separate
-unprivileged job then verifies registry metadata, requires each package's SLSA provenance,
+executable runs on the filesystem that produces the release bundle. That bundle contains only
+tarballs, their manifest, and checksums—never producer-generated executable code. The OIDC job
+checks out the same release commit, installs lockfile-bound dependencies with lifecycle scripts
+disabled, and runs the reviewed publisher source against that data-only bundle. Re-running the job
+is safe only for registry artifacts whose integrity matches the freshly packed tarballs; any other
+existing artifact is refused. A separate unprivileged job then verifies registry metadata, requires
+each package's SLSA provenance,
 cryptographically checks the exact installed release with `npm audit signatures`, and policy-checks
 the signed subject, repository, workflow path, tag ref, and commit before running the same fresh Bun
 and Deno consumer smoke test. The verification job has neither the `npm` environment nor OIDC

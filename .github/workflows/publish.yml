@@ -94,17 +94,8 @@ jobs:
       - name: Build the immutable release bundle
         run: |
           bundle="$RUNNER_TEMP/npm-release-bundle"
-          mkdir -p "$bundle/release" "$bundle/repository/scripts" "$bundle/repository/packages" "$bundle/repository/tests/helpers"
+          mkdir -p "$bundle/release"
           cp -R "$RUNNER_TEMP/npm-release/." "$bundle/release/"
-          cp package.json "$bundle/repository/package.json"
-          cp scripts/smoke-registry-release.ts scripts/workspaces.ts "$bundle/repository/scripts/"
-          cp tests/helpers/lsp.ts tests/helpers/spawn.ts "$bundle/repository/tests/helpers/"
-          bun build scripts/publish-release.ts --target=node --outfile "$bundle/repository/scripts/publish-release.js"
-          bun build scripts/verify-registry-release.ts --target=node --outfile "$bundle/repository/scripts/verify-registry-release.js"
-          for member in packages/*; do
-            mkdir -p "$bundle/repository/$member"
-            cp "$member/package.json" "$bundle/repository/$member/package.json"
-          done
           cd "$bundle"
           # SHA256SUMS is explicitly excluded from find's input set.
           # shellcheck disable=SC2094
@@ -128,13 +119,21 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.20.0
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.13
       - name: Verify the publishing npm version
         run: test "$(npm --version)" = "11.19.0"
+      - name: Install locked dependencies without lifecycle scripts
+        run: bun install --frozen-lockfile --ignore-scripts
       - name: Download the release bundle
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -143,9 +142,7 @@ jobs:
       - name: Verify the release bundle
         run: cd "$RUNNER_TEMP/npm-release-bundle" && sha256sum --check SHA256SUMS
       - name: Publish with npm Trusted Publishing
-        run: |
-          cd "$RUNNER_TEMP/npm-release-bundle/repository"
-          node scripts/publish-release.js "$RUNNER_TEMP/npm-release-bundle/release" --provenance
+        run: node scripts/publish-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --provenance
 
   verify:
     needs: [prepare, publish]
@@ -154,6 +151,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.20.0
@@ -165,6 +165,8 @@ jobs:
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.9.4
+      - name: Install locked dependencies without lifecycle scripts
+        run: bun install --frozen-lockfile --ignore-scripts
       - name: Download the release bundle
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -173,10 +175,6 @@ jobs:
       - name: Verify the release bundle
         run: cd "$RUNNER_TEMP/npm-release-bundle" && sha256sum --check SHA256SUMS
       - name: Verify registry metadata
-        run: |
-          cd "$RUNNER_TEMP/npm-release-bundle/repository"
-          node scripts/verify-registry-release.js "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance
+        run: node scripts/verify-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release" --require-provenance
       - name: Smoke-test fresh Bun and Deno consumers
-        run: |
-          cd "$RUNNER_TEMP/npm-release-bundle/repository"
-          node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"
+        run: node scripts/smoke-registry-release.ts "$RUNNER_TEMP/npm-release-bundle/release"
