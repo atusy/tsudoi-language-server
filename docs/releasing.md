@@ -132,16 +132,42 @@ the entire alpha pipeline without allocating a runner. See GitHub's
 [release event documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
 
 If a publish run fails after changing some packages, do not move or delete the tag, and do not
-unpublish or recreate the GitHub Release. Rerun the failed jobs from that exact workflow run while
-its one-day release bundle is retained, then watch the new attempt:
+unpublish or recreate the GitHub Release. If the checked-in workflow is sound and the failure was
+transient, rerun the failed jobs from that exact workflow run while its one-day release bundle is
+retained, then watch the new attempt:
 
 ```sh
 gh run rerun "$run_id" --failed
 gh run watch "$run_id" --exit-status
 ```
 
+GitHub reruns use the workflow and scripts from the original release commit. Merging a verifier fix
+later does not repair that run. When verification itself was defective, merge the fix before the
+next version bump, download the original data-only bundle, verify its checksum, and run only the
+read-only verification stages from the fixed checkout:
+
+```sh
+git switch main
+git pull --ff-only origin main
+test -z "$(git status --short)"
+bun install --frozen-lockfile --ignore-scripts
+recovery_dir="$(mktemp -d "${TMPDIR:-/tmp}/tsudoi-npm-recovery.XXXXXX")"
+gh run download "$run_id" \
+  --name "npm-release-$release_commit" \
+  --dir "$recovery_dir"
+(cd "$recovery_dir" && shasum -a 256 --check SHA256SUMS)
+GITHUB_REF="refs/tags/$release_tag" GITHUB_SHA="$release_commit" \
+  node scripts/verify-registry-release.ts "$recovery_dir/release" --require-provenance
+bun run scripts/smoke-registry-release.ts "$recovery_dir/release"
+```
+
+These commands do not publish or change dist-tags. Keep the failed workflow run as the immutable
+record, and record the successful manual verification separately.
+
 If the artifact has expired, `gh run rerun "$run_id"` reruns the whole workflow from the original
 release ref and rebuilds it; the publisher will resume only where registry artifact integrity
-matches. Verify the registry before preparing another version. The fixed workflow concurrency
-group serializes up to GitHub's maximum queue of release runs, and the publisher refuses to move an
+matches. A defective original verifier may leave that rerun red again, but its refreshed artifact
+can be downloaded and checked with the fixed checkout by repeating the read-only recovery block
+above. Verify the registry before preparing another version. The fixed workflow concurrency group
+serializes up to GitHub's maximum queue of release runs, and the publisher refuses to move an
 `alpha` dist-tag to the same or an older version.
