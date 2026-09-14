@@ -206,6 +206,7 @@ test("the verifier refuses unsafe alpha and latest tag movement", () => {
 });
 
 test("the verifier rejects invalid provenance before installation", () => {
+  const preflightLog = join(parent, "invalid-provenance-npm.log");
   for (const invalid of [
     { BAD_ATTESTATION_URL: "1", error: "does not expose npmjs SLSA provenance" },
     { BAD_PREDICATE: "1", error: "does not expose npmjs SLSA provenance" },
@@ -217,13 +218,13 @@ test("the verifier rejects invalid provenance before installation", () => {
         cwd: repoRoot,
         encoding: "utf8",
         timeout: SPAWN_TIMEOUT_MS,
-        env: { ...env, ADD_ATTESTATIONS: "1", ...invalid },
+        env: { ...env, NPM_LOG: preflightLog, ADD_ATTESTATIONS: "1", ...invalid },
       },
     );
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain(invalid.error);
   }
-  const preflightCalls = readFileSync(join(parent, "npm.log"), "utf8")
+  const preflightCalls = readFileSync(preflightLog, "utf8")
     .trim()
     .split("\n")
     .map((line) => JSON.parse(line) as string[]);
@@ -231,6 +232,7 @@ test("the verifier rejects invalid provenance before installation", () => {
 });
 
 test("the verifier installs exact packages and audits signatures", () => {
+  const auditLog = join(parent, "audit-npm.log");
   const provenance = spawnSync(
     "node",
     ["scripts/verify-registry-release.ts", release, "--require-provenance"],
@@ -238,12 +240,12 @@ test("the verifier installs exact packages and audits signatures", () => {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, ADD_ATTESTATIONS: "1" },
+      env: { ...env, NPM_LOG: auditLog, ADD_ATTESTATIONS: "1" },
     },
   );
   expect(provenance.status).not.toBe(0);
   expect(provenance.stderr).toContain("provenance policy verification failed");
-  const calls = readFileSync(join(parent, "npm.log"), "utf8")
+  const calls = readFileSync(auditLog, "utf8")
     .trim()
     .split("\n")
     .map((line) => JSON.parse(line) as string[]);
@@ -259,7 +261,7 @@ test("the verifier installs exact packages and audits signatures", () => {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, ADD_ATTESTATIONS: "1", FAIL_AUDIT: "1" },
+      env: { ...env, NPM_LOG: auditLog, ADD_ATTESTATIONS: "1", FAIL_AUDIT: "1" },
     },
   );
   expect(failedAudit.status).not.toBe(0);
