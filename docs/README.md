@@ -17,7 +17,7 @@ If you want to try tsudoi before reading the full API and installation details, 
 `@atusy/tsudoi-language-server` is published to npm under the opt-in `alpha` tag. Install the
 framework with `bun add @atusy/tsudoi-language-server@alpha` or
 `deno add --save-exact npm:@atusy/tsudoi-language-server@alpha`. Install handlers with the same tag
-and keep the resolved `0.1.0-alpha.1` versions together. In a Deno-only project, start the server
+and keep the resolved `0.1.0-alpha.2` versions together. In a Deno-only project, start the server
 through its exported CLI with
 `deno run -A --frozen --node-modules-dir=none @atusy/tsudoi-language-server/cli --config ./tsudoi.config.ts`.
 Handlers declare that exact framework version as a
@@ -686,7 +686,7 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | [`@atusy/tsudoi-completion-shell`](../packages/tsudoi-completion-shell/README.md)           | `textDocument/completion`, from a native shell        |
 
   **Neither bundles its own tsudoi.** Both declare `@atusy/tsudoi-language-server` as a required,
-  exact **peer** at `0.1.0-alpha.1` — the framework version is a host-level choice, not a handler's,
+  exact **peer** at `0.1.0-alpha.2` — the framework version is a host-level choice, not a handler's,
   and a plain dependency could leave a second copy in your `node_modules` that your CLI never runs.
   Install the matching framework alpha beside every handler explicitly; Bun and npm may otherwise
   auto-install the required peer.

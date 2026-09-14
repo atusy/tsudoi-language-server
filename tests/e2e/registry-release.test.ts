@@ -94,7 +94,7 @@ process.exit(2);
       REPO_ROOT: repoRoot,
       NPM_LOG: join(parent, "npm.log"),
       NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "tests/helpers/fake-attestation-fetch.ts")).href}`,
-      GITHUB_REF: "refs/tags/v0.1.0-alpha.1",
+      GITHUB_REF: "refs/tags/v0.1.0-alpha.2",
       GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
     };
     const verified = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
@@ -104,7 +104,7 @@ process.exit(2);
       env,
     });
     expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
-    expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.1");
+    expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.2");
 
     const movedLatest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
@@ -169,7 +169,7 @@ process.exit(2);
       .map((line) => JSON.parse(line) as string[]);
     const install = calls.find((args) => args[0] === "install");
     expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
-    expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.1"))).toHaveLength(7);
+    expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.2"))).toHaveLength(7);
     expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
 
     const failedAudit = spawnSync(

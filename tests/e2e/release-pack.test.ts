@@ -67,7 +67,7 @@ test("the release packer writes ordered, checksummed tarballs for every public p
       .map(packageManifest)
       .filter((entry) => entry.private !== true);
 
-    expect(manifest.releaseVersion).toBe("0.1.0-alpha.1");
+    expect(manifest.releaseVersion).toBe("0.1.0-alpha.2");
     expect(manifest.packages?.map(({ name, version }) => ({ name, version }))).toEqual(
       expected.map(({ name, version }) => ({ name, version })),
     );
@@ -237,7 +237,7 @@ process.exit(2);
           RELEASE_DIR: destination,
           REPO_ROOT: repoRoot,
           NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "tests/helpers/fake-attestation-fetch.ts")).href}`,
-          GITHUB_REF: "refs/tags/v0.1.0-alpha.1",
+          GITHUB_REF: "refs/tags/v0.1.0-alpha.2",
           GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
         },
       },
@@ -461,7 +461,7 @@ if (args[0] === "view" && args[2] === "dist.integrity") {
   process.exit(1);
 }
 if (args[0] === "view" && args[2] === "dist-tags.alpha") {
-  process.stdout.write(JSON.stringify("0.1.0-alpha.1"));
+  process.stdout.write(JSON.stringify("0.1.0-alpha.2"));
   process.exit(0);
 }
 if (args[0] === "publish") {
