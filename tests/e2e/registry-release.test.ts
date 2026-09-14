@@ -46,6 +46,10 @@ if (args[0] === "view") {
     process.stderr.write("npm error code E404\\n");
     process.exit(1);
   }
+  const staleAlphaOnce =
+    process.env.STALE_ALPHA_ONCE_FILE !== undefined &&
+    !existsSync(process.env.STALE_ALPHA_ONCE_FILE);
+  if (staleAlphaOnce) writeFileSync(process.env.STALE_ALPHA_ONCE_FILE, "");
   const separator = args[1].lastIndexOf("@");
   const name = args[1].slice(0, separator);
   const version = args[1].slice(separator + 1);
@@ -59,7 +63,11 @@ if (args[0] === "view") {
     "dist-tags": {
       ...(process.env.OMIT_ALPHA === "1"
         ? {}
-        : { alpha: process.env.ALPHA_VERSION ?? version }),
+        : {
+            alpha: staleAlphaOnce
+              ? "0.1.0-alpha.1"
+              : process.env.ALPHA_VERSION ?? version,
+          }),
       ...(process.env.OMIT_LATEST === "1"
         ? {}
         : { latest: process.env.LATEST_VERSION ?? "0.1.0-alpha.1" }),
@@ -139,6 +147,14 @@ process.exit(2);
       env: { ...env, VIEW_E404_ONCE_FILE: join(parent, "view-e404-once") },
     });
     expect(`${String(transientE404.status)} ${transientE404.stderr}`).toBe("0 ");
+
+    const staleAlpha = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: { ...env, STALE_ALPHA_ONCE_FILE: join(parent, "stale-alpha-once") },
+    });
+    expect(`${String(staleAlpha.status)} ${staleAlpha.stderr}`).toBe("0 ");
 
     for (const [name, override, error] of [
       ["missing alpha", { OMIT_ALPHA: "1" }, "alpha must point to 0.1.0-alpha.2"],

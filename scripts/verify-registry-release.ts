@@ -7,7 +7,7 @@ import process from "node:process";
 import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
-import { runNpmViewWithRetries } from "./src/retry-npm-view.ts";
+import { runNpmViewWithRetries, runWithRetries } from "./src/retry-npm-view.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
@@ -102,6 +102,53 @@ function object(value: unknown, subject: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function alphaVersionParts(value: unknown): readonly [bigint, bigint, bigint, bigint] | null {
+  if (typeof value !== "string") return null;
+  const match = /^(\d+)\.(\d+)\.(\d+)-alpha\.(\d+)$/.exec(value);
+  if (match === null) return null;
+  return [
+    BigInt(match[1] as string),
+    BigInt(match[2] as string),
+    BigInt(match[3] as string),
+    BigInt(match[4] as string),
+  ];
+}
+
+function isEarlierAlphaVersion(candidate: unknown, expected: string): boolean {
+  const candidateParts = alphaVersionParts(candidate);
+  const expectedParts = alphaVersionParts(expected);
+  if (candidateParts === null || expectedParts === null) return false;
+  for (const [index, part] of candidateParts.entries()) {
+    const expectedPart = expectedParts[index] as bigint;
+    if (part !== expectedPart) return part < expectedPart;
+  }
+  return false;
+}
+
+async function npmRegistryMetadata(
+  args: readonly string[],
+  packageSpec: string,
+  expectedVersion: string,
+): Promise<Record<string, unknown>> {
+  return runWithRetries(
+    async () => object(await npmJson(args, packageSpec), `registry metadata for ${packageSpec}`),
+    (metadata) => {
+      const tags = metadata["dist-tags"];
+      return (
+        typeof tags === "object" &&
+        tags !== null &&
+        !Array.isArray(tags) &&
+        isEarlierAlphaVersion((tags as Record<string, unknown>).alpha, expectedVersion)
+      );
+    },
+    {
+      onRetry: (delay) => {
+        console.log(`registry alpha has not propagated ${packageSpec}; retrying in ${delay}ms`);
+      },
+    },
+  );
+}
+
 const [directoryArgument, provenanceArgument, ...unexpected] = process.argv.slice(2);
 if (
   directoryArgument === undefined ||
@@ -189,23 +236,21 @@ for (const [index, entry] of entries.entries()) {
   const sha512 = createHash("sha512").update(tarball).digest("hex");
   const integrity = `sha512-${Buffer.from(sha512, "hex").toString("base64")}`;
   const packageSpec = `${entry.name}@${entry.version}`;
-  const metadata = object(
-    await npmJson(
-      [
-        "view",
-        packageSpec,
-        "name",
-        "version",
-        "dist.integrity",
-        "dist.attestations",
-        "dist-tags",
-        "repository",
-        "peerDependencies",
-        "peerDependenciesMeta",
-      ],
+  const metadata = await npmRegistryMetadata(
+    [
+      "view",
       packageSpec,
-    ),
-    `registry metadata for ${packageSpec}`,
+      "name",
+      "version",
+      "dist.integrity",
+      "dist.attestations",
+      "dist-tags",
+      "repository",
+      "peerDependencies",
+      "peerDependenciesMeta",
+    ],
+    packageSpec,
+    entry.version,
   );
   const tags = object(metadata["dist-tags"], `registry dist-tags for ${packageSpec}`);
   if (
