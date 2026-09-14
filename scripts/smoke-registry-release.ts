@@ -260,14 +260,18 @@ async function smokeDeno(
     DENO_DIR: join(root, "deno-cache"),
     NPM_CONFIG_REGISTRY: NPM_REGISTRY,
   };
+  writeFileSync(
+    join(directory, "deno.json"),
+    `${JSON.stringify({
+      minimumDependencyAge: {
+        age: "PT24H",
+        exclude: entries.map(({ name }) => `npm:${name}`),
+      },
+    })}\n`,
+  );
   run(
     "deno",
-    [
-      "add",
-      "--save-exact",
-      "--minimum-dependency-age=0",
-      ...entries.map(({ name, version }) => `npm:${name}@${version}`),
-    ],
+    ["add", "--save-exact", ...entries.map(({ name, version }) => `npm:${name}@${version}`)],
     directory,
     env,
   );

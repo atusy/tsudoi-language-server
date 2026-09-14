@@ -220,7 +220,6 @@ test("the registry smoke exercises fresh Bun and Deno consumers through a clean 
       [
         "add",
         "--save-exact",
-        "--minimum-dependency-age=0",
         ...releasePackages().map(({ name, version }) => `npm:${name}@${version}`),
       ],
       ...releasePackages().map(({ name }) => [
@@ -253,6 +252,14 @@ test("the registry smoke exercises fresh Bun and Deno consumers through a clean 
     expect(basename(denoInstall.cache)).toBe("deno-cache");
     expect(basename(dirname(denoInstall.cwd))).toBe(basename(dirname(denoInstall.cache)));
     expect(denoInstall.cache).not.toBe(bunInstall.cache);
+    expect(calls.find((call) => call.runtime === "deno" && call.phase === "add")).toEqual({
+      runtime: "deno",
+      phase: "add",
+      minimumDependencyAge: {
+        age: "PT24H",
+        exclude: releasePackages().map(({ name }) => `npm:${name}`),
+      },
+    });
     const expectedConfig = [
       'import { completeAround } from "@atusy/tsudoi-completion-document";',
       'import type { TsudoiConfigFactory } from "@atusy/tsudoi-language-server/types";',
