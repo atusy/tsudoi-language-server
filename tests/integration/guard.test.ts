@@ -1,0 +1,348 @@
+import { expect, test } from "bun:test";
+import { dirname, join } from "node:path";
+import { lintProbe } from "../helpers/lint.ts";
+import { applySuiteDeadline } from "../helpers/deadline.ts";
+
+applySuiteDeadline();
+
+const lib = 'export const hello = () => "hi";\n';
+
+function importer(specifier: string): string {
+  return `import { hello } from "${specifier}";\nexport const greet = () => hello();\n`;
+}
+
+function importsBunModule(specifier: string): string {
+  return `import { Database } from "${specifier}";\nexport const db = Database;\n`;
+}
+
+/** A shape a .ts file can take in this repo, and what the guard owes it. */
+interface PathShape {
+  /**
+   * A probe file at that shape. RULES 1 TO 3 are exercised at every path here;
+   * RULE 4 IS NOT, and the reason is given at rule 4 rather than assumed.
+   */
+  readonly path: string;
+  /**
+   * Whether `bun:*` imports are exempt there. TRUE only where `bun test` itself
+   * needs them -- the exemption's WIDTH is a claim in its own right, since
+   * fixture configs execute under deno and must stay Bun-free.
+   */
+  readonly bunModulesExempt: boolean;
+}
+
+/**
+ * THE SHAPES, NAMED RATHER THAN COUNTED, and ONE list drives rules 1 to 3.
+ *
+ * ONE LIST BECAUSE THREE DRIFT APART. A list per rule ends up pinned at
+ * different paths -- three here, four there, four again but not the same four --
+ * and a path that appears in none of them is COVERED by the config's
+ * default-deny and merely unasserted, which is the shape a coverage gap takes
+ * right up until someone adds an override.
+ *
+ * Adding a shape here now costs three rules' worth of assertions at once, and
+ * that is the point: a path that lints differently from the others has to be
+ * declared different, in the one place that says what the guard is for.
+ *
+ * THE MEMBER SHAPE NAMES NO PACKAGE, AND THAT IS THE LOAD-BEARING PART OF IT.
+ * `packages/probe/src/index.ts` is a WORKSPACE MEMBER AS A CLASS: no package by
+ * that name exists, and the config holds nothing keyed to one, so what this pins
+ * is that a file under `packages/` lints exactly as src/ does. A shape naming the
+ * one package that exists today would leave the second one unpinned with nothing
+ * anywhere saying so -- and would have to be edited for every package added,
+ * which is the same defect the fifth Definition-of-Done check avoids by
+ * enumerating members from the workspace configuration.
+ *
+ * IT IS `src/` INSIDE THE MEMBER AND NOT ITS TESTS, deliberately: the overrides
+ * switch `no-restricted-imports` off at every test-file path, which a member's
+ * own test files match, so a member shape spelled as a test path would assert the
+ * RELAXED configuration while reading as the strict one.
+ *
+ * WHAT IT DEFENDS, and it is not hypothetical: without a `packages/` shape here,
+ * the ban reaches a member BY DEFAULT AND NOT BY ASSERTION -- an override later
+ * widened to cover `packages/` would redden NOTHING, because this file pins only
+ * the shapes it carries. Shipped to strangers who cannot fix it, a handler that
+ * lost its Bun-freeness is worse than an example a reader can edit.
+ */
+/**
+ * WHERE THE FRAMEWORK'S OWN SOURCE LIVES, spelled once and NAMING ITS PACKAGE --
+ * which is the opposite of the member shape below and for a reason.
+ *
+ * The config's factory exemption is keyed to ONE FILE BY PATH, so a probe
+ * anywhere else asserts the RELAXED or the STRICT configuration by accident
+ * rather than by choice. The `packages/probe/...` shape names no package because
+ * its claim is about the class. Since the framework moved under packages/, `a
+ * file under packages/ lints exactly as source does` has EXACTLY ONE ASSERTED
+ * EXCEPTION, and it is this path.
+ */
+const frameworkSrc = "packages/tsudoi-language-server/src";
+
+const pathShapes: readonly PathShape[] = [
+  { path: `${frameworkSrc}/server.ts`, bunModulesExempt: false },
+  { path: `${frameworkSrc}/notifications.ts`, bunModulesExempt: false },
+  { path: "tests/probe.test.ts", bunModulesExempt: true },
+  { path: "tests/helpers/probe.ts", bunModulesExempt: true },
+  { path: "tests/fixtures/probe.ts", bunModulesExempt: false },
+  { path: "examples/probe.config.ts", bunModulesExempt: false },
+  { path: "packages/probe/src/index.ts", bunModulesExempt: false },
+];
+
+/** The `./lib.ts` a probe at `path` imports, beside it in the same directory. */
+function siblingLib(path: string): string {
+  return join(dirname(path), "lib.ts");
+}
+
+// WHAT THIS FILE PINS AND WHAT THE TOOL PINS FOR ITSELF, so the next person does
+// not add a spelling guard the linter already is. MEASURED: an unknown RULE NAME
+// in .oxlintrc.json is refused -- `Rule not found`, exit 1 -- so a rule that
+// stopped applying because somebody misspelled it can never be silent. The
+// OVERRIDE GLOBS are the opposite: a glob that matches nothing applies nothing
+// and says nothing, which is why every shape above is pinned BY EFFECT, through
+// a real lint run over a real probe, rather than by reading the config's text.
+
+// RULE 1, import/extensions. Deno resolves no extensions, so a relative import
+// that omits .ts runs under bun and dies under deno -- the single most likely
+// way this codebase loses its second runtime.
+//
+// The two shapes inside the `overrides` entry carry a second claim: `plugins`
+// is declared only at the top level, so these assert the PLUGIN rule still
+// reaches into a scope where another rule is switched off. Without them
+// import/extensions could be silently dead across every test file and helper,
+// half the repo's TypeScript.
+for (const { path } of pathShapes) {
+  test(`a relative import without .ts is flagged in ${path}`, async () => {
+    const result = await lintProbe({ [siblingLib(path)]: lib, [path]: importer("./lib") });
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain("import(extensions)");
+    expect(result.output).toContain(path);
+  });
+
+  // The pair: the rule is about the EXTENSION, not about relative imports.
+  test(`the same relative import carrying .ts is not flagged in ${path}`, async () => {
+    const result = await lintProbe({ [siblingLib(path)]: lib, [path]: importer("./lib.ts") });
+
+    expect(result.code).toBe(0);
+  });
+}
+
+// RULE 2, the Bun global. Not exempted at any shape, deliberately: @types/bun
+// declares it, so `tsc --noEmit` ACCEPTS Bun.file() in src/ and this rule is
+// what rejects it. Each shape is named so a leak reports which one leaked.
+for (const { path } of pathShapes) {
+  test(`the Bun global is flagged in ${path}`, async () => {
+    const result = await lintProbe({ [path]: 'export const read = () => Bun.file("x").text();\n' });
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain("no-restricted-globals");
+    expect(result.output).toContain(path);
+  });
+
+  test(`removing the Bun global from ${path} leaves it unflagged`, async () => {
+    const result = await lintProbe({ [path]: 'export const read = () => fetch("x").text();\n' });
+
+    expect(result.code).toBe(0);
+  });
+}
+
+/** The Bun-global diagnostic, at one path and one line, anchored to a line start. */
+function bunGlobalAt(path: string, line: number): RegExp {
+  return new RegExp(
+    `^${path.replaceAll(".", "\\.")}:${line}:\\d+: .+ \\[Error/eslint\\(no-restricted-globals\\)\\]$`,
+    "m",
+  );
+}
+
+/** A Bun global on its own line, so a diagnostic can be attributed to that line. */
+const bunGlobalUse = 'export const read = () => Bun.file("x").text();\n';
+
+// RULE 3, bun:* imports. BOTH halves are under test at every shape: that the
+// exemption exists where `bun test` needs it, and that it is no wider.
+//
+// THE EXEMPT SHAPES CARRY A SECOND VIOLATION, AND IT IS THE HALF THAT MEASURES
+// ANYTHING. A bare `code === 0` is equally true of a rule that does not exist, a
+// config oxlint never read, and a path an `ignorePatterns` grew to cover -- the
+// degeneracy named at rule 4 below. MEASURED: against a config declaring no
+// rules, a bare `code === 0` at these two shapes stays GREEN, where rule 4's
+// paired arm reddens with an empty output.
+//
+// A BUN GLOBAL ON LINE 3, flagged by a rule THE OVERRIDE LEAVES ON -- it
+// switches off `no-restricted-imports` alone. So the diagnostic is reported
+// against THIS FILE, which is stronger than rule 4's two-files-in-one-run: that
+// proves the RUN live, this proves the FILE was linted, so lines 1 and 2 were
+// seen and approved rather than never read. Same construction as `node:url and a
+// package subpath stay unflagged in a file that is itself flagged`.
+//
+// WHAT IT LEANS ON, named rather than left to be discovered: `the Bun global is
+// flagged in ${path}` at rule 2 is what says the witness is alive at these
+// shapes. Exempting the Bun global there would redden this arm too, which is the
+// loud failure rather than the silent one.
+for (const { path, bunModulesExempt } of pathShapes) {
+  const verb = bunModulesExempt ? "is exempt" : "is flagged";
+  test(`a bun:sqlite import ${verb} in ${path}`, async () => {
+    if (bunModulesExempt) {
+      const result = await lintProbe({
+        [path]: `${importsBunModule("bun:sqlite")}${bunGlobalUse}`,
+      });
+
+      expect(result.output).toMatch(bunGlobalAt(path, 3));
+      expect(result.output).not.toContain(`${path}:1:`);
+      expect(result.code).toBe(1);
+      return;
+    }
+
+    const result = await lintProbe({ [path]: importsBunModule("bun:sqlite") });
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain("no-restricted-imports");
+    expect(result.output).toContain(path);
+  });
+}
+
+// node:url is a runtime builtin; vscode-languageserver-protocol/node is a package
+// subpath. Both are bare specifiers that import/extensions must leave alone.
+const bareSpecifiers = [
+  'import { fileURLToPath } from "node:url";',
+  'import { createConnection } from "vscode-languageserver-protocol/node";',
+].join("\n");
+const bareUsage = "export const used = [fileURLToPath, createConnection];\n";
+
+test("node:url and a package subpath import are not flagged", async () => {
+  const result = await lintProbe({ "src/bare.ts": `${bareSpecifiers}\n${bareUsage}` });
+
+  expect(result.code).toBe(0);
+});
+
+test("node:url and a package subpath stay unflagged in a file that is itself flagged", async () => {
+  // Proves oxlint really linted this file rather than skipping it: line 3 is
+  // reported, so lines 1 and 2 were seen and approved.
+  const result = await lintProbe({
+    "src/lib.ts": lib,
+    "src/bare.ts": `${bareSpecifiers}\n${importer("./lib")}${bareUsage}`,
+  });
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("src/bare.ts:3:1:");
+  expect(result.output).not.toContain("src/bare.ts:1:");
+  expect(result.output).not.toContain("src/bare.ts:2:");
+});
+
+test('a bare "bun" import is flagged, not only the bun: namespace', async () => {
+  const result = await lintProbe({ [`${frameworkSrc}/server.ts`]: importsBunModule("bun") });
+
+  expect(result.code).toBe(1);
+  expect(result.output).toContain("no-restricted-imports");
+});
+
+/** A probe importing `name` from the module the connection factory lives in. */
+function importsProtocolExport(name: string): string {
+  return `import { ${name} } from "vscode-languageserver-protocol/node";\nexport const used = ${name};\n`;
+}
+
+/**
+ * The diagnostic the factory ban produces, BOUND TO ONE FILE AND NAMING THE
+ * IMPORT, on one line rather than as independent substrings: in a multi-file run
+ * `toContain("no-restricted-imports")` is satisfied by a diagnostic in the OTHER
+ * probe file and records nothing.
+ *
+ * The NAME form is what discriminates the rule this repo wants from a module-wide
+ * ban: banning the specifier reports `'vscode-languageserver-protocol/node'
+ * import is restricted` and never mentions createProtocolConnection, so this
+ * regex fails against it.
+ */
+function factoryBanAt(path: string): RegExp {
+  return new RegExp(
+    `^${path.replaceAll(".", "\\.")}:\\d+:\\d+: ` +
+      `'createProtocolConnection' import from 'vscode-languageserver-protocol/node' is restricted\\. ` +
+      `\\[Error/eslint\\(no-restricted-imports\\)\\]$`,
+    "m",
+  );
+}
+
+/**
+ * A diagnostic REPORTED AGAINST `path`, matched at the start of a line.
+ *
+ * Not the bare path: the rule's own help text NAMES THE ONE MODULE that may
+ * create a connection -- packages/tsudoi-language-server/src/notifications.ts,
+ * spelled in full there -- so a substring check reads that text
+ * out of ANOTHER file's diagnostic and reports the file as flagged while it is
+ * perfectly clean. Two outcomes, one observation -- caught by running it. The
+ * spelling is not what makes this anchored: any path in the message would do it.
+ */
+function reportedAgainst(path: string): RegExp {
+  return new RegExp(`^${path.replaceAll(".", "\\.")}:`, "m");
+}
+
+// RULE 4, the connection factory. THREE HALVES, and none of them is a one-off
+// probe: the first says the ban FIRES, the second that the router is EXEMPT, the
+// third that the exemption is scoped to a NAME rather than to the specifier.
+//
+// IT DOES NOT LOOP OVER pathShapes, and that is a decision rather than an
+// omission -- do not add the loop for symmetry. At the two shapes where the
+// whole rule is switched off, the assertion would be a bare `code === 0`, which
+// is equally true of a rule that does not exist, is misconfigured, or never
+// matched. That is the degeneracy this file caught twice while rule 4 was being
+// written, so the three paths are named here instead, each absence sharing its
+// run with a file the ban really flags.
+//
+// Why a lint at all, when packages/tsudoi-language-server/src/server.ts is
+// already unable to CALL onNotification:
+// it can still IMPORT the factory, build its own wide connection and register
+// beside the table. MEASURED with this rule taken out -- THE WHOLE SUITE green,
+// tsc 0, oxlint 0, with nothing objecting.
+test("importing createProtocolConnection is flagged in src/server.ts", async () => {
+  const result = await lintProbe({
+    [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
+  });
+
+  expect(result.output).toMatch(factoryBanAt(`${frameworkSrc}/server.ts`));
+  expect(result.code).toBe(1);
+});
+
+// THE EXEMPTION, and the router's own import is what needs it: it is the one
+// place a connection may be created, because the module that owns the gate owns
+// the thing being gated.
+//
+// TWO FILES IN ONE RUN, deliberately. `src/notifications.ts is unflagged` is
+// equally true of a rule that does not exist, is misconfigured, or never
+// matched -- and each lintProbe is its own temp dir and its own oxlint, so half
+// 1 firing in a DIFFERENT run proves nothing about liveness here. The server.ts
+// diagnostic is the presence pair, read off the same measurement.
+test("the same import is exempt in src/notifications.ts, in a run where src/server.ts is flagged", async () => {
+  const result = await lintProbe({
+    [`${frameworkSrc}/notifications.ts`]: importsProtocolExport("createProtocolConnection"),
+    [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
+  });
+
+  expect(result.output).not.toMatch(reportedAgainst(`${frameworkSrc}/notifications.ts`));
+  expect(result.output).toMatch(factoryBanAt(`${frameworkSrc}/server.ts`));
+  expect(result.code).toBe(1);
+});
+
+// THE HALF THAT LOOKS REDUNDANT, AND WHAT IT ACTUALLY BUYS -- corrected against
+// the perturbation rather than left as first written. Dropping `importNames`
+// reddens ALL THREE halves, MEASURED, so this is NOT the only one that catches a
+// module-wide ban. What it is, is the only one that NAMES THE CAUSE: the other
+// two fail because an expected diagnostic WORDING is absent, which is equally
+// what an oxlint message-format change looks like. This one fails with
+// src/reader.ts flagged -- an import nothing ever meant to ban. It is also the
+// only half asserting the PERMITTED direction, so it survives any later
+// loosening of those two regexes.
+//
+// The ban is on ONE NAME because three src modules import OTHER names from this
+// exact specifier: dropping it takes `oxlint` over the repo to exit 1 with
+// diagnostics in packages/tsudoi-language-server/src/server.ts,
+// packages/tsudoi-language-server/src/methods.ts and
+// packages/tsudoi-language-server/src/lifecycle.ts, and reddens the two
+// bare-specifier tests above, which import createConnection from it.
+//
+// Same two-files-in-one-run design as above, for the same reason.
+test("a different export from the same module is unflagged, in a run where the factory is flagged", async () => {
+  const result = await lintProbe({
+    "src/reader.ts": importsProtocolExport("StreamMessageReader"),
+    [`${frameworkSrc}/server.ts`]: importsProtocolExport("createProtocolConnection"),
+  });
+
+  expect(result.output).not.toMatch(reportedAgainst("src/reader.ts"));
+  expect(result.output).toMatch(factoryBanAt(`${frameworkSrc}/server.ts`));
+  expect(result.code).toBe(1);
+});

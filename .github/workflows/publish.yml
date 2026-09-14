@@ -112,11 +112,11 @@ jobs:
       - name: Build the immutable release bundle
         run: |
           bundle="$RUNNER_TEMP/npm-release-bundle"
-          mkdir -p "$bundle/release" "$bundle/repository/scripts" "$bundle/repository/packages" "$bundle/repository/test/helpers"
+          mkdir -p "$bundle/release" "$bundle/repository/scripts" "$bundle/repository/packages" "$bundle/repository/tests/helpers"
           cp -R "$RUNNER_TEMP/npm-release/." "$bundle/release/"
           cp package.json "$bundle/repository/package.json"
           cp scripts/smoke-registry-release.ts scripts/workspaces.ts "$bundle/repository/scripts/"
-          cp test/helpers/lsp.ts test/helpers/spawn.ts "$bundle/repository/test/helpers/"
+          cp tests/helpers/lsp.ts tests/helpers/spawn.ts "$bundle/repository/tests/helpers/"
           bun build scripts/publish-release.ts --target=node --outfile "$bundle/repository/scripts/publish-release.js"
           bun build scripts/verify-registry-release.ts --target=node --outfile "$bundle/repository/scripts/verify-registry-release.js"
           for member in packages/*; do

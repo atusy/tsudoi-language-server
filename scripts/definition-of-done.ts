@@ -5,106 +5,17 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 /**
- * TAKING THE WHOLE DEFINITION OF DONE IN ONE COMMAND, so that a check that
- * failed cannot be missed by reading the part of the output that happened to be
- * on screen.
+ * Run the checks declared in definition-of-done.json and aggregate their status.
+ * Unit, integration, and E2E suites are separate entries in that list.
  *
- * WHY IT EXISTS AT ALL, MEASURED RATHER THAN ASSUMED: this project has five
- * recorded occurrences of a commit taken while a check was red, across two
- * people, one of them recurring -- every one of them a reader
- * taking the LAST command's status, or a grep's, for the run's. A written rule
- * forbidding exactly that existed, was specific, carried its own recidivism
- * count, AND THE DEFECT HAPPENED ANYWAY. What is left after
- * that is not another sentence: it is an exit code.
+ * Checks run sequentially: the test preload builds artifacts needed by later
+ * type checks. A filtered run is marked in both the header and summary so it
+ * cannot be mistaken for complete verification.
  *
- * AND IT TAKES `--only <substring>` FOR THAT SAME REASON, WHICH MAKES THE OPTION
- * A CORRECTION AND NOT A CONVENIENCE. Twice in one session a maintainer re-ran a
- * single check BY HAND and read it through `tail`, which showed a summary line
- * and hid the verdict above it, and a red check went out as the next change's
- * baseline. The habit is not inattention: the sanctioned route had no answer for
- * `I only want that one check again`, so the unsanctioned one was the only one.
- * A FILTERED RUN THEREFORE REPORTS WHOLE -- every part an unfiltered one prints,
- * in the same shape -- so that nothing about it invites a pipe. What it must
- * never be is mistakable for the whole, and the marker below is where that is
- * paid for.
- *
- * IT IS NOT A SIXTH CHECK AND DOES NOT REPLACE THE FIVE. A check that runs every
- * check would run itself, unbounded; and the five are the list this reads. Every
- * `run` stays a line a maintainer can type at a prompt when debugging one of
- * them, which is what keeps that list honest as documentation.
- *
- * THE LIST LIVES IN scripts/definition-of-done.json, AND THAT IS THE
- * LOAD-BEARING DECISION HERE. The failure it refuses is a GREEN RUN THAT NEVER
- * EXECUTED A CHECK THE LIST NAMES, silently, because an entry was added to one
- * copy and not to another. This file holds no copy, so a sixth entry runs with
- * no edit here. It is a file of its own rather than a constant in this one for
- * the reason the root argument below exists: test/definition-of-done.test.ts
- * grades this exact runner against throwaway lists. It is JSON because it is
- * data -- nothing runs to produce it, so a list that does not parse is refused
- * by name.
- *
- * THE CHECKS RUN SEQUENTIALLY IN THE DECLARED ORDER, WHICH IS NOT COSMETIC: the
- * first builds every artifact the fourth reads. Nothing here parallelises them,
- * and the order is the list's, never this file's.
- *
- * AND THAT ORDER IS WHAT LETS A READER DECIDE, IN ONE STEP, WHAT A GREEN FOURTH
- * CHECK MEANT. Every framework export points into dist/, so a missing artifact
- * is loud rather than silently answered by source. A GREEN fourth check printed
- * by this runner was read from dist/ -- PROVIDED THE FIRST CHECK WAS GREEN too,
- * and that condition still protects against a stale or partially emitted build.
- * WITH BOTH GREEN the
- * step holds: the first check builds every artifact before
- * the fourth reads, and the fifth then refuses any published subpath answering
- * from anywhere but its `types` artifact. A GREEN FROM A BARE `tsc --noEmit` SAYS
- * NOTHING ABOUT WHICH FILE ANSWERED, and if it was src/ that is the half NOTHING
- * covers -- as against an artifact that survived a build, which is the fifth
- * check's half.
- *
- * MEASURED at base 6d1c85d, tsc 7.0.2, each cell taken with dist/
- * MOVED ASIDE rather than deleted: with nothing built the fourth check is exit 1
- * naming THE TWO HANDLER PACKAGES at examples/tsudoi.config.ts and the framework
- * silent; with the framework's dist/ ALONE absent it is EXIT 0 AND SILENT, every
- * framework subpath traced to packages/tsudoi-language-server/src/*.ts. That
- * state is producible by two documented commands -- `bun pm pack` in each
- * handler on a tree nobody has built, each exiting 0 -- and by nothing this
- * repository runs. The route is written in bunfig.toml, the cells at
- * test/helpers/build.ts.
- *
- * UNRUNNABLE IS NOT PASSED, AND IT IS ITS OWN VERDICT. A command naming a binary
- * that is not installed is spawned DIRECTLY rather than through a shell, so it
- * arrives as a spawn error and can be reported as one; run through `sh -c` it
- * would arrive as exit 127, indistinguishable from a check that ran and said no.
- * The machine this was written on is the witness: two of the five tools were
- * absent from PATH, and a runner treating that as anything but non-green would
- * have shipped green over two checks that never ran.
- *
- * SO `run` IS A COMMAND LINE THIS RUNNER SPAWNS -- A PROGRAM AND ITS
- * SPACE-SEPARATED ARGUMENTS -- AND NOT A SHELL COMMAND, AND ONE IT CANNOT
- * EXECUTE FAITHFULLY IS REFUSED RATHER THAN MISREAD. That is the price of the
- * paragraph above, and it was being paid silently: MEASURED, `true && false`
- * split on spaces ran `true` with the arguments `&&` and `false` and WAS
- * REPORTED PASSED, where the shell every reader has in mind runs `false` and
- * fails. Redirections, quoted arguments and globs were misread the same way. Of
- * the three available answers -- run it through a shell and lose the missing
- * binary; keep spawning and misread; refuse -- only refusing gives up neither
- * reading, and a silently misread command is the worst outcome an instrument
- * that exists to make failure loud can produce. WHAT IT COSTS, STATED RATHER
- * THAN DISCOVERED: a Definition of Done wanting a pipeline puts it in a script
- * and names the script, which is also a thing a maintainer can run by hand. The
- * five declared today carry no shell syntax at all.
- *
- * NOTHING HERE TOUCHES THE ENVIRONMENT OR RESOLVES A BINARY ITSELF. The
- * list says `tsc --noEmit`, so `tsc` is what is spawned, found the way the
- * reader's own shell would find it -- measured at planning: running the checks
- * through one script does not change what any of them sees.
- *
- * THE ROOT COMES FROM THE ARGUMENT OR FROM THIS FILE'S OWN LOCATION, NEVER FROM
- * THE WORKING DIRECTORY. That is a hazard and not a detail: the first check
- * finds its configuration only in the directory it is run from, so a runner
- * inheriting a subdirectory would report five greens over a suite that built
- * nothing. The argument is also what lets test/definition-of-done.test.ts drive
- * this against throwaway lists -- an instrument whose only subject is a
- * five-green repository can be measured in exactly one state.
+ * Commands are spawned directly to distinguish a missing binary from a failing
+ * check. Shell syntax is refused; put pipelines or quoting in a separate script.
+ * The working directory is the explicit root or this script's repository, so
+ * Bun finds the test preload even when this command is invoked elsewhere.
  */
 
 /** An entry of the list: the two fields each one carries. */
@@ -391,8 +302,8 @@ try {
 }
 /**
  * WHAT A FILTERED RUN WEARS SO THAT IT CANNOT PASS FOR THE WHOLE ONE, and the
- * claim is not decoration: the declared ORDER is load-bearing -- the first check
- * builds the artifacts the fourth reads -- so a subset's green is not this
+ * claim is not decoration: the declared ORDER is load-bearing -- the test preload
+ * builds artifacts consumed by the type checks -- so a subset's green is not this
  * Definition of Done's green whatever the subset is.
  *
  * IN THE SUMMARY AND NOT ONLY IN THE HEADER, WHICH IS THE WHOLE POINT OF THE

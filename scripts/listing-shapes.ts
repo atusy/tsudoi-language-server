@@ -76,7 +76,7 @@ import process from "node:process";
  * NOTHING HERE TAKES A PATH FROM ITS CALLER, and there is no argument that could
  * supply one. The fixture directory is made by this process under the system
  * temporary directory and is the only path written to or removed, checked at both
- * ends by the guard `test/helpers/perturbation.ts` carries and for its reason: a
+ * ends by the guard `tests/helpers/perturbation.ts` carries and for its reason: a
  * recursive delete at the far end of a configurable path removed a working tree
  * in this project once, and the destructive end had asked nothing about what it
  * was handed.
@@ -190,7 +190,7 @@ const shapes: readonly (readonly [string, (path: string) => Promise<Listing>])[]
  * made it under the system temporary directory.
  *
  * A REFUSAL RATHER THAN A SKIP, and asked again at the delete rather than trusted
- * from the creation, for the reason `test/helpers/perturbation.ts` gives: the
+ * from the creation, for the reason `tests/helpers/perturbation.ts` gives: the
  * guard that matters is the one standing at the MUTATION.
  */
 function throwawayOnly(path: string): string {

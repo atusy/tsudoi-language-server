@@ -151,7 +151,7 @@ function refuseCycle(
  * path so two runs agree; packages a declaration separates are emitted by the
  * DECLARATION, which on this repository's own graph happens to agree with the
  * path order -- an accident of the names, pinned as an accident by an arm in
- * test/build-order.test.ts built on a tree where the two disagree.
+ * tests/integration/build-order.test.ts built on a tree where the two disagree.
  *
  * THE CYCLE THROW LANDS IN THE `bun test` PRELOAD, so it must stay reachable
  * only from a state this repository can never be in.
@@ -254,7 +254,7 @@ function build(root: string, dir: string): void {
  * WHAT THE ORDER IS FOR IS THE RUNTIMES AND CURRENCY, NOT THE COMPILER. A
  * handler's own build resolves the framework's current built declarations.
  * They name the framework BY SPECIFIER and never by structure, so which file
- * answered cannot appear in them (test/handler-declaration-specifier.test.ts is
+ * answered cannot appear in them (tests/integration/handler-declaration-specifier.test.ts is
  * the arm whose subject that indirection is).
  *
  * WHAT WRITES A dist/ AND WHAT REMOVES ONE, because a reader who finds an

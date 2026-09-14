@@ -1,7 +1,15 @@
 [
   {
-    "name": "Tests pass",
-    "run": "bun test"
+    "name": "Unit tests pass",
+    "run": "bun test packages scripts/src"
+  },
+  {
+    "name": "Integration tests pass",
+    "run": "bun test tests/integration"
+  },
+  {
+    "name": "E2E tests pass",
+    "run": "bun test tests/e2e"
   },
   {
     "name": "Lint passes",

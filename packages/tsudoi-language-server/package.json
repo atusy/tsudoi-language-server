@@ -56,6 +56,6 @@
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.18.0"
   },
-  "//exports": "The published surface is dist/ alone: every conditional export names a compiled file included by `files`, including the CLI subpath used by Deno's npm resolver. There is no package-root export, `main`, or `bin`. The complete map and those refusals are asserted in test/package-shape.test.ts; package.json cannot carry comments, so this field links the declaration to its rationale.",
-  "//publishConfig": "PUBLIC AND ALPHA ARE DECLARED HERE AS PACKAGE DATA, not remembered as command flags. The access is required for a scoped first publication, and the tag keeps a pre-stable release away from npm's default latest channel. test/release-package-set.test.ts applies the same contract to every public member."
+  "//exports": "The published surface is dist/ alone: every conditional export names a compiled file included by `files`, including the CLI subpath used by Deno's npm resolver. There is no package-root export, `main`, or `bin`. The complete map and those refusals are asserted in tests/integration/package-shape.test.ts; package.json cannot carry comments, so this field links the declaration to its rationale.",
+  "//publishConfig": "PUBLIC AND ALPHA ARE DECLARED HERE AS PACKAGE DATA, not remembered as command flags. The access is required for a scoped first publication, and the tag keeps a pre-stable release away from npm's default latest channel. tests/integration/release-package-set.test.ts applies the same contract to every public member."
 }
