@@ -76,6 +76,8 @@ with `--tag alpha`, the registry assigned `latest` to `0.1.0-alpha.1` because no
 existed; it cannot be left absent. Registry verification therefore requires `alpha` to name the
 release being checked and `latest` to remain frozen at `0.1.0-alpha.1` throughout the alpha phase.
 An unqualified install gets that bootstrap version; use `@alpha` for the current alpha.
+The publisher checks this frozen `latest` policy for every package before its first registry write.
+Retire or revise the alpha workflow before a stable release intentionally advances `latest`.
 
 ## Enable Trusted Publishing
 

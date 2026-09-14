@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
@@ -14,8 +15,6 @@ const NPM_INSTALL_TIMEOUT_MS = 120_000;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
-const INITIAL_LATEST_VERSION = "0.1.0-alpha.1";
-
 interface PackageManifest {
   readonly name?: unknown;
   readonly version?: unknown;
