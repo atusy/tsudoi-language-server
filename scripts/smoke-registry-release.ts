@@ -262,7 +262,12 @@ async function smokeDeno(
   };
   run(
     "deno",
-    ["add", "--save-exact", ...entries.map(({ name }) => `npm:${name}@alpha`)],
+    [
+      "add",
+      "--save-exact",
+      "--minimum-dependency-age=0",
+      ...entries.map(({ name, version }) => `npm:${name}@${version}`),
+    ],
     directory,
     env,
   );
@@ -299,7 +304,7 @@ async function smokeDeno(
   run("deno", ["check", "--frozen", "--node-modules-dir=none", "tsudoi.config.ts"], directory, env);
   await smokeLsp(
     "Deno",
-    `deno run -A --frozen --node-modules-dir=none ${FRAMEWORK}/cli --config ./tsudoi.config.ts`,
+    `deno run --cached-only -A --frozen --node-modules-dir=none ${FRAMEWORK}/cli --config ./tsudoi.config.ts`,
     directory,
     env,
   );

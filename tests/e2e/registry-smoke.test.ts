@@ -217,7 +217,12 @@ test("the registry smoke exercises fresh Bun and Deno consumers through a clean 
     expect(basename(dirname(bunInstall.cwd))).toBe(basename(dirname(bunInstall.cache)));
     const denoCalls = calls.filter((call) => call.runtime === "deno" && call.args !== undefined);
     expect(denoCalls.map((call) => call.args)).toEqual([
-      ["add", "--save-exact", ...releasePackages().map(({ name }) => `npm:${name}@alpha`)],
+      [
+        "add",
+        "--save-exact",
+        "--minimum-dependency-age=0",
+        ...releasePackages().map(({ name, version }) => `npm:${name}@${version}`),
+      ],
       ...releasePackages().map(({ name }) => [
         "info",
         "--json",
@@ -228,6 +233,7 @@ test("the registry smoke exercises fresh Bun and Deno consumers through a clean 
       ["check", "--frozen", "--node-modules-dir=none", "tsudoi.config.ts"],
       [
         "run",
+        "--cached-only",
         "-A",
         "--frozen",
         "--node-modules-dir=none",
