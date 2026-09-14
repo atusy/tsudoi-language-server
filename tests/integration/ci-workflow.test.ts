@@ -186,7 +186,7 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
     "runs-on": "ubuntu-latest",
     "timeout-minutes": 60,
   });
-  expect(quality?.if).toBeUndefined();
+  expect(quality?.if).toBe("${{ github.event.release.prerelease == true }}");
   expect(quality?.permissions?.["id-token"]).toBeUndefined();
   expect(quality?.environment).toBeUndefined();
   expect(prepare?.permissions?.["id-token"]).toBeUndefined();

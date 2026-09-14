@@ -152,8 +152,9 @@ and Deno consumer smoke test. The verification job has neither the `npm` environ
 permission.
 
 GitHub documents that `release.published` covers both stable releases and prereleases, including a
-prerelease published from a draft; that is why the workflow also checks the event's `prerelease`
-field instead of relying on the activity type alone. See GitHub's
+prerelease published from a draft; that is why the workflow gates its first job on the event's
+`prerelease` field instead of relying on the activity type alone. Stable releases therefore skip
+the entire alpha pipeline without allocating a runner. See GitHub's
 [release event documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
 
 If a publish run fails after changing some packages, do not move or delete the tag, and do not
