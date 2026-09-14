@@ -4,7 +4,7 @@ export const NPM_VIEW_RETRY_DELAYS_MS = [
   0, 1_000, 2_000, 5_000, 10_000, 20_000, 30_000, 30_000,
 ] as const;
 
-interface NpmViewResult {
+export interface NpmViewResult {
   readonly status: number | null;
   readonly stdout: string;
   readonly stderr: string;
@@ -33,28 +33,19 @@ export async function runWithRetries<T>(
   return result;
 }
 
-export async function runNpmViewWithRetries<T extends NpmViewResult>(
-  run: () => T,
-  options: RetryOptions = {},
-): Promise<T> {
-  return runWithRetries(
-    run,
-    (result) => {
-      let jsonErrorCode: unknown;
-      try {
-        const output = JSON.parse(result.stdout) as {
-          readonly error?: { readonly code?: unknown };
-        };
-        jsonErrorCode = output.error?.code;
-      } catch {
-        // npm versions and log levels differ on whether errors are JSON on stdout or text on stderr.
-      }
-      return (
-        result.status !== 0 &&
-        result.status !== null &&
-        (jsonErrorCode === "E404" || /\bE404\b/.test(result.stderr))
-      );
-    },
-    options,
+export function isNpmViewE404(result: NpmViewResult): boolean {
+  let jsonErrorCode: unknown;
+  try {
+    const output = JSON.parse(result.stdout) as {
+      readonly error?: { readonly code?: unknown };
+    };
+    jsonErrorCode = output.error?.code;
+  } catch {
+    // npm versions and log levels differ on whether errors are JSON on stdout or text on stderr.
+  }
+  return (
+    result.status !== 0 &&
+    result.status !== null &&
+    (jsonErrorCode === "E404" || /\bE404\b/.test(result.stderr))
   );
 }

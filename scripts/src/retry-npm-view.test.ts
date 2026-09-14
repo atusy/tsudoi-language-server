@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { runNpmViewWithRetries } from "./retry-npm-view.ts";
+import { isNpmViewE404, runWithRetries } from "./retry-npm-view.ts";
 
 interface Result {
   readonly status: number | null;
@@ -11,7 +11,7 @@ function exercise(results: readonly Result[], delays: readonly number[]) {
   let calls = 0;
   const waited: number[] = [];
   const run = () => results[Math.min(calls++, results.length - 1)] as Result;
-  const result = runNpmViewWithRetries(run, {
+  const result = runWithRetries(run, isNpmViewE404, {
     delays,
     sleep: (delay) => {
       waited.push(delay);

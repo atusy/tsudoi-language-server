@@ -7,7 +7,8 @@ import process from "node:process";
 import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
-import { runNpmViewWithRetries, runWithRetries } from "./src/retry-npm-view.ts";
+import { shouldRetryRegistryMetadata } from "./src/registry-metadata-retry.ts";
+import { runWithRetries } from "./src/retry-npm-view.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
@@ -45,20 +46,18 @@ function readJson(path: string): unknown {
   }
 }
 
-async function npmJson(args: readonly string[], subject: string): Promise<unknown> {
-  const invoke = () =>
-    spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
-      encoding: "utf8",
-      timeout: NPM_TIMEOUT_MS,
-    });
-  const result =
-    args[0] === "view"
-      ? await runNpmViewWithRetries(invoke, {
-          onRetry: (delay) => {
-            console.log(`npm view has not propagated ${subject}; retrying in ${delay}ms`);
-          },
-        })
-      : invoke();
+function invokeNpmJson(args: readonly string[]) {
+  return spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
+    encoding: "utf8",
+    timeout: NPM_TIMEOUT_MS,
+  });
+}
+
+function parseNpmJson(
+  result: ReturnType<typeof invokeNpmJson>,
+  args: readonly string[],
+  subject: string,
+): unknown {
   if (result.error !== undefined) {
     if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
       fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
@@ -73,6 +72,10 @@ async function npmJson(args: readonly string[], subject: string): Promise<unknow
   } catch (cause) {
     fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
   }
+}
+
+function npmJson(args: readonly string[], subject: string): unknown {
+  return parseNpmJson(invokeNpmJson(args), args, subject);
 }
 
 function npmRun(
@@ -102,51 +105,22 @@ function object(value: unknown, subject: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function alphaVersionParts(value: unknown): readonly [bigint, bigint, bigint, bigint] | null {
-  if (typeof value !== "string") return null;
-  const match = /^(\d+)\.(\d+)\.(\d+)-alpha\.(\d+)$/.exec(value);
-  if (match === null) return null;
-  return [
-    BigInt(match[1] as string),
-    BigInt(match[2] as string),
-    BigInt(match[3] as string),
-    BigInt(match[4] as string),
-  ];
-}
-
-function isEarlierAlphaVersion(candidate: unknown, expected: string): boolean {
-  const candidateParts = alphaVersionParts(candidate);
-  const expectedParts = alphaVersionParts(expected);
-  if (candidateParts === null || expectedParts === null) return false;
-  for (const [index, part] of candidateParts.entries()) {
-    const expectedPart = expectedParts[index] as bigint;
-    if (part !== expectedPart) return part < expectedPart;
-  }
-  return false;
-}
-
 async function npmRegistryMetadata(
   args: readonly string[],
   packageSpec: string,
   expectedVersion: string,
+  requireProvenance: boolean,
 ): Promise<Record<string, unknown>> {
-  return runWithRetries(
-    async () => object(await npmJson(args, packageSpec), `registry metadata for ${packageSpec}`),
-    (metadata) => {
-      const tags = metadata["dist-tags"];
-      return (
-        typeof tags === "object" &&
-        tags !== null &&
-        !Array.isArray(tags) &&
-        isEarlierAlphaVersion((tags as Record<string, unknown>).alpha, expectedVersion)
-      );
-    },
+  const result = await runWithRetries(
+    () => invokeNpmJson(args),
+    (candidate) => shouldRetryRegistryMetadata(candidate, { expectedVersion, requireProvenance }),
     {
       onRetry: (delay) => {
-        console.log(`registry alpha has not propagated ${packageSpec}; retrying in ${delay}ms`);
+        console.log(`registry metadata has not propagated ${packageSpec}; retrying in ${delay}ms`);
       },
     },
   );
+  return object(parseNpmJson(result, args, packageSpec), `registry metadata for ${packageSpec}`);
 }
 
 const [directoryArgument, provenanceArgument, ...unexpected] = process.argv.slice(2);
@@ -251,6 +225,7 @@ for (const [index, entry] of entries.entries()) {
     ],
     packageSpec,
     entry.version,
+    requireProvenance,
   );
   const tags = object(metadata["dist-tags"], `registry dist-tags for ${packageSpec}`);
   if (
@@ -301,7 +276,7 @@ for (const [index, entry] of entries.entries()) {
     fail(`${packageSpec} does not expose the exact required framework peer`);
   }
   const access = object(
-    await npmJson(["access", "get", "status", entry.name], entry.name),
+    npmJson(["access", "get", "status", entry.name], entry.name),
     `registry access for ${entry.name}`,
   );
   if (access[entry.name] !== "public") {

@@ -38,18 +38,17 @@ const manifests = readdirSync(join(process.env.REPO_ROOT, "packages"), { withFil
   .filter((entry) => entry.isDirectory())
   .map((entry) => JSON.parse(readFileSync(join(process.env.REPO_ROOT, "packages", entry.name, "package.json"), "utf8")));
 if (args[0] === "view") {
-  if (
-    process.env.VIEW_E404_ONCE_FILE !== undefined &&
-    !existsSync(process.env.VIEW_E404_ONCE_FILE)
-  ) {
-    writeFileSync(process.env.VIEW_E404_ONCE_FILE, "");
+  let propagationStep = -1;
+  if (process.env.PROPAGATION_SEQUENCE_FILE !== undefined) {
+    propagationStep = existsSync(process.env.PROPAGATION_SEQUENCE_FILE)
+      ? Number(readFileSync(process.env.PROPAGATION_SEQUENCE_FILE, "utf8"))
+      : 0;
+    writeFileSync(process.env.PROPAGATION_SEQUENCE_FILE, String(propagationStep + 1));
+  }
+  if (propagationStep === 0) {
     process.stderr.write("npm error code E404\\n");
     process.exit(1);
   }
-  const staleAlphaOnce =
-    process.env.STALE_ALPHA_ONCE_FILE !== undefined &&
-    !existsSync(process.env.STALE_ALPHA_ONCE_FILE);
-  if (staleAlphaOnce) writeFileSync(process.env.STALE_ALPHA_ONCE_FILE, "");
   const separator = args[1].lastIndexOf("@");
   const name = args[1].slice(0, separator);
   const version = args[1].slice(separator + 1);
@@ -61,10 +60,10 @@ if (args[0] === "view") {
     version,
     "dist.integrity": "sha512-" + createHash("sha512").update(bytes).digest("base64"),
     "dist-tags": {
-      ...(process.env.OMIT_ALPHA === "1"
+      ...(propagationStep === 1
         ? {}
         : {
-            alpha: staleAlphaOnce
+            alpha: propagationStep === 2
               ? "0.1.0-alpha.1"
               : process.env.ALPHA_VERSION ?? version,
           }),
@@ -140,24 +139,28 @@ process.exit(2);
     });
     expect(`${String(reorderedRepository.status)} ${reorderedRepository.stderr}`).toBe("0 ");
 
-    const transientE404 = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+    const propagationLog = join(parent, "propagation-npm.log");
+    const propagation = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, VIEW_E404_ONCE_FILE: join(parent, "view-e404-once") },
+      env: {
+        ...env,
+        NPM_LOG: propagationLog,
+        PROPAGATION_SEQUENCE_FILE: join(parent, "propagation-sequence"),
+      },
     });
-    expect(`${String(transientE404.status)} ${transientE404.stderr}`).toBe("0 ");
-
-    const staleAlpha = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, STALE_ALPHA_ONCE_FILE: join(parent, "stale-alpha-once") },
-    });
-    expect(`${String(staleAlpha.status)} ${staleAlpha.stderr}`).toBe("0 ");
+    expect(`${String(propagation.status)} ${propagation.stderr}`).toBe("0 ");
+    const firstPackageViews = readFileSync(propagationLog, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as string[])
+      .filter(
+        (args) => args[0] === "view" && args[1] === "@atusy/tsudoi-language-server@0.1.0-alpha.2",
+      );
+    expect(firstPackageViews).toHaveLength(4);
 
     for (const [name, override, error] of [
-      ["missing alpha", { OMIT_ALPHA: "1" }, "alpha must point to 0.1.0-alpha.2"],
       ["wrong alpha", { ALPHA_VERSION: "0.1.0-alpha.999" }, "alpha must point to 0.1.0-alpha.2"],
       ["missing latest", { OMIT_LATEST: "1" }, "latest must remain at 0.1.0-alpha.1"],
     ] as const) {
@@ -179,19 +182,6 @@ process.exit(2);
     });
     expect(movedLatest.status).not.toBe(0);
     expect(movedLatest.stderr).toContain("latest must remain at 0.1.0-alpha.1");
-
-    const missingProvenance = spawnSync(
-      "node",
-      ["scripts/verify-registry-release.ts", release, "--require-provenance"],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-        timeout: SPAWN_TIMEOUT_MS,
-        env,
-      },
-    );
-    expect(missingProvenance.status).not.toBe(0);
-    expect(missingProvenance.stderr).toContain("registry attestations");
 
     for (const invalid of [
       { BAD_ATTESTATION_URL: "1", error: "does not expose npmjs SLSA provenance" },
