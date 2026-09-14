@@ -29,7 +29,7 @@ test("the registry verifier binds metadata and channels to the retained release"
       fakeNpm,
       `#!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { appendFileSync, readFileSync, readdirSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 const args = process.argv.slice(2);
 appendFileSync(process.env.NPM_LOG, JSON.stringify(args) + "\\n");
@@ -38,6 +38,14 @@ const manifests = readdirSync(join(process.env.REPO_ROOT, "packages"), { withFil
   .filter((entry) => entry.isDirectory())
   .map((entry) => JSON.parse(readFileSync(join(process.env.REPO_ROOT, "packages", entry.name, "package.json"), "utf8")));
 if (args[0] === "view") {
+  if (
+    process.env.VIEW_E404_ONCE_FILE !== undefined &&
+    !existsSync(process.env.VIEW_E404_ONCE_FILE)
+  ) {
+    writeFileSync(process.env.VIEW_E404_ONCE_FILE, "");
+    process.stderr.write("npm error code E404\\n");
+    process.exit(1);
+  }
   const separator = args[1].lastIndexOf("@");
   const name = args[1].slice(0, separator);
   const version = args[1].slice(separator + 1);
@@ -123,6 +131,14 @@ process.exit(2);
       env: { ...env, REORDER_REPOSITORY: "1" },
     });
     expect(`${String(reorderedRepository.status)} ${reorderedRepository.stderr}`).toBe("0 ");
+
+    const transientE404 = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: { ...env, VIEW_E404_ONCE_FILE: join(parent, "view-e404-once") },
+    });
+    expect(`${String(transientE404.status)} ${transientE404.stderr}`).toBe("0 ");
 
     for (const [name, override, error] of [
       ["missing alpha", { OMIT_ALPHA: "1" }, "alpha must point to 0.1.0-alpha.2"],

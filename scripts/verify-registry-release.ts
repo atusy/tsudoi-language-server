@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
+import { setTimeout as sleep } from "node:timers/promises";
 import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
@@ -13,6 +14,7 @@ import { buildOrder } from "./workspaces.ts";
 const NPM_REGISTRY = "https://registry.npmjs.org/";
 const NPM_TIMEOUT_MS = 30_000;
 const NPM_INSTALL_TIMEOUT_MS = 120_000;
+const NPM_VIEW_RETRY_DELAYS_MS = [0, 1_000, 2_000, 5_000, 10_000, 20_000, 30_000, 30_000] as const;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
@@ -44,24 +46,34 @@ function readJson(path: string): unknown {
   }
 }
 
-function npmJson(args: readonly string[], subject: string): unknown {
-  const result = spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
-    encoding: "utf8",
-    timeout: NPM_TIMEOUT_MS,
-  });
-  if (result.error !== undefined) {
-    if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
-      fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
+async function npmJson(args: readonly string[], subject: string): Promise<unknown> {
+  for (let attempt = 0; ; attempt += 1) {
+    const result = spawnSync("npm", [...args, "--json", "--registry", NPM_REGISTRY], {
+      encoding: "utf8",
+      timeout: NPM_TIMEOUT_MS,
+    });
+    if (result.error !== undefined) {
+      if ((result.error as NodeJS.ErrnoException).code === "ETIMEDOUT") {
+        fail(`npm ${args[0] ?? "command"} timed out for ${subject}`);
+      }
+      fail(
+        `npm ${args[0] ?? "command"} could not complete for ${subject}: ${result.error.message}`,
+      );
     }
-    fail(`npm ${args[0] ?? "command"} could not complete for ${subject}: ${result.error.message}`);
-  }
-  if (result.status !== 0) {
-    fail(`npm ${args[0] ?? "command"} failed for ${subject}: ${result.stderr.trim()}`);
-  }
-  try {
-    return JSON.parse(result.stdout);
-  } catch (cause) {
-    fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
+    if (result.status !== 0) {
+      const retryDelay = NPM_VIEW_RETRY_DELAYS_MS[attempt];
+      if (args[0] === "view" && /\bE404\b/.test(result.stderr) && retryDelay !== undefined) {
+        console.log(`npm view has not propagated ${subject}; retrying in ${retryDelay}ms`);
+        await sleep(retryDelay);
+        continue;
+      }
+      fail(`npm ${args[0] ?? "command"} failed for ${subject}: ${result.stderr.trim()}`);
+    }
+    try {
+      return JSON.parse(result.stdout);
+    } catch (cause) {
+      fail(`npm ${args[0] ?? "command"} returned invalid JSON for ${subject}: ${String(cause)}`);
+    }
   }
 }
 
@@ -180,7 +192,7 @@ for (const [index, entry] of entries.entries()) {
   const integrity = `sha512-${Buffer.from(sha512, "hex").toString("base64")}`;
   const packageSpec = `${entry.name}@${entry.version}`;
   const metadata = object(
-    npmJson(
+    await npmJson(
       [
         "view",
         packageSpec,
@@ -246,7 +258,7 @@ for (const [index, entry] of entries.entries()) {
     fail(`${packageSpec} does not expose the exact required framework peer`);
   }
   const access = object(
-    npmJson(["access", "get", "status", entry.name], entry.name),
+    await npmJson(["access", "get", "status", entry.name], entry.name),
     `registry access for ${entry.name}`,
   );
   if (access[entry.name] !== "public") {
