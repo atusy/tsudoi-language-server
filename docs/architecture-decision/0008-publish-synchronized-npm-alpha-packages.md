@@ -20,7 +20,7 @@ credential-free route for later releases.
 
 - A consumer must be able to install the same artifacts under Bun and Deno.
 - A handler must not claim that the framework it imports is optional.
-- The initial release must not accidentally acquire npm's `latest` dist-tag.
+- Later alpha releases must not advance npm's mandatory `latest` dist-tag.
 - Publication must use the artifacts that passed the repository's release checks.
 - Recurring publication must not depend on a stored, long-lived npm token.
 - The irreversible first publication must remain an explicit maintainer action protected by 2FA.
@@ -47,7 +47,9 @@ private and unpublished.
 
 The initial release is packed and checked from the merged release commit, then published in build
 order with an interactive npm session and 2FA. The framework is first because every handler names
-it as a required peer. Later releases use the repository's `publish.yml` through npm Trusted
+it as a required peer. npm requires every package to have a `latest` tag, so bootstrap leaves
+`latest` at `0.1.0-alpha.1`; later prereleases advance only `alpha`. Later releases are published by
+the repository's `publish.yml` when a matching GitHub prerelease is published, through npm Trusted
 Publishing, GitHub's `npm` environment, and short-lived OIDC credentials.
 
 ### Consequences
@@ -56,13 +58,15 @@ Publishing, GitHub's `npm` environment, and short-lived OIDC credentials.
 
 - `bun add` and `deno add npm:` can obtain the same compiled package set from npm.
 - Required peer metadata now agrees with the handlers' runtime and type-level imports.
-- The alpha tag prevents an experimental release from becoming the default install.
+- The explicit alpha tag prevents later experimental releases from changing the default install.
 - Trusted Publishing removes a reusable npm secret from GitHub Actions.
 
 **Negative:**
 
 - A change to any public package version requires updating the whole set.
 - The first release is manual and therefore does not carry trusted-publishing provenance.
+- Until a stable release moves `latest`, an unqualified install resolves the bootstrap alpha; users
+  must select `@alpha` to follow the current prerelease.
 - Each npm package needs its own Trusted Publisher configuration after bootstrap.
 
 **Neutral:**
@@ -76,7 +80,8 @@ Repository tests must reject mismatched public versions, optional framework peer
 non-alpha publish configuration, stale package artifacts, and a release workflow that publishes a
 different commit from the requested alpha tag. A release candidate must pass the Definition of Done
 and package-install smoke tests under Bun and Deno before publication. After the first publication,
-registry probes must verify versions, dist-tags, package metadata, and both installation routes.
+registry probes must verify versions, the advancing `alpha` and frozen bootstrap `latest` tags,
+package metadata, and both installation routes.
 
 ## Pros and Cons of the Options
 

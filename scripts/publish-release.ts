@@ -4,6 +4,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
@@ -129,10 +130,10 @@ function registryIntegrity(packageSpec: string): string | null {
   return integrity;
 }
 
-function registryAlphaVersion(packageName: string): string | null {
+function registryDistTagVersion(packageName: string, tag: "alpha" | "latest"): string | null {
   const viewed = spawnSync(
     "npm",
-    ["view", packageName, "dist-tags.alpha", "--json", "--registry", NPM_REGISTRY],
+    ["view", packageName, `dist-tags.${tag}`, "--json", "--registry", NPM_REGISTRY],
     { encoding: "utf8", timeout: NPM_VIEW_TIMEOUT_MS },
   );
   if (viewed.error !== undefined) {
@@ -154,7 +155,7 @@ function registryAlphaVersion(packageName: string): string | null {
     fail(`npm view returned invalid JSON for ${packageName}: ${String(cause)}`);
   }
   if (typeof version !== "string") {
-    fail(`npm view returned an invalid alpha dist-tag for ${packageName}: ${String(version)}`);
+    fail(`npm view returned an invalid ${tag} dist-tag for ${packageName}: ${String(version)}`);
   }
   return version;
 }
@@ -299,7 +300,11 @@ const tarballs = release.packages.map((entry) => {
 const publication = tarballs.map((tarball) => {
   const packageSpec = `${tarball.entry.name}@${tarball.entry.version}`;
   const published = registryIntegrity(packageSpec);
-  const currentAlpha = registryAlphaVersion(tarball.entry.name);
+  const currentAlpha = registryDistTagVersion(tarball.entry.name, "alpha");
+  const currentLatest = registryDistTagVersion(tarball.entry.name, "latest");
+  if (currentLatest !== INITIAL_LATEST_VERSION) {
+    fail(`${tarball.entry.name} latest must remain at ${INITIAL_LATEST_VERSION}`);
+  }
   if (published !== null && published !== tarball.integrity) {
     fail(`registry integrity does not match the release tarball: ${packageSpec}`);
   }

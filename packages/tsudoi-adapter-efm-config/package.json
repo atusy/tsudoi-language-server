@@ -1,6 +1,6 @@
 {
   "name": "@atusy/tsudoi-adapter-efm-config",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,6 +32,6 @@
     "@types/node": "^24.0.0"
   },
   "peerDependencies": {
-    "@atusy/tsudoi-language-server": "0.1.0-alpha.1"
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.2"
   }
 }

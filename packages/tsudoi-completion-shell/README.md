@@ -30,7 +30,7 @@ The selected shell must be installed and available on `PATH`. `useShellCompletio
 a later request starts a fresh process. A request cancelled before it sends input leaves the
 existing process available for reuse.
 
-Tsudoi is a required **peer** at `0.1.0-alpha.1`, the version this alpha set was tested against.
+Tsudoi is a required **peer** at `0.1.0-alpha.2`, the version this alpha set was tested against.
 This package does not bundle or choose it, though Bun and npm may auto-install the required peer.
 Its JavaScript artifact can load without tsudoi because the handler imports are type-only, but a
 TypeScript consumer needs the peer to resolve the public handler types, and the returned handler is

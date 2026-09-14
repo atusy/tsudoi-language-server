@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
 import { buildOrder } from "./workspaces.ts";
 
@@ -14,7 +15,6 @@ const NPM_INSTALL_TIMEOUT_MS = 120_000;
 const FRAMEWORK = "@atusy/tsudoi-language-server";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const RELEASE_WORKFLOW = ".github/workflows/publish.yml";
-
 interface PackageManifest {
   readonly name?: unknown;
   readonly version?: unknown;
@@ -224,8 +224,11 @@ for (const [index, entry] of entries.entries()) {
       attestationUrl: attestations.url,
     });
   }
-  if (tags.alpha !== entry.version || Object.hasOwn(tags, "latest")) {
-    fail(`${entry.name} must expose only the intended alpha channel, not latest`);
+  if (tags.alpha !== entry.version) {
+    fail(`${entry.name} alpha must point to ${entry.version}`);
+  }
+  if (tags.latest !== INITIAL_LATEST_VERSION) {
+    fail(`${entry.name} latest must remain at ${INITIAL_LATEST_VERSION}`);
   }
   if (JSON.stringify(metadata.repository) !== JSON.stringify(local.repository)) {
     fail(`registry repository metadata does not match ${packageSpec}`);

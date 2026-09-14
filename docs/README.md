@@ -17,17 +17,17 @@ If you want to try tsudoi before reading the full API and installation details, 
 `@atusy/tsudoi-language-server` is published to npm under the opt-in `alpha` tag. Install the
 framework with `bun add @atusy/tsudoi-language-server@alpha` or
 `deno add --save-exact npm:@atusy/tsudoi-language-server@alpha`. Install handlers with the same tag
-and keep the resolved `0.1.0-alpha.1` versions together. In a Deno-only project, start the server
+and keep the resolved `0.1.0-alpha.2` versions together. In a Deno-only project, start the server
 through its exported CLI with
 `deno run -A --frozen --node-modules-dir=none @atusy/tsudoi-language-server/cli --config ./tsudoi.config.ts`.
 Handlers declare that exact framework version as a
 required peer rather than bundling their own copy; Bun and npm may auto-install required peers, but
 installing the matching framework explicitly keeps the chosen set visible.
 
-The first release keeps the untagged `latest` channel untouched. The registry commands are
-**unverified** until the first publication: nothing can run them before the package exists, and installing a tarball and
-resolving `npm:` through deno's own cache are different mechanisms, so one of them working says
-little about the other.
+The registry requires a `latest` tag, so it remains frozen at the bootstrap `0.1.0-alpha.1` while
+the opt-in `alpha` tag advances. The bootstrap set is published and verified against npm: all seven
+registry artifacts were checked, then installed into fresh Bun and Deno consumers and exercised
+through a complete LSP session.
 
 For developing tsudoi itself, the checkout route below builds a tarball and installs that exact
 artifact. For a shorter Deno-only route, use the
@@ -686,7 +686,7 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   | [`@atusy/tsudoi-completion-shell`](../packages/tsudoi-completion-shell/README.md)           | `textDocument/completion`, from a native shell        |
 
   **Neither bundles its own tsudoi.** Both declare `@atusy/tsudoi-language-server` as a required,
-  exact **peer** at `0.1.0-alpha.1` — the framework version is a host-level choice, not a handler's,
+  exact **peer** at `0.1.0-alpha.2` — the framework version is a host-level choice, not a handler's,
   and a plain dependency could leave a second copy in your `node_modules` that your CLI never runs.
   Install the matching framework alpha beside every handler explicitly; Bun and npm may otherwise
   auto-install the required peer.

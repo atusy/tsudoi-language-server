@@ -67,7 +67,7 @@ test("the release packer writes ordered, checksummed tarballs for every public p
       .map(packageManifest)
       .filter((entry) => entry.private !== true);
 
-    expect(manifest.releaseVersion).toBe("0.1.0-alpha.1");
+    expect(manifest.releaseVersion).toBe("0.1.0-alpha.2");
     expect(manifest.packages?.map(({ name, version }) => ({ name, version }))).toEqual(
       expected.map(({ name, version }) => ({ name, version })),
     );
@@ -207,6 +207,10 @@ if (args[0] === "view") {
     process.stdout.write(JSON.stringify(process.env.EXISTING_VERSION));
     process.exit(0);
   }
+  if (args[2] === "dist-tags.latest") {
+    process.stdout.write(JSON.stringify("0.1.0-alpha.1"));
+    process.exit(0);
+  }
   console.error("npm error code E404");
   process.exit(1);
 }
@@ -237,7 +241,7 @@ process.exit(2);
           RELEASE_DIR: destination,
           REPO_ROOT: repoRoot,
           NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "tests/helpers/fake-attestation-fetch.ts")).href}`,
-          GITHUB_REF: "refs/tags/v0.1.0-alpha.1",
+          GITHUB_REF: "refs/tags/v0.1.0-alpha.2",
           GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
         },
       },
@@ -405,6 +409,10 @@ if (args[0] === "view" && args[1] === process.env.MISMATCH_SPEC && args[2] === "
   process.stdout.write(JSON.stringify("sha512-AAAAAAAA"));
   process.exit(0);
 }
+if (args[0] === "view" && args[2] === "dist-tags.latest") {
+  process.stdout.write(JSON.stringify("0.1.0-alpha.1"));
+  process.exit(0);
+}
 if (args[0] === "view") {
   console.error("npm error code E404");
   process.exit(1);
@@ -431,7 +439,80 @@ process.exit(args[0] === "publish" ? 0 : 2);
       .split("\n")
       .map((line) => JSON.parse(line) as string[]);
     expect(calls.some(([command]) => command === "publish")).toBeFalse();
-    expect(calls.at(-2)?.[1]).toBe(`${String(mismatch?.name)}@${String(mismatch?.version)}`);
+    expect(
+      calls.some(
+        ([command, subject, field]) =>
+          command === "view" &&
+          subject === `${String(mismatch?.name)}@${String(mismatch?.version)}` &&
+          field === "dist.integrity",
+      ),
+    ).toBeTrue();
+  } finally {
+    rmSync(parent, { recursive: true, force: true });
+  }
+});
+
+test("the publisher refuses a moved latest dist-tag before publishing anything", () => {
+  const parent = mkdtempSync(join(tmpdir(), "tsudoi-release-latest-preflight-"));
+  const destination = join(parent, "release");
+  const bin = join(parent, "bin");
+  const npmLog = join(parent, "npm.jsonl");
+  try {
+    const packed = spawnSync("bun", ["run", "scripts/pack-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+    });
+    expect(packed.status).toBe(0);
+    const manifest = JSON.parse(
+      readFileSync(join(destination, "release-manifest.json"), "utf8"),
+    ) as ReleaseManifest;
+    const mismatch = manifest.packages?.at(-1);
+    expect(mismatch).toBeDefined();
+
+    mkdirSync(bin);
+    const fakeNpm = join(bin, "npm");
+    writeFileSync(
+      fakeNpm,
+      `#!/usr/bin/env node
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+appendFileSync(process.env.NPM_LOG, JSON.stringify(args) + "\\n");
+if (args[0] === "view" && args[2] === "dist.integrity") {
+  console.error("npm error code E404");
+  process.exit(1);
+}
+if (args[0] === "view" && args[2] === "dist-tags.alpha") {
+  process.stdout.write(JSON.stringify("0.1.0-alpha.1"));
+  process.exit(0);
+}
+if (args[0] === "view" && args[2] === "dist-tags.latest") {
+  const latest = args[1] === process.env.MISMATCH_NAME ? "0.1.0-alpha.2" : "0.1.0-alpha.1";
+  process.stdout.write(JSON.stringify(latest));
+  process.exit(0);
+}
+process.exit(args[0] === "publish" ? 0 : 2);
+`,
+    );
+    chmodSync(fakeNpm, 0o755);
+    const published = spawnSync("bun", ["run", "scripts/publish-release.ts", destination], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: {
+        ...process.env,
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        MISMATCH_NAME: String(mismatch?.name),
+        NPM_LOG: npmLog,
+      },
+    });
+    expect(published.status).not.toBe(0);
+    expect(published.stderr).toContain("latest must remain at 0.1.0-alpha.1");
+    const calls = readFileSync(npmLog, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as string[]);
+    expect(calls.some(([command]) => command === "publish")).toBeFalse();
   } finally {
     rmSync(parent, { recursive: true, force: true });
   }
@@ -461,6 +542,10 @@ if (args[0] === "view" && args[2] === "dist.integrity") {
   process.exit(1);
 }
 if (args[0] === "view" && args[2] === "dist-tags.alpha") {
+  process.stdout.write(JSON.stringify("0.1.0-alpha.2"));
+  process.exit(0);
+}
+if (args[0] === "view" && args[2] === "dist-tags.latest") {
   process.stdout.write(JSON.stringify("0.1.0-alpha.1"));
   process.exit(0);
 }

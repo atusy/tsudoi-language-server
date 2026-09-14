@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { handlerMembers } from "../../scripts/workspaces.ts";
 import { LspSession } from "./lsp.ts";
@@ -145,6 +145,32 @@ export async function packPackage(packageRoot: string): Promise<PackedPackage> {
   } catch (cause) {
     dispose();
     throw cause;
+  }
+}
+
+/**
+ * Packs a clean copy of one workspace package without rewriting its checkout artifacts.
+ *
+ * The copy still runs the package's own prepack script, so the returned artifact exercises the
+ * publication path. Excluding dist also prevents a stale checkout artifact from entering the
+ * observation before prepack has rebuilt it.
+ */
+export async function packIsolatedPackage(packageRoot: string): Promise<PackedPackage> {
+  const source = realpathSync(packageRoot);
+  const stage = mkdtempSync(join(tmpdir(), "tsudoi-isolated-pack-"));
+  const copy = join(stage, "package");
+  try {
+    cpSync(source, copy, {
+      recursive: true,
+      filter: (candidate) => {
+        const [topLevel] = relative(source, candidate).split(sep);
+        return topLevel !== "dist" && topLevel !== "node_modules";
+      },
+    });
+    symlinkSync(join(repoRoot, "node_modules"), join(copy, "node_modules"), "dir");
+    return await packPackage(copy);
+  } finally {
+    rmSync(stage, { recursive: true, force: true });
   }
 }
 

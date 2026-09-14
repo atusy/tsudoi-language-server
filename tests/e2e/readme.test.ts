@@ -520,7 +520,7 @@ const facts: readonly ReadmeFact[] = [
     tokens: [
       /required/i,
       /peer/i,
-      /0\.1\.0-alpha\.1/,
+      /0\.1\.0-alpha\.2/,
       /(?:does not|rather than) bundl/i,
       /auto-install/i,
     ],
@@ -604,12 +604,12 @@ const facts: readonly ReadmeFact[] = [
     // words around them reddens for a rewording that left the name exactly
     // right -- which is the punishment `survives having its section reworded`
     // exists to refuse.
-    name: "the registry route is intended and unverified",
+    name: "the registry route is published and verified",
     tokens: [
       /bun add @atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
       /deno add --save-exact npm:@atusy\/tsudoi-language-server@alpha(?![A-Za-z0-9._-])/,
       /deno run -A --frozen --node-modules-dir=none @atusy\/tsudoi-language-server\/cli/,
-      /unverified/i,
+      /verified against npm/i,
     ],
   },
   {
@@ -757,7 +757,7 @@ const memberFacts: ReadmeFact[] = [
   },
   {
     name: "tsudoi is a required versioned peer this package does not bundle",
-    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.1/, /does not bundle/i, /auto-install/i],
+    tokens: [/required/i, /peer/i, /0\.1\.0-alpha\.2/, /does not bundle/i, /auto-install/i],
   },
   {
     // THE TOKEN IS DELIBERATELY GENERIC WHERE THE SENTENCE IS NOT: each

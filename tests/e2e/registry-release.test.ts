@@ -49,8 +49,12 @@ if (args[0] === "view") {
     version,
     "dist.integrity": "sha512-" + createHash("sha512").update(bytes).digest("base64"),
     "dist-tags": {
-      alpha: version,
-      ...(process.env.ADD_LATEST === "1" ? { latest: version } : {}),
+      ...(process.env.OMIT_ALPHA === "1"
+        ? {}
+        : { alpha: process.env.ALPHA_VERSION ?? version }),
+      ...(process.env.OMIT_LATEST === "1"
+        ? {}
+        : { latest: process.env.LATEST_VERSION ?? "0.1.0-alpha.1" }),
     },
     repository: manifest.repository,
     ...(process.env.ADD_ATTESTATIONS === "1" ? {
@@ -94,7 +98,7 @@ process.exit(2);
       REPO_ROOT: repoRoot,
       NPM_LOG: join(parent, "npm.log"),
       NODE_OPTIONS: `--import=${pathToFileURL(join(repoRoot, "tests/helpers/fake-attestation-fetch.ts")).href}`,
-      GITHUB_REF: "refs/tags/v0.1.0-alpha.1",
+      GITHUB_REF: "refs/tags/v0.1.0-alpha.2",
       GITHUB_SHA: "0123456789abcdef0123456789abcdef01234567",
     };
     const verified = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
@@ -104,16 +108,31 @@ process.exit(2);
       env,
     });
     expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
-    expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.1");
+    expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.2");
 
-    const latest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+    for (const [name, override, error] of [
+      ["missing alpha", { OMIT_ALPHA: "1" }, "alpha must point to 0.1.0-alpha.2"],
+      ["wrong alpha", { ALPHA_VERSION: "0.1.0-alpha.999" }, "alpha must point to 0.1.0-alpha.2"],
+      ["missing latest", { OMIT_LATEST: "1" }, "latest must remain at 0.1.0-alpha.1"],
+    ] as const) {
+      const invalidTag = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+        env: { ...env, ...override },
+      });
+      expect(invalidTag.status, name).not.toBe(0);
+      expect(invalidTag.stderr, name).toContain(error);
+    }
+
+    const movedLatest = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: SPAWN_TIMEOUT_MS,
-      env: { ...env, ADD_LATEST: "1" },
+      env: { ...env, LATEST_VERSION: "0.1.0-alpha.2" },
     });
-    expect(latest.status).not.toBe(0);
-    expect(latest.stderr).toContain("not latest");
+    expect(movedLatest.status).not.toBe(0);
+    expect(movedLatest.stderr).toContain("latest must remain at 0.1.0-alpha.1");
 
     const missingProvenance = spawnSync(
       "node",
@@ -169,7 +188,7 @@ process.exit(2);
       .map((line) => JSON.parse(line) as string[]);
     const install = calls.find((args) => args[0] === "install");
     expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
-    expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.1"))).toHaveLength(7);
+    expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.2"))).toHaveLength(7);
     expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
 
     const failedAudit = spawnSync(

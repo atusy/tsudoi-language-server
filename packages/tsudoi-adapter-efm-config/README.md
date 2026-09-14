@@ -22,7 +22,7 @@ export default config;
 ```
 
 **It needs tsudoi at run time.** `@atusy/tsudoi-language-server` is a required **peer** at
-`0.1.0-alpha.1`, the version this alpha set was tested against. This package does not bundle or
+`0.1.0-alpha.2`, the version this alpha set was tested against. This package does not bundle or
 choose the framework copy: the host chooses the copy its CLI runs, while this package supplies
 handlers to that host. Bun and npm may auto-install the required peer, so install the matching
 framework explicitly when selecting the set.
