@@ -36,11 +36,12 @@ integrity of any version already in the registry. A retry skips an already-publi
 when its registry artifact is byte-for-byte the same; a mismatch or a registry error stops the run
 before another package is published. The read-only verifier then checks all seven registry
 identities and versions, each retained tarball's integrity, public access, repository and exact peer
-metadata, the synchronized `alpha` tags, and the bootstrap `latest` tags. The smoke
-test then installs all seven packages through `alpha` into isolated, empty Bun and Deno consumers,
-checks that every resolved version matches the retained release manifest, and completes an LSP
-initialize, document completion, shutdown, and clean exit under both runtimes. The first release
-cannot be verified this way beforehand because the package names do not yet exist in the registry.
+metadata, the synchronized `alpha` tags, and the bootstrap `latest` tags. The smoke test then
+installs all seven packages through `alpha` into an isolated, empty Bun consumer and installs the
+manifest's exact versions into an isolated, empty Deno consumer. It checks that every resolved
+version matches the retained release manifest, then completes an LSP initialize, document
+completion, shutdown, and clean exit under both runtimes. The first release cannot be verified this
+way beforehand because the package names do not yet exist in the registry.
 
 The npm registry's
 [package metadata contract](https://github.com/npm/registry/blob/main/docs/responses/package-metadata.md)
