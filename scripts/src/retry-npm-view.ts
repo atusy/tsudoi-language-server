@@ -16,31 +16,45 @@ interface RetryOptions {
   readonly onRetry?: (delay: number) => void;
 }
 
-export async function runNpmViewWithRetries<T extends NpmViewResult>(
-  run: () => T,
+export async function runWithRetries<T>(
+  run: () => T | Promise<T>,
+  shouldRetry: (result: T) => boolean,
   options: RetryOptions = {},
 ): Promise<T> {
   const delays = options.delays ?? NPM_VIEW_RETRY_DELAYS_MS;
   const wait = options.sleep ?? sleep;
-  let result = run();
+  let result = await run();
   for (const delay of delays) {
-    let jsonErrorCode: unknown;
-    try {
-      const output = JSON.parse(result.stdout) as { readonly error?: { readonly code?: unknown } };
-      jsonErrorCode = output.error?.code;
-    } catch {
-      // npm versions and log levels differ on whether errors are JSON on stdout or text on stderr.
-    }
-    if (
-      result.status === 0 ||
-      result.status === null ||
-      (jsonErrorCode !== "E404" && !/\bE404\b/.test(result.stderr))
-    ) {
-      return result;
-    }
+    if (!shouldRetry(result)) return result;
     options.onRetry?.(delay);
     await wait(delay);
-    result = run();
+    result = await run();
   }
   return result;
+}
+
+export async function runNpmViewWithRetries<T extends NpmViewResult>(
+  run: () => T,
+  options: RetryOptions = {},
+): Promise<T> {
+  return runWithRetries(
+    run,
+    (result) => {
+      let jsonErrorCode: unknown;
+      try {
+        const output = JSON.parse(result.stdout) as {
+          readonly error?: { readonly code?: unknown };
+        };
+        jsonErrorCode = output.error?.code;
+      } catch {
+        // npm versions and log levels differ on whether errors are JSON on stdout or text on stderr.
+      }
+      return (
+        result.status !== 0 &&
+        result.status !== null &&
+        (jsonErrorCode === "E404" || /\bE404\b/.test(result.stderr))
+      );
+    },
+    options,
+  );
 }
