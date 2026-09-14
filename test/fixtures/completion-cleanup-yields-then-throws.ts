@@ -45,9 +45,6 @@ function failCleanup(): never {
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: COMPLETE on the path that answers, NO CLAIM on the
-      // cancelled one -- `returnedItems` is a module constant and the params are
-      // read only to poll the gate, and a cancelled request carries no result.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

@@ -120,7 +120,7 @@ export function makeShellCompletion(
       }
     }
     if (items.length > 0) {
-      // COMPLETENESS RULING: the native shell process returns its complete
+      // The native shell process returns its complete
       // candidate set for this exact line. A later edit triggers a new request.
       yield items;
     }

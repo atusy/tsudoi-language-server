@@ -45,14 +45,6 @@ export function itemsFor(folders: Iterable<WorkspaceFolder>): CompletionItem[] {
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: COMPLETE, and it is the ONE fixture where the
-      // question needed thinking about rather than reading off a constant. The
-      // candidate set is the CLIENT'S OWN workspace folder list, which MOVES --
-      // but `isIncomplete` is about a set that changes AS THE USER TYPES, and no
-      // keystroke narrows this one: it is not filtered by the line, the position
-      // or anything else in the request. A folder arrives on a notification of
-      // its own, and the client is entitled to ask again then whatever this
-      // answer claimed.
       "textDocument/completion": async function* (
         context: RequestContext,
         params: CompletionParams,

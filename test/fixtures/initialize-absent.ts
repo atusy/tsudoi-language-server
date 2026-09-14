@@ -19,12 +19,6 @@ import type { TsudoiConfig } from "../../packages/tsudoi-language-server/src/typ
  * left every arm green.
  */
 export const sharedMethods: NonNullable<TsudoiConfig["methods"]> = {
-  // COMPLETENESS RULING: COMPLETE. The handler takes no parameters at all, so
-  // nothing about the request reaches its answer and the one item IS the whole
-  // candidate set at every position in every document. WHAT THIS CONFIG IS FOR
-  // does not change that: it exists so `completionProvider.resolveProvider` has
-  // somewhere to be contributed, and no arm reads what this yields -- but a
-  // handler that yields is a handler that claims, whether or not anybody looks.
   "textDocument/completion": async function* () {
     yield [{ label: "one" }];
   },

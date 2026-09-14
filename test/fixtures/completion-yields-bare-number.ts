@@ -30,9 +30,6 @@ export const bareNumber = 42;
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NO CLAIM. This handler never produces a candidate
-      // set at all -- its one batch is a type error -- so `isIncomplete` has
-      // nothing to be about.
       "textDocument/completion": async function* () {
         try {
           yield bareNumber as unknown as CompletionItem[];

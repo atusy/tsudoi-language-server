@@ -205,7 +205,7 @@ export async function makeCompleteDictionary(
     if (filtered.length === 0) {
       return;
     }
-    // COMPLETENESS RULING: this is the complete bounded answer from the active
+    // This is the complete bounded answer from the active
     // immutable snapshot. A background refresh is a future dictionary snapshot,
     // not an omitted chunk of this response.
     yield filtered.map(

@@ -41,10 +41,7 @@ let entries = 0;
  * at 1. A count read at entry and reported there would say nothing -- the first
  * invocation reports 1 either way.
  *
- * NO OTHER METHOD IS DECLARED, and the sibling fixtures' `sharedMethods` is
- * deliberately not spread in: that import would have this file SERVE a method it
- * never names, which is the hole test/completeness-ruling.test.ts's scan cannot
- * see. Nothing here needs a capability.
+ * No other methods are needed to observe the handshake entry count.
  */
 const initialize: MethodHandler<"initialize"> = async (context) => {
   entries += 1;
