@@ -1,28 +1,4 @@
-/**
- * Buffer-local completion for a config author's own `textDocument/completion`
- * handler: the words already written AROUND the cursor.
- *
- * THE NARROWER OF THIS PACKAGE'S TWO HANDLERS, and the pair is the point: this
- * one answers FROM THE BUFFER UNDER THE CURSOR and reads a bounded slice of it,
- * where `completeCorpus` answers from every document the client has opened. An
- * author installs whichever question they have, or both.
- *
- * MODELLED ON ddc-source-around, AND READ FROM ITS SOURCE RATHER THAN ITS
- * README. The two disagree: the README documents `maxSize: 500` where `params()`
- * returns 200. Every default below is the code's, because a default taken from
- * the prose would be a claim nobody could check against the thing this was
- * modelled on. THE REFERENCE'S NAME FOR IT IS `maxSize`, WHICH THIS PACKAGE DOES
- * NOT USE: `maxItems` arrived beside it and the two were read as one bound, so the
- * option says its UNIT instead. The provenance of the NUMBER is unaffected.
- *
- * WHAT DOES NOT TRANSLATE, NAMED SO IT IS NOT MISTAKEN FOR AN OMISSION: ddc
- * NARROWS the candidates itself against what the user has typed. LSP gives that
- * job to the CLIENT, so this hands over the window's words and the editor
- * filters them -- which is also why the word under the cursor is among them
- * rather than being excluded. Excluding it would be this package deciding what
- * the editor already decides, and would be wrong for the user who is retyping a
- * word that appears elsewhere.
- */
+/** Buffer-local word completion, with a bounded window around the cursor. */
 import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
@@ -83,55 +59,12 @@ export function windowAround(
 }
 
 /**
- * A `textDocument/completion` handler offering the words around the cursor.
+ * Offers words around the cursor in one batch from the in-memory buffer.
+ * A missing document or an empty filtered result yields nothing (LSP null).
  *
- * THE SAME SHAPE AS `completePath` IN THE SIBLING PACKAGE, and that is a
- * decision rather than a coincidence: `(context, params, options)`, an async
- * generator, options LAST and defaulted. A factory returning a handler was the
- * first spelling and is refused -- two handler packages an author installs side
- * by side would then be called two different ways for no reason either of them
- * could give, and the options argument buys the same thing a closure would.
- *
- * IT IS USABLE WITH NO WRAPPER: `"textDocument/completion": completeAround`
- * type-checks, the third parameter being optional, and an author who wants
- * options writes the arrow that supplies them.
- *
- * IT YIELDS ONCE, AND THAT IS A RULING RATHER THAN A SHORTCUT. tsudoi's
- * completion drive lets a handler stream, and streaming exists for an answer
- * that ARRIVES OVER TIME -- a directory being walked, an index being consulted.
- * This one reads a bounded slice of a buffer already in memory: there is no
- * moment at which a partial answer is more useful than no answer, and yielding
- * per line would spend a `$/progress` per line to say the same thing.
- *
- * WHAT THE USER TYPED IS FILTERED AGAINST, WHICH REVERSES WHAT THIS DOCBLOCK USED
- * TO SAY. It said the client narrows the list and a handler must not -- right about
- * whose JOB it is, wrong about what sending everything costs. The reading that
- * overturned it is at `filters`, and it was taken on the corpus handler, whose
- * answer is bigger; the window keeps the same pipeline so that an author composing
- * both learns one behaviour.
- *
- * COMPLETENESS RULING: COMPLETE FOR A CLIENT THAT NARROWS BY PREFIX, AND THAT IS
- * NARROWER THAN THE RULING IT REPLACES. The specification treats a supplied
- * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query, filter
- * what you were given -- and under `prefixFilter` that stays TRUE AS THE USER
- * TYPES: the words matching a LONGER prefix are a SUBSET of the ones sent for the
- * shorter one. A DELETION is an edit, so `didChange` and a fresh request restore
- * the wider set.
- *
- * WHAT IT IS NOT TRUE FOR IS A FUZZY CLIENT: `cmpl` reaching `completion` needs a
- * candidate the prefix rejected, and it was never sent -- while the answer still
- * claims to be final, because this handler does not return
- * `isIncomplete`. `filters` is where an author says otherwise.
- *
- * AND AN EDIT OVERTURNS THE ANSWER WHATEVER THE PIPELINE DOES: typing changes the
- * buffer's words, the client sends `didChange` and asks again, and that is the
- * route every source is refreshed by.
- *
- * A DOCUMENT THE STORE DOES NOT HOLD YIELDS NOTHING rather than answering
- * emptily, and the difference reaches the client: a stream that yields nothing
- * is answered `null` -- `this server has no answer here` -- where an empty batch
- * would say `there are no candidates`, which is a stronger claim than tsudoi can
- * make about a buffer it was never sent.
+ * The default prefix filter reduces the payload; fuzzy clients should customize
+ * `filters` or disable them and set `maxItems`. The yielded array implies
+ * isIncomplete: false; this handler does not request automatic re-querying.
  */
 export async function* completeAround(
   context: RequestContext,

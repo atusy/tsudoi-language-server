@@ -149,65 +149,14 @@ function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[
 }
 
 /**
- * A `textDocument/completion` handler offering the words of every open document.
+ * Offers words from all open documents in one batch, in first-seen order.
+ * The cursor selects the prefix to filter by; it does not limit the scan.
+ * If the requested document is missing, filtering uses an empty prefix.
+ * Scans are cached by document version and scan options.
  *
- * THE SAME SHAPE AS `completeAround` AND `completePath`: `(context, params,
- * options)`, an async generator, options LAST and defaulted, so
- * `"textDocument/completion": completeCorpus` type-checks with no wrapper and an
- * author who wants options writes the arrow that supplies them.
- *
- * THE CURSOR DECIDES WHAT IS SENT BUT NOT WHAT IS SCANNED, which is the whole of
- * what `params` is read for: the corpus is every open document wherever the cursor
- * is, and `params.position` is consulted only to find the WORD BEING TYPED for the
- * pipeline to filter against. This docblock used to say the params were read for
- * nothing, and that stopped being true when the filters arrived.
- *
- * SO A REQUEST NAMING A BUFFER THE STORE DOES NOT HOLD IS STILL ANSWERED, where
- * `completeAround` has nothing to say about one: the answer never depended on
- * that document, and every other open buffer is still there to offer.
- *
- * IT YIELDS ONCE, ON THE RULING ITS SIBLING RECORDS AND FOR THE SAME REASON,
- * WHICH THE LARGER READ DOES NOT CHANGE. Streaming exists for an answer that
- * ARRIVES OVER TIME; this one is CPU over buffers already in memory with no
- * `await` in it, so there is no moment at which a partial list has arrived and
- * the rest has not -- a yield per document would spend a `$/progress` per
- * document to say the same thing at the same time. STREAMING THE SCAN WAS ASKED
- * FOR AND IS REFUSED FOR A SECOND REASON: a handler that offered what it had
- * indexed so far would need to tell the client to ask again, and that is
- * `isIncomplete`, which this handler does not return -- so the client
- * would take a partial list as final.
- *
- * THE ORDER IS THE STORE'S, first-seen: documents in the order the client opened
- * them, words in the order they appear. NOTHING IS SORTED and no `sortText` is
- * sent, so the client ranks the list -- a package-chosen order would be a guess
- * competing with the editor's own fuzzy score.
- *
- * WHAT THE USER TYPED IS NOW FILTERED AGAINST, WHICH REVERSES WHAT THIS DOCBLOCK
- * USED TO SAY. It said the client narrows the list and a handler must not --
- * right about whose JOB it is, wrong about what sending everything costs.
- * MEASURED in a real editor: this handler over five open files sent 3341 items and
- * 155 KiB ON EVERY KEYSTROKE to a client capped at 500, and the editor's
- * completion stopped answering while this server stayed healthy at 3-28ms.
- * `filters` is the remedy and `defaultFilters` applies it.
- *
- * COMPLETENESS RULING: COMPLETE FOR A CLIENT THAT NARROWS BY PREFIX, AND THAT IS
- * NARROWER THAN THE RULING IT REPLACES. The specification treats a supplied
- * `CompletionItem[]` as `{ isIncomplete: false, items }` -- do not re-query, filter
- * what you were given -- and under `prefixFilter` that stays TRUE AS THE USER
- * TYPES: the words matching a LONGER prefix are a SUBSET of the ones sent for the
- * shorter one, so no candidate the client would show is missing. A DELETION is an
- * edit, so `didChange` and a fresh request restore the wider set.
- *
- * WHAT IT IS NOT TRUE FOR IS A FUZZY CLIENT, and this is a real cost rather than a
- * caveat: `cmpl` reaching `completion` needs a candidate the prefix rejected, and
- * it was never sent -- while the answer still claims to be final, because this
- * handler does not return `isIncomplete`. AN AUTHOR WITH A FUZZY MATCHER
- * SHOULD SAY SO IN `filters`: their own filter, or none of them and a `maxItems`.
- *
- * AND AN EDIT OR AN OPEN OVERTURNS THE ANSWER TOO: a `didChange` or a `didOpen`
- * really does change the corpus, and the client sends one and asks again, which is
- * the route every source is refreshed by. THE MEMO IS NOT AN EXCEPTION -- it is
- * keyed on the version, so the next request after an edit re-scans what it touched.
+ * The default prefix filter reduces the payload; fuzzy clients should customize
+ * `filters` or disable them and set `maxItems`. The yielded array implies
+ * isIncomplete: false; this handler does not request automatic re-querying.
  */
 export async function* completeCorpus(
   context: RequestContext,

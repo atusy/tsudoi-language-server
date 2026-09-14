@@ -37,9 +37,6 @@ export const bareItem: CompletionItem = { label: "裸の候補", detail: "yielde
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NO CLAIM. This handler never produces a candidate
-      // set at all -- its one batch is malformed -- so `isIncomplete` has
-      // nothing to be about.
       "textDocument/completion": async function* () {
         try {
           yield bareItem as unknown as CompletionItem[];

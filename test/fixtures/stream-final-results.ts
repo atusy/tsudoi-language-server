@@ -60,7 +60,7 @@ async function* batches<T>(context: RequestContext, uri: string, partial: T[], f
 
 export default (): TsudoiConfig => ({
   methods: {
-    // COMPLETENESS RULING: array cases are complete; list cases model a truncated search.
+    // Array cases are complete; list cases model a truncated search.
     "textDocument/completion": async function* (context, params) {
       const mode = params.textDocument.uri.slice(params.textDocument.uri.lastIndexOf("/") + 1);
       if (mode.endsWith("list")) {

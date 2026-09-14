@@ -669,7 +669,7 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
 /**
  * A `textDocument/completion` handler that completes paths.
  *
- * COMPLETENESS RULING: NOT COMPLETE. This handler still yields arrays and
+ * This handler yields arrays and
  * returns void, so its aggregated result implicitly claims isIncomplete:false.
  * Typing a separator changes the directory being listed rather than narrowing
  * the previous candidates. ADR 0009 lets an enclosing handler return a

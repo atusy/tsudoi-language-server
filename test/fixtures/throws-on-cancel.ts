@@ -39,17 +39,7 @@ export default (): Promise<TsudoiConfig> => {
         await aborted(context);
         throw new Error(throwMessage);
       },
-      // COMPLETENESS RULING: NO CLAIM IS MADE, BY CONSTRUCTION RATHER THAN BY
-      // CHOICE. This handler yields nothing and never returns -- it parks until
-      // the abort and then throws -- so no result of any shape reaches the wire
-      // and the specification's array equivalence has nothing to apply to. The
-      // ruling is recorded so the enumeration covers every completion handler
-      // rather than only the ones that answer.
-      //
-      // IT WOULD DRAW `eslint(require-yield)` AND THAT IS THE FIXTURE WORKING.
-      // The exception is silenced AT THIS LINE so `--deny-warnings` can make
-      // every other warning gate the run. Reporting unused directives makes
-      // this exception gate the run too if the rule ever stops applying.
+      // This fixture waits for cancellation and throws without yielding.
       // oxlint-disable-next-line require-yield
       "textDocument/completion": async function* (
         context: RequestContext,

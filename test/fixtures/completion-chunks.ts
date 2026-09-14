@@ -18,12 +18,6 @@ export const returnedItems: CompletionItem[] = [{ label: "最後", detail: "yiel
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: COMPLETE. Both parameters are unused -- they are
-      // spelled underscore-prefixed below -- so nothing about the request
-      // reaches this answer and the three constants ARE the whole candidate set
-      // at every position in every document. The tests here assert ORDER and
-      // IDENTITY of chunks, which is a claim about the transport rather than
-      // about whether more items exist.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

@@ -37,10 +37,6 @@ export const cleanupMarker = "completion-ignores-signal: released";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NO CLAIM. Every request this fixture serves is
-      // answered -32800 with no result, and the path that would answer is
-      // unreachable -- the handler never returns -- so there is no candidate set
-      // for `isIncomplete` to be about.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

@@ -17,30 +17,9 @@ import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NOT COMPLETE, AND THE CLAIM THIS CONFIG MAKES ON
-      // THE WIRE IS WRONG. The specification says a supplied `CompletionItem[]`
-      // is identical to `{ isIncomplete: false, items }` -- so a bare array is a
-      // POSITIVE ASSERTION that the candidate set is final and the client need
-      // not ask again. THIS CONFIG MAKES THAT ASSERTION BY DEFAULT AND NOT BY
-      // CHOICE: it is what a bare array says, and nothing written below decides
-      // it.
-      //
-      // WHY IT IS FALSE: the delegate lists ONE DIRECTORY filtered by the
-      // trailing name of the fragment under the cursor. The next keystroke
-      // changes the filter, and often changes the DIRECTORY -- typing `/` moves
-      // to a different listing entirely. A client told the set is final shows
-      // the user candidates for a prefix they have already left behind.
-      //
-      // The framework now accepts a returned CompletionList (ADR 0009).
-      // This example keeps the delegate's existing policy; choosing
-      // isIncomplete here or in completePath is a separate behavior change.
-      //
-      // AND THE ARM JUST BELOW DECLINES A SECOND WRONG CLAIM, worth separating
-      // because a re-type papers over both: it fires when the document is NOT IN
-      // THE STORE, which means `this server cannot see the buffer yet`. A
-      // `return []` there goes out as `the candidate set is complete and empty`
-      // -- a different statement, and the one thing this server is sure it
-      // cannot say. YIELDING NOTHING is `no answer`, which is what is true.
+      // completePath yields arrays, which imply isIncomplete: false. Typing a
+      // separator needs a new directory listing; see completePath for this limitation.
+      // A missing document yields nothing, so the response is null rather than [].
       "textDocument/completion": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);
         if (!document) {

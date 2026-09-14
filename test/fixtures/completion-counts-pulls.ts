@@ -40,9 +40,6 @@ export const batchCount = 2000;
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NO CLAIM. Every request this fixture serves is
-      // cancelled mid-stream and answered -32800 with no result, so there is no
-      // candidate set for `isIncomplete` to be about.
       "textDocument/completion": async function* (
         _context: RequestContext,
         _params: CompletionParams,

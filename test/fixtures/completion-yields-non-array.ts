@@ -42,9 +42,6 @@ export const cleanupMarker = "completion-yields-non-array: released";
 export default (): Promise<TsudoiConfig> => {
   return Promise.resolve({
     methods: {
-      // COMPLETENESS RULING: NO CLAIM. This handler never produces a candidate
-      // set at all -- its one batch is a type error -- so `isIncomplete` has
-      // nothing to be about.
       "textDocument/completion": async function* () {
         try {
           yield 42 as unknown as CompletionItem[];
