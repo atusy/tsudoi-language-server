@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
+import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { INITIAL_LATEST_VERSION } from "./release-policy.ts";
 import { verifyProvenance } from "./src/verify-provenance.ts";
@@ -230,7 +231,7 @@ for (const [index, entry] of entries.entries()) {
   if (tags.latest !== INITIAL_LATEST_VERSION) {
     fail(`${entry.name} latest must remain at ${INITIAL_LATEST_VERSION}`);
   }
-  if (JSON.stringify(metadata.repository) !== JSON.stringify(local.repository)) {
+  if (!isDeepStrictEqual(metadata.repository, local.repository)) {
     fail(`registry repository metadata does not match ${packageSpec}`);
   }
   if (entry.name === FRAMEWORK) {

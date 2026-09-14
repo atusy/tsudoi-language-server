@@ -56,7 +56,13 @@ if (args[0] === "view") {
         ? {}
         : { latest: process.env.LATEST_VERSION ?? "0.1.0-alpha.1" }),
     },
-    repository: manifest.repository,
+    repository: process.env.REORDER_REPOSITORY === "1"
+      ? {
+          url: manifest.repository.url,
+          type: manifest.repository.type,
+          directory: manifest.repository.directory,
+        }
+      : manifest.repository,
     ...(process.env.ADD_ATTESTATIONS === "1" ? {
       "dist.attestations": {
         url: process.env.BAD_ATTESTATION_URL === "1"
@@ -109,6 +115,14 @@ process.exit(2);
     });
     expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
     expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.2");
+
+    const reorderedRepository = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+      env: { ...env, REORDER_REPOSITORY: "1" },
+    });
+    expect(`${String(reorderedRepository.status)} ${reorderedRepository.stderr}`).toBe("0 ");
 
     for (const [name, override, error] of [
       ["missing alpha", { OMIT_ALPHA: "1" }, "alpha must point to 0.1.0-alpha.2"],
