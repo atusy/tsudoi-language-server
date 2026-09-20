@@ -1,26 +1,12 @@
 # tsudoi-language-server
 
-The language server for **gathering** (tsudoi; 集い) the features you wish for.
+**Your editor features. One TypeScript config. Any LSP client.**
 
-tsudoi turns one TypeScript config into a Language Server. Pick the features you want,
-write the handlers only your workflow needs, and tsudoi takes care of the protocol,
-document lifecycle, capability advertisement, cancellation, and streaming.
+tsudoi (集い, “gathering”) brings the features you want into one language server.
+Combine ready-made completion and hover, or write your own diagnostics, formatting, and more.
+You write the handlers; tsudoi handles the LSP protocol.
 
-It is a good fit when a full compiler-backed language server would be too much, but an
-editor-specific script would be too limiting:
-
-- combine path, document-word, dictionary, and native-shell completion
-- add hover from WordNet or another data source
-- reuse an existing efm configuration
-- plug in your own diagnostics, formatting, commands, code actions, or custom methods
-- share the same server across Neovim, Helix, Emacs, VS Code, and other LSP clients
-
-In one everyday setup, a single config combines native-shell, Git, path, open-document, and
-dictionary completion with WordNet hover, dprint formatting, and custom kakehashi routing. The
-config decides the order, filters, and fallbacks; each feature keeps its own implementation.
-
-Your server stays ordinary TypeScript. A minimal config is just a typed factory and the
-methods it answers:
+Start with path completion and English definitions on hover:
 
 <!-- overview -->
 
@@ -44,30 +30,23 @@ export default config;
 
 ## Try the npm alpha
 
-The first npm release is an opt-in alpha. Install the framework and whichever handlers you want
-with `bun add @atusy/tsudoi-language-server@alpha`, or use
-`deno add --save-exact npm:@atusy/tsudoi-language-server@alpha` in a Deno project. Deno users run
-the installed CLI with
-`deno run -A --frozen --node-modules-dir=none @atusy/tsudoi-language-server/cli --config ./tsudoi.config.ts`.
-All tsudoi packages in one project should use the same alpha version.
+tsudoi runs on **Bun or Deno**. Follow the [npm alpha setup](docs/README.md#install-the-npm-alpha)
+to install the framework and your chosen handlers. Keep all tsudoi packages on the same alpha version.
 
-You can also try a pinned repository snapshot without cloning or building this repository. With
-[Deno](https://docs.deno.com/runtime/getting_started/installation/) installed, download the
-[three-file starter](examples/github) and run it:
+For a quick start with [Deno](https://docs.deno.com/runtime/getting_started/installation/),
+download the [three-file starter](examples/github)—no clone or build needed:
 
     mkdir my-language-server && cd my-language-server
     base=https://raw.githubusercontent.com/atusy/tsudoi-language-server/main/examples/github; curl -fSLO "$base/deno.json" -O "$base/cli.js" -O "$base/tsudoi.config.ts"
     deno run -A cli.js --config ./tsudoi.config.ts
 
-The command waits for LSP messages on stdin, so silence means it started successfully. Point
-your editor's LSP client at the last command, then edit `tsudoi.config.ts` to make the server
-yours. The starter pins tsudoi to a known Git commit; updating is an explicit change rather
-than something that happens behind your back.
+The server waits for LSP messages on stdin. Configure your editor's LSP client to run the last
+command from this directory, then edit `tsudoi.config.ts` to make it yours.
+The starter pins tsudoi to a specific Git commit.
 
 ## Make it yours
 
-The starter gives you filesystem completion and English WordNet hover. The repository also
-contains composable handlers for:
+Pick the features your workflow needs:
 
 | Package                                                                  | What it adds                                      |
 | ------------------------------------------------------------------------ | ------------------------------------------------- |
@@ -78,15 +57,12 @@ contains composable handlers for:
 | [hover-wordnet](packages/tsudoi-hover-wordnet/README.md)                 | English definitions on hover                      |
 | [adapter-efm-config](packages/tsudoi-adapter-efm-config/README.md)       | handlers derived from an efm config               |
 
-For a more involved real-world shape, see the
-[full example](examples/tsudoi.config.ts). It combines packaged handlers with local
-diagnostics and formatting in the same config.
+Need something custom? Add your own handlers alongside these packages.
+The [full example](examples/tsudoi.config.ts) shows how to combine them with diagnostics and formatting.
 
 ## Learn more
 
-The [complete guide](docs/README.md) covers npm and checkout installation, configuring Bun or Deno,
-handler and context APIs, initialization, custom methods, cancellation, and cleanup. Maintainers use
-the [npm alpha release runbook](docs/releasing.md) for bootstrap and later OIDC releases.
+See the [complete guide](docs/README.md) for installation, handler APIs, and custom methods.
 
 ## License
 
