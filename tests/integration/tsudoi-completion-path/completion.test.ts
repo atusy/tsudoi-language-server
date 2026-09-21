@@ -5,6 +5,7 @@ applySuiteDeadline();
 import { describe, expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
 import { readdir } from "node:fs/promises";
+import { homedir } from "node:os";
 import nodePath, { isAbsolute, join, normalize, type PlatformPath, posix, win32 } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -159,6 +160,115 @@ function inserted(items: readonly CompletionItem[]): string[] {
 
 /** A document that does not exist, so only cwd answers a relative fragment. */
 const elsewhere = { uri: "file:///workspace/a.txt" } as const;
+
+test("~/ completes from home while preserving the tilde in the edit", async () => {
+  const home = tree(["notes.txt"]);
+  const cwd = tree(["~/not-home.txt"]);
+  try {
+    const items = await complete(
+      { ...elsewhere, line: "~/no" },
+      cwd.root,
+      undefined,
+      true,
+      ["markdown"],
+      { home: home.root },
+    );
+    expect(inserted(items)).toEqual(["~/notes.txt"]);
+    expect(items[0]?.textEdit?.newText).toBe("~/notes.txt");
+    expect(completedPath(items[0]!)).toBe(join(home.root, "notes.txt"));
+  } finally {
+    home.dispose();
+    cwd.dispose();
+  }
+});
+
+describe("home-relative paths", () => {
+  test.each(["~", "~/", "~//", "~/notes/../"])("%s lists home", async (line) => {
+    const home = tree(["notes/file.txt"]);
+    const cwd = tree(["unrelated.txt"]);
+    try {
+      const items = await complete(
+        { ...elsewhere, line },
+        cwd.root,
+        undefined,
+        true,
+        ["markdown"],
+        {
+          home: home.root,
+        },
+      );
+      expect(inserted(items)).toEqual([(line === "~" ? "~/" : line) + "notes"]);
+      expect(completedSource(items[0]!)).toBe("home");
+      const resolved = await resolvePathStat(resolveSession(["markdown"]), items[0]!);
+      expect(documentationOf(resolved)).toContain("source: home");
+      expect(documentationOf(resolved)).toContain("file.txt");
+    } finally {
+      home.dispose();
+      cwd.dispose();
+    }
+  });
+
+  test("nested paths with spaces preserve the prefix and replace the existing suffix", async () => {
+    const home = tree(["my notes/file.txt"]);
+    try {
+      const line = "open ~/my notes/fi-old";
+      const character = "open ~/my notes/fi".length;
+      const items = await complete(
+        { ...elsewhere, line },
+        home.root,
+        character,
+        true,
+        ["markdown"],
+        {
+          home: home.root,
+        },
+      );
+      expect(inserted(items)).toEqual(["~/my notes/file.txt"]);
+      expect(items[0]?.filterText).toBe("~/my notes/file.txt");
+      expect(items[0]?.textEdit).toEqual({
+        newText: "~/my notes/file.txt",
+        insert: { start: { line: 0, character: 5 }, end: { line: 0, character } },
+        replace: { start: { line: 0, character: 5 }, end: { line: 0, character: line.length } },
+      });
+      expect(completedPath(items[0]!)).toBe(join(home.root, "my notes/file.txt"));
+    } finally {
+      home.dispose();
+    }
+  });
+
+  test("home defaults to the server user's home and excludes other roots", () => {
+    const folders = [{ uri: "file:///project", name: "project" }];
+    expect(sourcesFor(only("~/"), elsewhere.uri, "/elsewhere", folders)).toEqual([
+      { name: "home", root: homedir() },
+    ]);
+  });
+
+  test.each(["~/notes/fi", "~\\notes\\fi"])("Windows accepts %s", (text) => {
+    const fragment = only(text, win32);
+    const sources = sourcesFor(fragment, elsewhere.uri, "C:\\cwd", [], win32, "C:\\Users\\me");
+    expect(sources).toEqual([{ name: "home", root: "C:\\Users\\me" }]);
+    expect(listingDirectory(sources[0]!, fragment, win32)).toBe("C:\\Users\\me\\notes");
+  });
+
+  test.each(["~other/fi", "sub/~/fi", "~\\fi"])("POSIX keeps %s literal", (text) => {
+    expect(sourcesFor(only(text, posix), "untitled:buffer", "/cwd", [], posix, "/home/me")).toEqual(
+      [{ name: "cwd", root: "/cwd" }],
+    );
+  });
+
+  test("a missing home directory does not fall back to a literal cwd tilde directory", async () => {
+    const cwd = tree(["~/file.txt"]);
+    try {
+      expect(
+        await complete({ ...elsewhere, line: "~/" }, cwd.root, undefined, true, ["markdown"], {
+          home: join(cwd.root, "missing"),
+        }),
+      ).toEqual([]);
+    } finally {
+      cwd.dispose();
+    }
+  });
+});
 
 /** The kind each item carries, keyed by what it inserts. */
 function kinds(items: readonly CompletionItem[]): Record<string, CompletionItemKind | undefined> {

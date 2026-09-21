@@ -94,11 +94,17 @@ Nothing recurses here either: one listing, one level, no walk.
 
 ## Completion options
 
-| option           | default      | effect                                                       |
-| ---------------- | ------------ | ------------------------------------------------------------ |
-| `minQueryLength` | `1`          | minimum path-token length that starts directory lookup       |
-| `cwd`            | server cwd   | root used to complete a bare relative path                   |
-| `flavour`        | host flavour | path rules supplied by `path.win32`, `path.posix`, or a host |
+Use `~` or `~/` to complete from the server user's home directory, and `~/notes/` to
+browse beneath it. Inserted paths keep the `~` prefix; previews resolve the actual file.
+Windows also accepts `~\`. `~username` is not expanded, and a `~` elsewhere in a path
+remains a literal directory name.
+
+| option           | default            | effect                                                       |
+| ---------------- | ------------------ | ------------------------------------------------------------ |
+| `minQueryLength` | `1`                | minimum path-token length that starts directory lookup       |
+| `cwd`            | server cwd         | root used to complete a bare relative path                   |
+| `home`           | server user's home | root used for `~` paths                                      |
+| `flavour`        | host flavour       | path rules supplied by `path.win32`, `path.posix`, or a host |
 
 Options are the **third argument**, so the handler can be registered directly when the defaults
 suit you and wrapped when they do not:

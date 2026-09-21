@@ -1051,6 +1051,7 @@ const records: readonly PerturbationRecord[] = [
     },
     redAt: 'expect(items.map((item) => item.filterText)).toEqual(["a/b/deep.txt"]);',
     alsoReddens: [
+      "nested paths with spaces preserve the prefix and replace the existing suffix",
       "what an item inserts is the directory typed and the label it shows, raw on both sides",
       "each item names the file it resolves to and the source that produced it",
       "each item's mark names the source that produced it, for every source there is",

@@ -6,6 +6,7 @@
 
 import type { Dirent } from "node:fs";
 import { opendir, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import nodePath, { basename, dirname } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -41,7 +42,7 @@ export interface PathFragment {
   readonly text: string;
   /** Where `text` begins on the line, in UTF-16 code units, as LSP counts. */
   readonly start: number;
-  /** Up to and including the last separator -- e.g. `src/`, `C:\Users\`, or `` for none. */
+  /** Up to the last separator; a bare `~` uses `~/` to insert home-relative children. */
   readonly directory: string;
   /** The filter, and possibly empty -- e.g. `fo`. */
   readonly name: string;
@@ -110,8 +111,8 @@ function fragmentAt(
     text,
     start,
     end,
-    directory: text.slice(0, cut),
-    name: text.slice(cut),
+    directory: text === "~" ? "~/" : text.slice(0, cut),
+    name: text === "~" ? "" : text.slice(cut),
   };
 }
 
@@ -195,7 +196,7 @@ export function completedSource(item: CompletionItem): PathSourceName | undefine
  * type-checks everywhere while every item marked with the dropped name silently
  * loses its attribution at resolve time.
  */
-const sourceNames = ["document", "cwd", "workspace", "absolute"] as const;
+const sourceNames = ["document", "cwd", "workspace", "absolute", "home"] as const;
 
 const batchSize = 100;
 
@@ -218,6 +219,8 @@ export interface CompletePathOptions {
    * permission a runtime withholds into a failed HANDSHAKE.
    */
   readonly cwd?: string;
+  /** The absolute root for `~` paths. Defaults lazily to the server user's home directory. */
+  readonly home?: string;
   /** How a path is spelled: `path.win32`, `path.posix`, or the host's own. */
   readonly flavour?: PathFlavour;
 }
@@ -237,7 +240,14 @@ export function sourcesFor(
   cwd: string,
   folders: readonly WorkspaceFolder[] = [],
   flavour: PathFlavour = nodePath,
+  home?: string,
 ): PathSource[] {
+  if (
+    fragment.text === "~" ||
+    separatorsOf(flavour).some((sep) => fragment.text.startsWith(`~${sep}`))
+  ) {
+    return [{ name: "home", root: home ?? homedir() }];
+  }
   const root = flavour.parse(fragment.text).root;
   if (flavour.isAbsolute(fragment.text)) {
     return [{ name: "absolute", root }];
@@ -335,6 +345,9 @@ export function listingDirectory(
   fragment: PathFragment,
   flavour: PathFlavour = nodePath,
 ): string {
+  if (source.name === "home") {
+    return flavour.resolve(flavour.join(source.root, fragment.directory.slice(2)));
+  }
   return flavour.resolve(source.root, fragment.directory);
 }
 
@@ -727,7 +740,14 @@ export async function* completePath(
         continue;
       }
       let named = false;
-      for (const source of sourcesFor(fragment, params.textDocument.uri, cwd, folders, flavour)) {
+      for (const source of sourcesFor(
+        fragment,
+        params.textDocument.uri,
+        cwd,
+        folders,
+        flavour,
+        options.home,
+      )) {
         for await (const batch of itemsFrom(
           source,
           fragment,
