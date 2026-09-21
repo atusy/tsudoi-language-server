@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import {
   CompletionItemKind,
   type CompletionItem,
+  type CompletionList,
   type Hover,
   type InitializeResult,
   type MarkupContent,
@@ -192,10 +193,12 @@ test("an installed consumer answers a completion and then resolves one of its ow
         textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "./" },
       });
 
-      const items = await running.request<CompletionItem[]>("textDocument/completion", {
+      const answer = await running.request<CompletionList>("textDocument/completion", {
         textDocument: { uri: documentUri },
         position: { line: 0, character: 2 },
       });
+      expect(answer.isIncomplete).toBe(true);
+      const items = answer.items;
       expect(`${String(items.length)} items, stderr: ${running.stderr}`).toBe(
         `${String(items.length)} items, stderr: `,
       );

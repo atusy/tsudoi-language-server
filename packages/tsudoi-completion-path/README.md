@@ -127,11 +127,12 @@ Two more limits worth knowing before you turn it on:
 - **Nothing recurses.** One fragment is answered by ONE directory listing filtered by the
   fragment's trailing name. Unbounded walks, recursion depth and symlink cycles are not
   unhandled here but unrepresentable.
-- **The answer is not marked incomplete, and it should be.** A completion handler yields
-  `CompletionItem[]`, which the specification treats as `isIncomplete: false` — a positive claim
-  that the set is final. It is not: the next keystroke changes the filter and often changes the
-  directory. The wrongness is in tsudoi's published type, not in this package, and no value
-  either could produce says otherwise.
+- **The answer requests recomputation.** For an available document and line, the final
+  `CompletionList` has `isIncomplete: true`, even when no candidates match or the query is too
+  short. Typing a separator can change the directory instead of narrowing the previous list.
+  A missing document or line produces no result. Use `return yield*` when delegating so the
+  final metadata reaches tsudoi. With a partial-result token, batches travel as progress and
+  applying the final response's metadata to those batches depends on the client.
 
 Two things depend on **your editor** rather than on this package: items carry an
 `InsertReplaceEdit` only where the client declared `insertReplaceSupport`, and the workspace

@@ -38,8 +38,18 @@ const params = {
   position: { line: 0, character: 0 },
 };
 async function labels() {
-  const answer = await complete(context, params, { minQueryLength: 0 }).next();
-  return answer.done ? [] : answer.value.map((item) => item.label);
+  const iterator = complete(context, params, { minQueryLength: 0 });
+  const labels = [];
+  for (;;) {
+    const next = await iterator.next();
+    if (next.done) {
+      if (JSON.stringify(next.value) !== JSON.stringify({ isIncomplete: false, items: [] })) {
+        throw new Error("snapshot completeness: " + JSON.stringify(next.value));
+      }
+      return labels;
+    }
+    labels.push(...next.value.map((item) => item.label));
+  }
 }
 async function waitFor(expected) {
   const deadline = Date.now() + 5_000;

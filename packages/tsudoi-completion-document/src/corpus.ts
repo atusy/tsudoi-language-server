@@ -13,11 +13,16 @@
  * is that a project's vocabulary repeats, and what makes it safe is that the
  * client filters and the items say where they came from.
  */
-import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
+import type {
+  CompletionItem,
+  CompletionList,
+  CompletionParams,
+} from "@atusy/tsudoi-language-server/deps/protocol";
 import type { DocumentView, RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   applyFilters,
   defaultFilters,
+  prefixFilter,
   nonNegativeSafeInteger,
   validateMaxItems,
 } from "./filters.ts";
@@ -162,21 +167,22 @@ function wordsOf(document: DocumentView, filters: ScanFilters): readonly Scanned
  * Scans are cached by document version and scan options.
  *
  * The default prefix filter reduces the payload; fuzzy clients should customize
- * `filters` or disable them and set `maxItems`. The yielded array implies
- * isIncomplete: false; this handler does not request automatic re-querying.
+ * `filters` or disable them and set `maxItems`. This handler can establish
+ * completeness only when all matches fit and the scanner and filters are known.
+ * The final CompletionList requests recomputation for truncation or custom callbacks.
  */
 export async function* completeCorpus(
   context: RequestContext,
   params: CompletionParams,
   options: CompleteCorpusOptions = {},
-): AsyncGenerator<CompletionItem[], void, void> {
+): AsyncGenerator<CompletionItem[], CompletionList | void, void> {
   validateMaxItems(options.maxItems);
   const minQueryLength = nonNegativeSafeInteger(
     options.minQueryLength === undefined ? 0 : options.minQueryLength,
     "minQueryLength",
   );
   if (options.maxItems === 0) {
-    return;
+    return { isIncomplete: false, items: [] };
   }
   const scanFilters: ScanFilters = {
     scanner: options.scanner ?? defaultScanner,
@@ -203,7 +209,7 @@ export async function* completeCorpus(
           }),
         );
   if (typed.length < minQueryLength) {
-    return;
+    return { isIncomplete: true, items: [] };
   }
   const scanned: string[] = [];
   for (const document of context.tsudoi.documents.values()) {
@@ -214,14 +220,26 @@ export async function* completeCorpus(
       ),
     );
   }
+  const filters = options.filters ?? defaultFilters;
   const words = applyFilters(
     scanned,
-    options.filters ?? defaultFilters,
+    filters,
     { typed },
-    options.maxItems,
+    options.maxItems === undefined
+      ? undefined
+      : Math.min(Number.MAX_SAFE_INTEGER, options.maxItems + 1),
   );
+  // An extra distinct filtered word proves truncation; an exact fit is complete.
+  // Unknown callbacks may reveal or rewrite candidates as the query grows.
+  const isIncomplete =
+    (options.maxItems !== undefined && words.length > options.maxItems) ||
+    scanFilters.scanner !== defaultScanner ||
+    filters.some((filter) => filter !== prefixFilter);
+  if (options.maxItems !== undefined && words.length > options.maxItems) {
+    words.length = options.maxItems;
+  }
   if (words.length === 0) {
-    return;
+    return { isIncomplete, items: [] };
   }
   yield words.map(
     (word) =>
@@ -238,4 +256,5 @@ export async function* completeCorpus(
         detail: "corpus",
       }) satisfies CompletionItem,
   );
+  return { isIncomplete, items: [] };
 }

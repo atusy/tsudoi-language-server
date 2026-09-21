@@ -114,7 +114,7 @@ test("a zero candidate bound does not invoke the shell", async () => {
 
   expect(await handler(context, params, { maxItems: 0 }).next()).toEqual({
     done: true,
-    value: undefined,
+    value: { isIncomplete: false, items: [] },
   });
   expect(invoked).toBe(false);
 });
@@ -165,7 +165,7 @@ test("the minimum prefix length ignores leading shell indentation", async () => 
 
   expect(await handler(context, params, { minQueryLength: 3 }).next()).toEqual({
     done: true,
-    value: undefined,
+    value: { isIncomplete: true, items: [] },
   });
   expect(invoked).toBe(false);
 });
@@ -184,7 +184,10 @@ test("the default minimum prefix length does not complete an empty shell line", 
   );
   const { context, params } = request("");
 
-  expect(await handler(context, params).next()).toEqual({ done: true, value: undefined });
+  expect(await handler(context, params).next()).toEqual({
+    done: true,
+    value: { isIncomplete: true, items: [] },
+  });
   expect(invoked).toBe(false);
 });
 

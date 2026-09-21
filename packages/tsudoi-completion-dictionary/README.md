@@ -146,6 +146,21 @@ bun install ../tsudoi-language-server/tsudoi-completion-dictionary.tgz
 The pack command is extracted and **executed** by this repository's tests. The install command is
 **never run** there; its path is checked, **not the command** or its package-manager behavior.
 
+## Completion results
+
+The handler yields candidates and returns a final `CompletionList`. `isIncomplete` is `true`
+when `maxItems` omitted a distinct filtered candidate, the query is shorter than `minQueryLength`,
+or the filter pipeline contains a function other than `dictionaryPrefixFilter`. With only that
+filter (or no filters), an exhausted search is complete, including zero matches and an exact fit
+at the limit. `maxItems: 0` returns a complete empty list; a missing document produces no result.
+Completeness describes the current immutable snapshot. A background refresh alone does not make
+it incomplete and does not notify the client to request completion again.
+
+Use `return yield*` in a delegating wrapper to preserve the final result. A config combining
+sources must OR their `isIncomplete` flags; these handlers return empty final `items` because
+all candidates are yielded. With a partial-result token, candidates travel as progress; applying
+final-response metadata to them is client-dependent.
+
 ## License
 
 MIT

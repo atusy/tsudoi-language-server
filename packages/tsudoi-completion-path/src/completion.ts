@@ -14,6 +14,7 @@ import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import { type CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
 import {
   type CompletionItem,
+  type CompletionList,
   CompletionItemKind,
   type InsertReplaceEdit,
   type MarkupContent,
@@ -682,18 +683,15 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
 /**
  * A `textDocument/completion` handler that completes paths.
  *
- * This handler yields arrays and
- * returns void, so its aggregated result implicitly claims isIncomplete:false.
- * Typing a separator changes the directory being listed rather than narrowing
- * the previous candidates. ADR 0009 lets an enclosing handler return a
- * CompletionList with isIncomplete:true; choosing that policy in this package
- * remains separate from adding support in the framework.
+ * Directory separators can reveal candidates absent from the previous listing.
+ * Even an empty or query-gated result therefore requests recomputation.
+ * The final list carries metadata; yielded batches keep their existing delivery.
  */
 export async function* completePath(
   context: RequestContext,
   params: CompletionParams,
   options: CompletePathOptions = {},
-): AsyncGenerator<CompletionItem[], void, void> {
+): AsyncGenerator<CompletionItem[], CompletionList | void, void> {
   const minQueryLength = options.minQueryLength === undefined ? 1 : options.minQueryLength;
   if (!Number.isSafeInteger(minQueryLength) || minQueryLength < 0) {
     throw new RangeError("minQueryLength must be a non-negative safe integer");
@@ -772,10 +770,10 @@ export async function* completePath(
         }
       }
       if (named) {
-        return;
+        return { isIncomplete: true, items: [] };
       }
     }
-    return;
+    return { isIncomplete: true, items: [] };
   } finally {
     // WHERE A HANDLER RELEASES WHAT IT HELD: an index reader, a child process, a
     // temporary file. There is nothing to release here, and the block is kept

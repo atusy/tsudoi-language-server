@@ -8,6 +8,27 @@ import { fakeDocuments } from "../tests/helpers/documents.ts";
 const uri = "file:///workspace/a.txt";
 
 test.each([completeAround, completeCorpus])(
+  "%p requests recomputation when the candidate bound hides a match",
+  async (complete) => {
+    const documents = fakeDocuments();
+    documents.open(uri, "alpha alpine\nal");
+    const iterator = complete(
+      documents.context,
+      {
+        textDocument: { uri },
+        position: { line: 1, character: 2 },
+      },
+      { maxItems: 1 },
+    );
+    expect((await iterator.next()).value).toEqual([expect.objectContaining({ label: "alpha" })]);
+    expect(await iterator.next()).toEqual({
+      done: true,
+      value: { isIncomplete: true, items: [] },
+    });
+  },
+);
+
+test.each([completeAround, completeCorpus])(
   "%p does not offer the word being typed as its own candidate",
   async (complete) => {
     const documents = fakeDocuments();

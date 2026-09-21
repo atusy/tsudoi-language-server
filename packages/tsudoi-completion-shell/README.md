@@ -107,6 +107,18 @@ bun install ../tsudoi-language-server/tsudoi-completion-shell.tgz
 The pack command is extracted and **executed** by this repository's tests. The install command is
 **never run** there; its path is checked, **not the command** or its package-manager behavior.
 
+## Completion results
+
+The handler yields candidates and returns a final `CompletionList` with `isIncomplete: true`.
+The native shell decides how further input changes candidates, so even an empty native answer
+or a query shorter than `minQueryLength` requests recomputation. `maxItems: 0` disables lookup
+and returns a complete empty list. A missing document produces no result.
+
+Use `return yield*` in a delegating wrapper to preserve the final result. A config combining
+sources must OR their `isIncomplete` flags; these handlers return empty final `items` because
+all candidates are yielded. With a partial-result token, candidates travel as progress; applying
+final-response metadata to them is client-dependent.
+
 ## License and credits
 
 MIT. The capture scripts are adapted from

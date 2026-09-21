@@ -48,8 +48,12 @@ const config: TsudoiConfigFactory = () =>
   Promise.resolve({
     methods: {
       "textDocument/completion": async function* (context, params) {
-        yield* completeAround(context, params);
-        yield* completeCorpus(context, params);
+        const around = yield* completeAround(context, params);
+        const corpus = yield* completeCorpus(context, params);
+        return {
+          isIncomplete: Boolean(around?.isIncomplete || corpus?.isIncomplete),
+          items: [],
+        };
       },
     },
   });
@@ -186,9 +190,9 @@ want it yourself. That is deliberately not your editor's idea of a word: measure
 finds no word at all before a Japanese cursor, where `segmentScanner` finds `コー`.
 
 **A prefix filter defeats a fuzzy client.** If your editor matches `cmpl` against `completion`, it
-can no longer do it through this — the candidate was never sent, and the answer still claims to be
-final because this handler yields arrays and does not return `isIncomplete`. That is why `filters` is a list rather
-than a flag: give it a fuzzy filter of your own, or empty it and set `maxItems` instead.
+can no longer do it through this — the candidate was never sent. Requesting recomputation does
+not change that prefix-matching policy. That is why
+`filters` is a list rather than a flag: give it a fuzzy filter of your own, or empty it and set `maxItems` instead.
 
 <!-- snippet -->
 
@@ -231,11 +235,17 @@ changing `minLength`, `maxColumns` or `scanner` between requests, since those ch
 without the document moving at all — and a scanner counts as changed whenever it is a different
 function, which is why you build it once.
 
-**Neither says _ask me again_.** Both hand over a complete list, and there is no way for a tsudoi
-handler to say otherwise — the protocol's `isIncomplete` is not something this framework's
-completion row can express. So `completeCorpus` cannot offer a partial answer while it finishes
-indexing: it scans, then answers. Everything it reads is already in memory, so there is no wait to
-break up.
+**Completeness is explicit.** Each handler yields its candidate batch and returns a final
+`CompletionList`. `isIncomplete` is `true` when `maxItems` omitted a distinct filtered candidate,
+when the query is shorter than `minQueryLength`, or when a non-default scanner or a filter other
+than `prefixFilter` makes future query behavior unknown. An exact fit at the limit is complete.
+With the default scanner and only prefix filters (or no filters), an exhausted search is complete,
+including an empty result. `maxItems: 0` is a complete empty result. The chosen scan bounds define
+this source's scope; they do not themselves mark the answer incomplete.
+
+A wrapper must forward the generator's return, or merge `isIncomplete` with logical OR when
+combining sources as above. With a partial-result token, candidates travel as progress and the
+final metadata is a separate response; applying it to earlier candidates depends on the client.
 
 **A long line is skipped, not truncated.** Minified output, a base64 blob and a generated table are
 exactly the lines whose "words" nobody wants and whose scan costs the most, so a line at or over

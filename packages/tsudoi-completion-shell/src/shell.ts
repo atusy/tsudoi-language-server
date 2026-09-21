@@ -1,4 +1,4 @@
-import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/types";
+import type { CompletionItem, CompletionList } from "@atusy/tsudoi-language-server/deps/types";
 import type { MethodHandler } from "@atusy/tsudoi-language-server/types";
 import { NativeShellRuntime } from "./session.ts";
 
@@ -53,7 +53,7 @@ export function makeShellCompletion(
     context,
     params,
     completionOptions = {},
-  ): AsyncGenerator<CompletionItem[], void, void> {
+  ): AsyncGenerator<CompletionItem[], CompletionList | void, void> {
     const maxItems = completionOptions.maxItems === undefined ? 500 : completionOptions.maxItems;
     if (!Number.isSafeInteger(maxItems) || maxItems < 0) {
       throw new RangeError("maxItems must be a non-negative safe integer");
@@ -63,8 +63,11 @@ export function makeShellCompletion(
     if (!Number.isSafeInteger(minQueryLength) || minQueryLength < 0) {
       throw new RangeError("minQueryLength must be a non-negative safe integer");
     }
-    if (context.signal.aborted || maxItems === 0) {
+    if (context.signal.aborted) {
       return;
+    }
+    if (maxItems === 0) {
+      return { isIncomplete: false, items: [] };
     }
     const document = context.tsudoi.documents.get(params.textDocument.uri);
     if (document === undefined) {
@@ -76,7 +79,7 @@ export function makeShellCompletion(
     });
     const input = line.trimStart();
     if (input.length < minQueryLength) {
-      return;
+      return { isIncomplete: true, items: [] };
     }
     const target = /\S*$/u.exec(line)?.[0] ?? "";
     const start = params.position.character - target.length;
@@ -120,10 +123,10 @@ export function makeShellCompletion(
       }
     }
     if (items.length > 0) {
-      // The native shell process returns its complete
-      // candidate set for this exact line. A later edit triggers a new request.
+      // The native shell owns how later input changes this candidate set.
       yield items;
     }
+    return { isIncomplete: true, items: [] };
   };
 }
 

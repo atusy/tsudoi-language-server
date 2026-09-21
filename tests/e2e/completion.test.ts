@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionItem,
+  type CompletionList,
   type InitializeResult,
   type ServerCapabilities,
   type TextDocumentSyncOptions,
@@ -395,59 +396,21 @@ for (const runtime of runtimes) {
           textDocument: { uri: documentUri, languageId: "plaintext", version: 1, text: "aggreg" },
         });
 
-        const result = await session.request<CompletionItem[] | null>("textDocument/completion", {
+        const result = await session.request<CompletionList>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: "aggreg".length },
         });
 
-        expect(result?.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
-        // A BARE ARRAY, which the specification reads as
-        // `{ isIncomplete: false, items }` -- a claim
-        // `@atusy/tsudoi-completion-path` rules FALSE at its own site and has no
-        // way to contradict on the wire, a handler being unable to say it in
-        // any spelling.
-        //
-        // AN ASSERTION IS DESCRIBED HERE AND NEVER QUOTED, and that is not
-        // fastidiousness: this project measures `none weakened` by grepping
-        // every source line that opens an assertion call, so a comment quoting
-        // one INFLATES THE INSTRUMENT BY ONE. MEASURED: a draft of this comment
-        // carrying such a quotation put that grep ONE ABOVE its prediction,
-        // while the runtime count and the test count both landed exactly.
+        expect(result.items.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
+        expect(result.isIncomplete).toBe(true);
         expect(session.progressCount).toBe(0);
 
-        // THE PAIR, and it is what keeps the assertion above from being
-        // satisfiable by a server that answers a list for everything: a request
-        // the example has NOTHING for is answered null -- `no answer at all` --
-        // rather than an empty list, which would tell the user there are no
-        // candidates. The example reaching BOTH outcomes is what makes `it is
-        // really being driven` evidence rather than a single lucky call.
-        //
-        // DO NOT DROP THIS HALF TO SIMPLIFY THE TEST. It is not a second nice
-        // assertion -- it is the ONLY half that carries amended standing item
-        // 6's `breaking a handler's return must redden` control. A handler that
-        // produced an empty list instead is INDISTINGUISHABLE at the populated
-        // call above; the empty call is where the difference becomes visible.
-        //
-        // THE CONTROL IS RE-MEASURED RATHER THAN ASSUMED. The example's `null`
-        // is what tsudoi answers for a generator that YIELDED NOTHING, and the
-        // perturbation is spelled `yield []` at that generator's own exit in
-        // packages/tsudoi-completion-path/src/completion.ts. MEASURED: it reddens EXACTLY
-        // here,
-        // `Received: []`, and nowhere else -- two tests, one per runtime.
-        //
-        // AND ONE OBVIOUS PERTURBATION HERE IS DEGENERATE, recorded because its
-        // green looks like success. Perturbing the `if (!document)` arm in
-        // examples/tsudoi.config.ts leaves the whole file GREEN -- not because
-        // the control is quiet, but because THIS REQUEST NEVER REACHES THAT
-        // ARM: the document IS in the store, and the `null` comes from there
-        // being no path fragment at character 0. Ask it of every green before
-        // reading one -- whether what you perturbed is reached by what you
-        // measured.
-        const nothing = await session.request<CompletionItem[] | null>("textDocument/completion", {
+        // Empty queries also need recomputation when further typing becomes eligible.
+        const nothing = await session.request<CompletionList>("textDocument/completion", {
           textDocument: { uri: documentUri },
           position: { line: 0, character: 0 },
         });
-        expect(nothing).toBeNull();
+        expect(nothing).toEqual({ isIncomplete: true, items: [] });
       } finally {
         session.dispose();
         rmSync(documents, { recursive: true, force: true });

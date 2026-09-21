@@ -1,9 +1,14 @@
 /** Buffer-local word completion, with a bounded window around the cursor. */
-import type { CompletionItem, CompletionParams } from "@atusy/tsudoi-language-server/deps/protocol";
+import type {
+  CompletionItem,
+  CompletionList,
+  CompletionParams,
+} from "@atusy/tsudoi-language-server/deps/protocol";
 import type { RequestContext } from "@atusy/tsudoi-language-server/types";
 import {
   applyFilters,
   defaultFilters,
+  prefixFilter,
   nonNegativeSafeInteger,
   validateMaxItems,
 } from "./filters.ts";
@@ -61,24 +66,25 @@ export function windowAround(
 /**
  * Offers words around the cursor in one batch from the in-memory buffer.
  * Omits the word occurrence ending at the cursor, retaining occurrences elsewhere.
- * A missing document or an empty filtered result yields nothing (LSP null).
+ * A missing document yields no result; an empty search returns a CompletionList.
  *
  * The default prefix filter reduces the payload; fuzzy clients should customize
- * `filters` or disable them and set `maxItems`. The yielded array implies
- * isIncomplete: false; this handler does not request automatic re-querying.
+ * `filters` or disable them and set `maxItems`. This handler can establish
+ * completeness only when all matches fit and the scanner and filters are known.
+ * The final CompletionList requests recomputation for truncation or custom callbacks.
  */
 export async function* completeAround(
   context: RequestContext,
   params: CompletionParams,
   options: CompleteAroundOptions = {},
-): AsyncGenerator<CompletionItem[], void, void> {
+): AsyncGenerator<CompletionItem[], CompletionList | void, void> {
   validateMaxItems(options.maxItems);
   const minQueryLength = nonNegativeSafeInteger(
     options.minQueryLength === undefined ? 0 : options.minQueryLength,
     "minQueryLength",
   );
   if (options.maxItems === 0) {
-    return;
+    return { isIncomplete: false, items: [] };
   }
   const document = context.tsudoi.documents.get(params.textDocument.uri);
   if (document === undefined) {
@@ -99,7 +105,7 @@ export async function* completeAround(
     (lines[params.position.line] ?? "").slice(0, params.position.character),
   );
   if (typed.length < minQueryLength) {
-    return;
+    return { isIncomplete: true, items: [] };
   }
   const { from, to } = windowAround(params.position.line, lines.length, options.maxLines ?? 200);
   const scanned = scanWords(lines.slice(from, to), {
@@ -110,17 +116,29 @@ export async function* completeAround(
   // THE CURSOR'S OWN LINE OUT OF THE STRING TAKEN ABOVE, and not a second
   // `getText`: the liveness rule means a second read could be of a later buffer,
   // and then the prefix would be from one buffer and the candidates from another.
+  const filters = options.filters ?? defaultFilters;
   const words = applyFilters(
     wordsExceptInput(scanned, {
       line: params.position.line - from,
       character: params.position.character,
     }),
-    options.filters ?? defaultFilters,
+    filters,
     { typed },
-    options.maxItems,
+    options.maxItems === undefined
+      ? undefined
+      : Math.min(Number.MAX_SAFE_INTEGER, options.maxItems + 1),
   );
+  // An extra distinct filtered word proves truncation; an exact fit is complete.
+  // Unknown callbacks may reveal or rewrite candidates as the query grows.
+  const isIncomplete =
+    (options.maxItems !== undefined && words.length > options.maxItems) ||
+    scanner !== defaultScanner ||
+    filters.some((filter) => filter !== prefixFilter);
+  if (options.maxItems !== undefined && words.length > options.maxItems) {
+    words.length = options.maxItems;
+  }
   if (words.length === 0) {
-    return;
+    return { isIncomplete, items: [] };
   }
   yield words.map(
     (word) =>
@@ -137,4 +155,5 @@ export async function* completeAround(
         detail: "around",
       }) satisfies CompletionItem,
   );
+  return { isIncomplete, items: [] };
 }

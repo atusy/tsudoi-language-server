@@ -86,7 +86,7 @@ for (const runtime of runtimes) {
           textDocument: { uri, languageId: "plaintext", version: 1, text: "entry-" },
         });
 
-        const result = await session.request<null>("textDocument/completion", {
+        const result = await session.request("textDocument/completion", {
           textDocument: { uri },
           position: { line: 0, character: "entry-".length },
           partialResultToken,
@@ -119,9 +119,8 @@ for (const runtime of runtimes) {
         expect(session.progress.map((progress) => progress.token)).toEqual(
           batches.map(() => partialResultToken),
         );
-        // The batches have already left; the response adds nothing to them, and
-        // `null` is what `empty in terms of result values` is spelled as here.
-        expect(result).toBeNull();
+        // Metadata remains in the response without duplicating streamed candidates.
+        expect(result).toEqual({ isIncomplete: true, items: [] });
       } finally {
         session.dispose();
         fixture.dispose();

@@ -181,8 +181,11 @@ export async function makeCompleteDictionary(
       completionOptions.minQueryLength === undefined ? 2 : completionOptions.minQueryLength,
       "minQueryLength",
     );
-    if (context.signal.aborted || maxItems === 0) {
+    if (context.signal.aborted) {
       return;
+    }
+    if (maxItems === 0) {
+      return { isIncomplete: false, items: [] };
     }
     requestRefresh();
     const document = context.tsudoi.documents.get(params.textDocument.uri);
@@ -195,18 +198,24 @@ export async function makeCompleteDictionary(
     });
     const query = /\S+$/u.exec(before)?.[0] ?? "";
     if (query.length < minQueryLength) {
-      return;
+      return { isIncomplete: true, items: [] };
     }
+    const probeLimit = Math.min(Number.MAX_SAFE_INTEGER, maxItems + 1);
     const prefixRunsFirst = filters[0] === dictionaryPrefixFilter;
     const queryLimit =
-      filters.length === 0 || (prefixRunsFirst && filters.length === 1) ? maxItems : undefined;
+      filters.length === 0 || (prefixRunsFirst && filters.length === 1) ? probeLimit : undefined;
     const entries = queryEntries(snapshotEntries, prefixRunsFirst ? query : "", queryLimit);
-    const filtered = applyDictionaryFilters(entries, filters, { typed: query }, maxItems);
-    if (filtered.length === 0) {
-      return;
+    const filtered = applyDictionaryFilters(entries, filters, { typed: query }, probeLimit);
+    // Keep one extra distinct match through both query and filter bounds.
+    const isIncomplete =
+      filtered.length > maxItems || filters.some((filter) => filter !== dictionaryPrefixFilter);
+    if (filtered.length > maxItems) {
+      filtered.length = maxItems;
     }
-    // This is the complete bounded answer from the active
-    // immutable snapshot. A background refresh is a future dictionary snapshot,
+    if (filtered.length === 0) {
+      return { isIncomplete, items: [] };
+    }
+    // A background refresh is a future dictionary snapshot,
     // not an omitted chunk of this response.
     yield filtered.map(
       (label) =>
@@ -216,6 +225,7 @@ export async function makeCompleteDictionary(
           detail: "dictionary",
         }) satisfies CompletionItem,
     );
+    return { isIncomplete, items: [] };
   };
 }
 

@@ -24,14 +24,21 @@ const complete = useShellCompletion("fish", {
   idleTimeoutMs: 20,
 });
 const line = "tsudoi-runtime al";
-const answer = await complete({
+const iterator = complete({
   signal: new AbortController().signal,
   tsudoi: { documents: { get: () => ({ getText: () => line }) } },
 }, {
   textDocument: { uri: "file:///buffer.fish" },
   position: { line: 0, character: line.length },
-}).next();
-process.stdout.write(JSON.stringify(answer.done ? [] : answer.value.map(({ label }) => label)));
+});
+const labels = [];
+let result;
+for (;;) {
+  const next = await iterator.next();
+  if (next.done) { result = next.value; break; }
+  labels.push(...next.value.map(({ label }) => label));
+}
+process.stdout.write(JSON.stringify({ labels, result }));
 `;
 }
 
@@ -56,7 +63,10 @@ for (const runtime of ["bun", "deno"] as const) {
       expect(result.status).toBe(0);
       expect(result.signal).toBeNull();
       expect(result.stderr).toBe("");
-      expect(JSON.parse(result.stdout)).toEqual(["alpha", "alpine"]);
+      expect(JSON.parse(result.stdout)).toEqual({
+        labels: ["alpha", "alpine"],
+        result: { isIncomplete: true, items: [] },
+      });
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
