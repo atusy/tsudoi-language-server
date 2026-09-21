@@ -8,7 +8,7 @@ import {
   validateMaxItems,
 } from "./filters.ts";
 import { defaultScanner } from "./scanners.ts";
-import { type WordOptions, typedWord, wordsIn } from "./words.ts";
+import { type WordOptions, typedWord, scanWords, wordsExceptInput } from "./words.ts";
 
 /**
  * How the window is chosen, on top of what counts as a word.
@@ -60,6 +60,7 @@ export function windowAround(
 
 /**
  * Offers words around the cursor in one batch from the in-memory buffer.
+ * Omits the word occurrence ending at the cursor, retaining occurrences elsewhere.
  * A missing document or an empty filtered result yields nothing (LSP null).
  *
  * The default prefix filter reduces the payload; fuzzy clients should customize
@@ -101,7 +102,7 @@ export async function* completeAround(
     return;
   }
   const { from, to } = windowAround(params.position.line, lines.length, options.maxLines ?? 200);
-  const scanned = wordsIn(lines.slice(from, to), {
+  const scanned = scanWords(lines.slice(from, to), {
     scanner,
     minLength: options.minLength ?? 2,
     maxColumns: options.maxColumns ?? 200,
@@ -110,7 +111,10 @@ export async function* completeAround(
   // `getText`: the liveness rule means a second read could be of a later buffer,
   // and then the prefix would be from one buffer and the candidates from another.
   const words = applyFilters(
-    scanned,
+    wordsExceptInput(scanned, {
+      line: params.position.line - from,
+      character: params.position.character,
+    }),
     options.filters ?? defaultFilters,
     { typed },
     options.maxItems,

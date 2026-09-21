@@ -145,16 +145,50 @@ export function wordsIn(
   lines: readonly string[],
   options: { scanner: Scanner; minLength: number; maxColumns: number },
 ): string[] {
-  const found: string[] = [];
-  for (const line of lines) {
+  return scanWords(lines, options).map(({ word }) => word);
+}
+
+/** Positions stay with cached words so a request can omit only its own occurrence. */
+export interface ScannedWord {
+  readonly word: string;
+  readonly line: number;
+  readonly end: number;
+}
+
+export function scanWords(
+  lines: readonly string[],
+  options: { scanner: Scanner; minLength: number; maxColumns: number },
+): ScannedWord[] {
+  const found: ScannedWord[] = [];
+  for (const [lineNumber, line] of lines.entries()) {
     if (line.length >= options.maxColumns) {
       continue;
     }
+    let from = 0;
     for (const word of options.scanner(line)) {
+      // Scanners return words in source order. Keep generated words that cannot
+      // be located, but do not mistake them for the occurrence at the cursor.
+      const start = line.indexOf(word, from);
+      const end = start < 0 ? -1 : start + word.length;
+      if (start >= 0) {
+        from = end;
+      }
       if (word.length >= options.minLength) {
-        found.push(word);
+        found.push({ word, line: lineNumber, end });
       }
     }
   }
   return found;
+}
+
+/** Keep longer words under the cursor: they can still complete the typed prefix. */
+export function* wordsExceptInput(
+  words: readonly ScannedWord[],
+  position?: { readonly line: number; readonly character: number },
+): Iterable<string> {
+  for (const entry of words) {
+    if (entry.line !== position?.line || entry.end !== position.character) {
+      yield entry.word;
+    }
+  }
 }

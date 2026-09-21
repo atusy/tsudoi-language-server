@@ -74,6 +74,11 @@ framework explicitly when selecting the set.
 Every distinct word, in the order each was **first seen** — for `completeAround` that is the window
 top-down, for `completeCorpus` it is the documents in the order your client opened them.
 
+Both handlers exclude the occurrence you are currently typing. Typing `corpus` does not
+suggest itself unless `corpus` also appears elsewhere in the scanned text. Longer words
+under the cursor remain candidates for completing a partial input. This exclusion happens
+before custom filters, deduplication, and `maxItems`.
+
 | option           | default          | `around` | `corpus` | what it decides                                                 |
 | ---------------- | ---------------- | -------- | -------- | --------------------------------------------------------------- |
 | `minQueryLength` | `0`              | yes      | yes      | shortest scanner-defined typed word that starts scanning        |

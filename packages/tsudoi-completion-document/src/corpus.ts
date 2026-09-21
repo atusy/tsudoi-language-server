@@ -22,7 +22,13 @@ import {
   validateMaxItems,
 } from "./filters.ts";
 import { defaultScanner, type Scanner } from "./scanners.ts";
-import { type WordOptions, typedWord, wordsIn } from "./words.ts";
+import {
+  type ScannedWord,
+  type WordOptions,
+  typedWord,
+  scanWords,
+  wordsExceptInput,
+} from "./words.ts";
 
 /**
  * What counts as a word, and nothing about which lines are read.
@@ -69,7 +75,7 @@ interface Scan {
   readonly minLength: number;
   readonly maxColumns: number;
   readonly scanner: Scanner;
-  readonly words: readonly string[];
+  readonly words: readonly ScannedWord[];
 }
 
 /**
@@ -122,7 +128,7 @@ interface ScanFilters {
  * re-scanned a request later, where a version newer than the text it is stored
  * under is served as current for as long as the document sits still.
  */
-function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[] {
+function wordsOf(document: DocumentView, filters: ScanFilters): readonly ScannedWord[] {
   const version = document.version;
   const cached = scans.get(document);
   if (
@@ -137,7 +143,7 @@ function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[
   // SPLIT ON `\r?\n` AND NOT `\n`, the same reading its sibling takes: a CRLF
   // document otherwise leaves a `\r` at the end of every line, which the word
   // pattern matches but which counts toward the column bound.
-  const words = wordsIn(document.getText().split(/\r?\n/), filters);
+  const words = scanWords(document.getText().split(/\r?\n/), filters);
   scans.set(document, {
     version,
     minLength: filters.minLength,
@@ -150,6 +156,7 @@ function wordsOf(document: DocumentView, filters: ScanFilters): readonly string[
 
 /**
  * Offers words from all open documents in one batch, in first-seen order.
+ * Omits the word occurrence ending at the cursor, retaining occurrences elsewhere.
  * The cursor selects the prefix to filter by; it does not limit the scan.
  * If the requested document is missing, filtering uses an empty prefix.
  * Scans are cached by document version and scan options.
@@ -200,7 +207,12 @@ export async function* completeCorpus(
   }
   const scanned: string[] = [];
   for (const document of context.tsudoi.documents.values()) {
-    scanned.push(...wordsOf(document, scanFilters));
+    scanned.push(
+      ...wordsExceptInput(
+        wordsOf(document, scanFilters),
+        document === asked ? params.position : undefined,
+      ),
+    );
   }
   const words = applyFilters(
     scanned,

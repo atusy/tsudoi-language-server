@@ -1,9 +1,94 @@
 import { describe, expect, test } from "bun:test";
 import type { CompletionItem } from "@atusy/tsudoi-language-server/deps/protocol";
 import { completeAround, windowAround } from "./around.ts";
+import { completeCorpus } from "./corpus.ts";
+import { segmentScanner } from "./scanners.ts";
 import { fakeDocuments } from "../tests/helpers/documents.ts";
 
 const uri = "file:///workspace/a.txt";
+
+test.each([completeAround, completeCorpus])(
+  "%p does not offer the word being typed as its own candidate",
+  async (complete) => {
+    const documents = fakeDocuments();
+    documents.open(uri, "corpus");
+    const batches: CompletionItem[][] = [];
+    for await (const batch of complete(documents.context, {
+      textDocument: { uri },
+      position: { line: 0, character: 6 },
+    })) {
+      batches.push(batch);
+    }
+    expect(batches).toEqual([]);
+  },
+);
+
+describe.each([completeAround, completeCorpus])(
+  "%p excludes only the input occurrence",
+  (complete) => {
+    test.each([
+      ["corpus corpus", 6, ["corpus"]],
+      ["corpus corpus", 13, ["corpus"]],
+      ["corpus corpora corpus", 6, ["corpora", "corpus"]],
+      ["corpus", 3, ["corpus"]],
+      ["corpus ", 7, ["corpus"]],
+    ] as const)("%s at column %i", async (text, character, expected) => {
+      const documents = fakeDocuments();
+      documents.open(uri, text);
+      const items: CompletionItem[] = [];
+      for await (const batch of complete(
+        documents.context,
+        { textDocument: { uri }, position: { line: 0, character } },
+        { filters: [] },
+      )) {
+        items.push(...batch);
+      }
+      expect(items.map((item) => item.label)).toEqual([...expected]);
+    });
+
+    test("exclusion precedes custom filters and the item limit", async () => {
+      const documents = fakeDocuments();
+      documents.open(uri, "corpus corpora");
+      const items: CompletionItem[] = [];
+      for await (const batch of complete(
+        documents.context,
+        { textDocument: { uri }, position: { line: 0, character: 6 } },
+        { filters: [(words) => Array.from(words, (word) => word.toUpperCase())], maxItems: 1 },
+      )) {
+        items.push(...batch);
+      }
+      expect(items.map((item) => item.label)).toEqual(["CORPORA"]);
+    });
+
+    test("a segmented Japanese word at the cursor is excluded", async () => {
+      const documents = fakeDocuments();
+      documents.open(uri, "設定\r\nコーパス");
+      const batches: CompletionItem[][] = [];
+      for await (const batch of complete(
+        documents.context,
+        { textDocument: { uri }, position: { line: 1, character: 4 } },
+        { scanner: segmentScanner("ja") },
+      )) {
+        batches.push(batch);
+      }
+      expect(batches).toEqual([]);
+    });
+  },
+);
+
+test("around excludes input using the cursor's position within a bounded window", async () => {
+  const documents = fakeDocuments();
+  documents.open(uri, "corpus\r\nother\r\ncorpus");
+  const batches: CompletionItem[][] = [];
+  for await (const batch of completeAround(
+    documents.context,
+    { textDocument: { uri }, position: { line: 2, character: 6 } },
+    { maxLines: 0 },
+  )) {
+    batches.push(batch);
+  }
+  expect(batches).toEqual([]);
+});
 
 /**
  * Every item the handler yielded, flattened, for a cursor on `line` of a document

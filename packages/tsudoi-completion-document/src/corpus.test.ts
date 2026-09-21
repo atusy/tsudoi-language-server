@@ -209,6 +209,45 @@ describe("completing from every open document", () => {
 });
 
 describe("what the memo may and may not serve again", () => {
+  test("cursor movement excludes only the current occurrence without rescanning", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "corpus corpora\ncorpus");
+    for (const position of [
+      { line: 0, character: 6 },
+      { line: 1, character: 6 },
+      { line: 0, character: 0 },
+    ]) {
+      const items: CompletionItem[] = [];
+      for await (const batch of completeCorpus(
+        documents.context,
+        { textDocument: { uri: asked }, position },
+        { filters: [] },
+      )) {
+        items.push(...batch);
+      }
+      expect(items.map((item) => item.label)).toEqual(
+        position.line === 0 && position.character === 6
+          ? ["corpora", "corpus"]
+          : ["corpus", "corpora"],
+      );
+    }
+    expect(documents.reads(asked)).toBe(1);
+  });
+
+  test("the same word in another document remains a candidate", async () => {
+    const documents = fakeDocuments();
+    documents.open(asked, "corpus");
+    documents.open("file:///workspace/other.txt", "corpus");
+    const items: CompletionItem[] = [];
+    for await (const batch of completeCorpus(documents.context, {
+      textDocument: { uri: asked },
+      position: { line: 0, character: 6 },
+    })) {
+      items.push(...batch);
+    }
+    expect(items.map((item) => item.label)).toEqual(["corpus"]);
+  });
+
   /**
    * AN UNCHANGED DOCUMENT IS SCANNED ONCE ACROSS TWO REQUESTS, which is the whole
    * point of memoising: a completion runs on a keystroke, and the documents a
