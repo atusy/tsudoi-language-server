@@ -50,15 +50,12 @@ report the kind of what it points at.
 
 **Which field carries what**, because they are read at different moments, or by different
 parts of an editor. The **label** is the entry's own name — `deep.txt`, never `notes/deep.txt`,
-so a listing does not spend its width repeating the directory you have already typed — while
-`filterText` and `insertText` both carry the whole thing, directory part and all. That is not
-duplication: the item's edit range starts where the fragment does, and an editor that reads
-`filterText` and derives the typed text from that range — which the specification does not
-require and not every editor does — is matching against text that still includes `notes/`, so
-an item filtering on the bare name would be dropped by the separator you just typed. None of
-the three is sanitised — `insertText` is written into your buffer as it stands, `filterText`
-must equal it, and a client can be configured to drop an item whose label it cannot find in the
-word it completes.
+so a listing does not repeat the directory you have already typed. The edit starts after the
+last directory separator, and `textEdit.newText` and `insertText` carry only the entry name.
+`filterText` is omitted so clients filter on the label. This also anchors completion menus at the filename being completed. The directory
+prefix stays in the buffer, including spaces, `~/`, and Windows separators. A bare `~` offers only `~/`, even for an empty home directory.
+Home entries are listed after the separator has been entered.
+Labels and replacement text preserve the raw filename.
 `detail` carries the **absolute path** the item
 completes to, on one line — a name holding a line break or a control character is rendered, not
 reproduced — and it is there the moment the list appears, in the field a client can show inline
@@ -94,7 +91,7 @@ Nothing recurses here either: one listing, one level, no walk.
 
 ## Completion options
 
-Use `~` or `~/` to complete from the server user's home directory, and `~/notes/` to
+Use `~` to complete `~/`, then list the server user's home directory with `~/`. Use `~/notes/` to
 browse beneath it. Inserted paths keep the `~` prefix; previews resolve the actual file.
 Windows also accepts `~\`. `~username` is not expanded, and a `~` elsewhere in a path
 remains a literal directory name.

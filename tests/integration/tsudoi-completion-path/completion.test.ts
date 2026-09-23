@@ -161,7 +161,7 @@ function inserted(items: readonly CompletionItem[]): string[] {
 /** A document that does not exist, so only cwd answers a relative fragment. */
 const elsewhere = { uri: "file:///workspace/a.txt" } as const;
 
-test("~/ completes from home while preserving the tilde in the edit", async () => {
+test("~/ completes from home while preserving the tilde in the buffer", async () => {
   const home = tree(["notes.txt"]);
   const cwd = tree(["~/not-home.txt"]);
   try {
@@ -173,8 +173,8 @@ test("~/ completes from home while preserving the tilde in the edit", async () =
       ["markdown"],
       { home: home.root },
     );
-    expect(inserted(items)).toEqual(["~/notes.txt"]);
-    expect(items[0]?.textEdit?.newText).toBe("~/notes.txt");
+    expect(inserted(items)).toEqual(["notes.txt"]);
+    expect(items[0]?.textEdit?.newText).toBe("notes.txt");
     expect(completedPath(items[0]!)).toBe(join(home.root, "notes.txt"));
   } finally {
     home.dispose();
@@ -183,7 +183,36 @@ test("~/ completes from home while preserving the tilde in the edit", async () =
 });
 
 describe("home-relative paths", () => {
-  test.each(["~", "~/", "~//", "~/notes/../"])("%s lists home", async (line) => {
+  test.each([true, false])(
+    "bare ~ completes only the home directory (insertReplaceSupport=%s)",
+    async (supported) => {
+      for (const entries of [[], ["notes/file.txt", "other.txt"]]) {
+        const home = tree(entries);
+        try {
+          const line = "open ~";
+          const items = await complete(
+            { ...elsewhere, line },
+            home.root,
+            undefined,
+            supported,
+            ["markdown"],
+            { home: home.root },
+          );
+          expect(items).toHaveLength(1);
+          expect(items[0]?.label).toBe("~/");
+          expect(items[0]?.filterText).toBeUndefined();
+          expect(items[0]?.kind).toBe(CompletionItemKind.Folder);
+          expect(completedPath(items[0]!)).toBe(home.root);
+          expect(completedSource(items[0]!)).toBe("home");
+          expect(applyAsClient(line, line.length, items[0]!)).toBe("open ~/");
+        } finally {
+          home.dispose();
+        }
+      }
+    },
+  );
+
+  test.each(["~/", "~//", "~/notes/../"])("%s lists home", async (line) => {
     const home = tree(["notes/file.txt"]);
     const cwd = tree(["unrelated.txt"]);
     try {
@@ -197,7 +226,8 @@ describe("home-relative paths", () => {
           home: home.root,
         },
       );
-      expect(inserted(items)).toEqual([(line === "~" ? "~/" : line) + "notes"]);
+      expect(inserted(items)).toEqual(["notes"]);
+      expect(applyAsClient(line, line.length, items[0]!)).toBe(line + "notes");
       expect(completedSource(items[0]!)).toBe("home");
       const resolved = await resolvePathStat(resolveSession(["markdown"]), items[0]!);
       expect(documentationOf(resolved)).toContain("source: home");
@@ -223,12 +253,12 @@ describe("home-relative paths", () => {
           home: home.root,
         },
       );
-      expect(inserted(items)).toEqual(["~/my notes/file.txt"]);
-      expect(items[0]?.filterText).toBe("~/my notes/file.txt");
+      expect(inserted(items)).toEqual(["file.txt"]);
+      expect(items[0]?.filterText ?? items[0]?.label).toBe("file.txt");
       expect(items[0]?.textEdit).toEqual({
-        newText: "~/my notes/file.txt",
-        insert: { start: { line: 0, character: 5 }, end: { line: 0, character } },
-        replace: { start: { line: 0, character: 5 }, end: { line: 0, character: line.length } },
+        newText: "file.txt",
+        insert: { start: { line: 0, character: 16 }, end: { line: 0, character } },
+        replace: { start: { line: 0, character: 16 }, end: { line: 0, character: line.length } },
       });
       expect(completedPath(items[0]!)).toBe(join(home.root, "my notes/file.txt"));
     } finally {
@@ -356,7 +386,7 @@ describe("the typed prefix selects the source class", () => {
     try {
       const items = await complete({ ...elsewhere, line: "src/" }, fixture.root);
 
-      expect(inserted(items)).toEqual(["src/bar.ts", "src/foo.ts"]);
+      expect(inserted(items)).toEqual(["bar.ts", "foo.ts"]);
     } finally {
       fixture.dispose();
     }
@@ -371,19 +401,14 @@ describe("the typed prefix selects the source class", () => {
       const items = await complete({ ...elsewhere, line: "/" }, fixture.root);
 
       expect(items.length).toBeGreaterThan(0);
-      expect(items.filter((item) => !(item.insertText ?? "").startsWith("/"))).toEqual([]);
+      expect(items.every((item) => completedSource(item) === "absolute")).toBe(true);
       // Compared against a listing this test performs ITSELF, so the oracle is
       // the filesystem rather than the module. HIDDEN ENTRIES ARE DROPPED FROM
       // BOTH SIDES ON PURPOSE: whether a completion offers them is UNRULED, and a
       // set equality including them would decide it here by accident.
       const visible = (name: string): boolean => !name.startsWith(".");
       const rootEntries = (await readdir("/")).filter(visible);
-      expect(
-        inserted(items)
-          .map((text) => text.slice(1))
-          .filter(visible)
-          .sort(),
-      ).toEqual(rootEntries.sort());
+      expect(inserted(items).filter(visible).sort()).toEqual(rootEntries.sort());
     } finally {
       fixture.dispose();
     }
@@ -527,12 +552,48 @@ describe("a listing directory is read under the root that produced it", () => {
   });
 });
 
-describe("an item's edit spans the fragment whatever the separators are", () => {
-  // WHERE THE TWO RULES MEET: the anchor is a WHITESPACE boundary and the cut is
-  // a SEPARATOR one, so changing the separator set must not move the anchor. An
-  // edit inserting the right path at the wrong span corrupts the buffer, which is
-  // worse than the empty popup this feature set out to close.
-  test("a Windows fragment's edit is anchored at the word, and writes the whole path back", () => {
+describe("an item's edit starts after the last separator", () => {
+  test.each([true, false])(
+    "basename edits preserve prefixes and suffixes (insertReplaceSupport=%s)",
+    (supported) => {
+      for (const directory of [
+        "src/",
+        "~/my notes/",
+        "絵😀/",
+        "C:\\Users\\",
+        "\\\\server\\share\\",
+      ]) {
+        const prefix = `see ${directory}`;
+        const line = `${prefix}foo (1).txt after`;
+        const cursor = prefix.length + 2;
+        const flavour = directory.includes("\\") ? win32 : posix;
+        const fragment = pathFragments(line, cursor, flavour).find(
+          (entry) => entry.text === `${directory}fo`,
+        )!;
+        const edit = editFor(
+          fragment,
+          { line: 2, character: cursor },
+          line,
+          `${directory}foo (1).txt`,
+          supported,
+        );
+        const item: CompletionItem = { label: "foo (1).txt", textEdit: edit };
+        const insert = "range" in edit ? edit.range : edit.insert;
+        expect(insert.start).toEqual({ line: 2, character: prefix.length });
+        expect(insert.end).toEqual({ line: 2, character: cursor });
+        expect(edit.newText).toBe("foo (1).txt");
+        expect(applyAsClient(line, cursor, item, "insert")).toBe(
+          `${prefix}foo (1).txto (1).txt after`,
+        );
+        if ("replace" in edit) {
+          expect(edit.replace.end.character).toBe(prefix.length + "foo (1).txt".length);
+          expect(applyAsClient(line, cursor, item, "replace")).toBe(line);
+        }
+      }
+    },
+  );
+
+  test("a Windows fragment completes the basename and preserves the directory", () => {
     const line = "see C:\\Users\\fo";
     const cursor = line.length;
     const fragment = only(line, win32);
@@ -541,12 +602,10 @@ describe("an item's edit spans the fragment whatever the separators are", () => 
     const item: CompletionItem = { label: newText, insertText: newText, textEdit: edit };
 
     expect(newText).toBe("C:\\Users\\foo.txt");
-    // 4, where the WORD begins -- not 0, and not 13 where the last separator
-    // sits. Both ranges, because a client reads whichever its own setting names.
-    expect("insert" in edit ? edit.insert.start.character : undefined).toBe(4);
-    expect("insert" in edit ? edit.replace.start.character : undefined).toBe(4);
-    // At the end of the line the two preferences coincide, and what this claims
-    // is that each is WHOLE.
+    // Both ranges start after the directory.
+    expect("insert" in edit ? edit.insert.start.character : undefined).toBe(13);
+    expect("insert" in edit ? edit.replace.start.character : undefined).toBe(13);
+    // At the end of the line both preferences produce the same complete path.
     expect(applyAsClient(line, cursor, item, "replace")).toBe("see C:\\Users\\foo.txt");
     expect(applyAsClient(line, cursor, item, "insert")).toBe("see C:\\Users\\foo.txt");
   });
@@ -688,9 +747,11 @@ describe("an item resolves against its own source's root", () => {
           .filter((name) => name.startsWith(fragment.name))
           .map((name) => join(directory, name))
           .sort();
-        expect(items.map((item) => resolvesTo(source.root, item.insertText ?? "")).sort()).toEqual(
-          real,
-        );
+        expect(
+          items
+            .map((item) => resolvesTo(source.root, fragment.directory + (item.insertText ?? "")))
+            .sort(),
+        ).toEqual(real);
       }
     } finally {
       documentTree.dispose();
@@ -705,13 +766,13 @@ describe("an item resolves against its own source's root", () => {
     try {
       const named: PathSource = { name: "cwd", root: fixture.root };
       const [item] = await fromSource(named, only("notes/"));
-      const insertText = item?.insertText ?? "";
+      const insertText = "notes/" + (item?.insertText ?? "");
       expect(resolvesTo(named.root, insertText)).toBe(join(fixture.root, "notes/deep.txt"));
       // The item carries an ABSOLUTE path while its source is a NAMED root.
       expect(resolvesTo(named.root, join(fixture.root, insertText))).toBeUndefined();
 
       const [rootItem] = await fromSource({ name: "absolute", root: "/" }, only("/us"));
-      const absoluteText = rootItem?.insertText ?? "";
+      const absoluteText = "/" + (rootItem?.insertText ?? "");
       expect(resolvesTo("/", absoluteText)).toBe(absoluteText);
       // The item carries a RELATIVE path while its source IS the filesystem
       // root -- which reads against whatever directory happens to be current.
@@ -759,15 +820,15 @@ describe("an item names the root that produced it", () => {
           // reported it -- an oracle taken from the subject cannot disagree with
           // it.
           expect({ detail: item.detail, documentation: item.documentation }).toEqual({
-            detail: join(source.root, item.insertText ?? ""),
+            detail: join(source.root, fragment.directory, item.insertText ?? ""),
             documentation: { kind: "markdown", value: `- source: ${source.name}` },
           });
           // BOTH FIELDS, NEVER ONE TRADED FOR THE OTHER. TWO SOURCE CLASSES AND
           // NOT FOUR -- a relative fragment with no folders offers `document`
           // and `cwd` alone -- which is why the same pair is read again in the
           // sweep that does reach all four.
-          expect(item.filterText).toBe(item.insertText);
-          expect(item.insertText).toBe(`notes/${item.label}`);
+          expect(item.filterText ?? item.label).toBe(item.insertText ?? "");
+          expect(item.insertText).toBe(item.label);
         }
       }
     } finally {
@@ -883,7 +944,7 @@ describe("an item names the root that produced it", () => {
         "- source: workspace",
         "- source: workspace",
       ]);
-      expect(inserted(workspaceItems)).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
+      expect(inserted(workspaceItems)).toEqual(["first-only.txt", "second-only.txt"]);
     } finally {
       cwdTree.dispose();
       first.dispose();
@@ -1030,16 +1091,8 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
    * to make); the whole value then says which bytes the user is shown. The
    * resolve half's twin is in this order too.
    *
-   * WHAT THIS DOES NOT CLOSE, said plainly because the shape invites the reading:
-   * markdown syntax inside a name still renders as syntax, and `label`,
-   * `filterText` and `insertText` still carry the name RAW. `insertText` has to
-   * -- it is written into the buffer. `filterText` is raw because it must EQUAL
-   * what is inserted, which is a wire-shape policy and not a filtering
-   * consequence: the bytes a flattening would move sit after a line break, and
-   * the fragment scanner stops at whitespace, so no typed input reaches them and
-   * no arm here could show a flattened one filtering differently. The label's
-   * reason is the arm below, and it belongs to the client rather than to this
-   * package.
+   * Markdown syntax inside a name still renders as syntax. The label and
+   * insertText preserve the raw filename; filtering defaults to that label.
    */
   test("an entry whose own name would forge an attribution line names it as one that cannot", async () => {
     const forged = "x\n\nsource: workspace";
@@ -1057,37 +1110,8 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
     }
   });
 
-  /**
-   * WHAT KEEPS THE LABEL RAW NOW THAT `filterText` DOES ITS FILTERING. Nothing
-   * in this package stops the label being flattened like the `detail` beside it
-   * -- the edit looks free.
-   *
-   * IT IS NOT, AND THE BOUND IS THE CLIENT'S: READ FROM ddc-source-lsp'S SOURCE
-   * AND MEASURED NOWHERE HERE -- nothing in this repository spawns an editor --
-   * an item whose label the client cannot find in the word it reconstructs from
-   * the edit range is dropped outright, under an option that defaults off. A
-   * flattened label is in no name it flattened, so that option would take the
-   * entry out of the list instead of showing it with a replacement character.
-   *
-   * WHAT IS ASSERTED HERE IS A PROXY FOR THAT AND IS NARROWER THAN IT: the
-   * client's word is a TAIL of the inserted text, re-cut at the position it
-   * began completing, so this relation is necessary for the client's rule and
-   * not sufficient for it. Stating the sufficient one would mean modelling that
-   * client's cut in this repository, which is the thing no check here can take.
-   *
-   * THE RELATION IS ASSERTED FIRST AND THE WHOLE VALUES AFTER, for the reason
-   * the arm above records about its own order.
-   *
-   * AND IT IS AN EQUALITY RATHER THAN A CONTAINMENT: every string contains the
-   * EMPTY one, so `insertText contains label` is green for `label: ""` -- the one
-   * label value the client punishes hardest, since it discards an item carrying
-   * it outright.
-   *
-   * TWO SEPARATORS, NOT ONE: a label cut at the FIRST separator rather than the
-   * last satisfies every single-separator arm in this file, and leaves the popup
-   * repeating a directory segment the user has already typed.
-   */
-  test("what an item inserts is the directory typed and the label it shows, raw on both sides", async () => {
+  // The raw label is also the default filtering text.
+  test("the label, filter and replacement preserve the raw entry name", async () => {
     const forged = "x\n\nsource: workspace";
     const fixture = tree([`a/b/${forged}`]);
     try {
@@ -1095,14 +1119,11 @@ describe("a name that would break the line grammar is rendered so it cannot", ()
 
       expect(items).toHaveLength(1);
       const item = items[0] as CompletionItem;
-      expect(item.insertText).toBe(`a/b/${item.label}`);
+      expect(item.insertText).toBe(item.label);
       expect(item.label).toBe(forged);
-      expect(item.insertText).toBe(`a/b/${forged}`);
-      // THE FIELD NOTHING ELSE READS ON A NAME WORTH READING IT ON: the two
-      // other `filterText` assertions drive an ordinary name, where flattening
-      // is a no-op, so `filterText: flattened(insertText)` was green across the
-      // whole suite.
-      expect(item.filterText).toBe(`a/b/${forged}`);
+      expect(item.insertText).toBe(forged);
+      // Filtering must preserve the raw name as well.
+      expect(item.filterText ?? item.label).toBe(forged);
     } finally {
       fixture.dispose();
     }
@@ -1165,7 +1186,7 @@ describe("an item records the source it was produced under", () => {
             tsudoiCompletionPath: {
               // As THIS TEST computes it from the root and the inserted text, never
               // as the module reported it.
-              path: resolvesTo(source.root, item.insertText ?? ""),
+              path: resolvesTo(source.root, fragment.directory + (item.insertText ?? "")),
               source: source.name,
             },
           });
@@ -1174,8 +1195,8 @@ describe("an item records the source it was produced under", () => {
           // reaches the same four and reads the block instead, and the other arm
           // reading this pair drives a relative fragment with no folders, so it
           // offers `document` and `cwd` and nothing else.
-          expect(item.filterText).toBe(item.insertText);
-          expect(item.insertText).toBe(`${fragment.directory}${item.label}`);
+          expect(item.filterText ?? item.label).toBe(item.insertText ?? "");
+          expect(item.insertText).toBe(item.label);
         }
       }
     } finally {
@@ -1195,7 +1216,7 @@ describe("items with identical inserted text collapse to one", () => {
       const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
       const items = await complete({ uri, line: "notes/" }, fixture.root);
 
-      expect(inserted(items)).toEqual(["notes/deep.txt"]);
+      expect(inserted(items)).toEqual(["deep.txt"]);
       // WHICH root the survivor names is decided by SOURCE ORDER, and it is
       // pinned so it cannot drift silently: the document is asked first.
       expect(documentationOf(items[0])).toContain("source: document");
@@ -1214,7 +1235,7 @@ describe("items with identical inserted text collapse to one", () => {
       const uri = pathToFileURL(join(fixture.root, "doc.txt")).href;
       const items = await complete({ uri, line: "notes/" }, join(fixture.root, "mirror"));
 
-      expect(inserted(items)).toEqual(["notes/deep.txt"]);
+      expect(inserted(items)).toEqual(["deep.txt"]);
     } finally {
       fixture.dispose();
     }
@@ -1256,7 +1277,7 @@ describe("items with identical inserted text collapse to one", () => {
       const uri = pathToFileURL(join(documentTree.root, "doc.txt")).href;
       const items = await complete({ uri, line: "notes/" }, cwdTree.root);
 
-      expect(inserted(items)).toEqual(["notes/deep.txt", "notes/wide.txt"]);
+      expect(inserted(items)).toEqual(["deep.txt", "wide.txt"]);
     } finally {
       documentTree.dispose();
       cwdTree.dispose();
@@ -1565,25 +1586,27 @@ function applyAsClient(
 }
 
 describe("an item shows the entry and inserts the path", () => {
-  /**
-   * WHAT THE USER READS AND WHAT THE BUFFER GETS ARE DIFFERENT STRINGS, and the
-   * popup is where the difference is paid: with the fragment's directory in the
-   * label, every row of a listing repeats the part already on the line, and the
-   * bytes that tell two candidates apart begin after it.
-   *
-   * A MULTI-SEGMENT FRAGMENT IS THE ONLY THING THAT SAYS SO. Where the fragment
-   * names no directory, the entry name and the inserted text are the SAME string
-   * -- so the arm below is a control and not a repetition: it must stay green
-   * under the weakening that reddens this one.
-   *
-   * AND THE FRAGMENT CARRIES TWO SEPARATORS.
-   * Under ONE, a label cut at the first separator and one cut at the last are the
-   * SAME STRING, so every label assertion in this file was green against an
-   * implementation that leaves the popup repeating a segment the user had typed.
-   * Under two they differ -- `b/deep.txt` against `deep.txt` -- and this is where
-   * that difference reddens.
-   */
-  test("the label is the entry's own name, where what is inserted carries the directory typed", async () => {
+  test("a trailing separator anchors completion at the basename", async () => {
+    const fixture = tree(["__ignored/nvim.man"]);
+    try {
+      const line = "__ignored/";
+      const items = await complete({ ...elsewhere, line }, fixture.root);
+      expect(items).toHaveLength(1);
+      expect(items[0]?.textEdit).toEqual({
+        newText: "nvim.man",
+        insert: { start: { line: 0, character: 10 }, end: { line: 0, character: 10 } },
+        replace: { start: { line: 0, character: 10 }, end: { line: 0, character: 10 } },
+      });
+      expect(items[0]?.filterText ?? items[0]?.label).toBe("nvim.man");
+      expect(items[0]?.filterText).toBeUndefined();
+      expect(applyAsClient(line, line.length, items[0]!)).toBe("__ignored/nvim.man");
+    } finally {
+      fixture.dispose();
+    }
+  });
+
+  // Two separators distinguish the basename from the tail after the first slash.
+  test("the label, filter and replacement contain only the basename", async () => {
     const fixture = tree(["a/b/deep.txt"]);
     try {
       const items = await complete({ ...elsewhere, line: "a/b/de" }, fixture.root);
@@ -1593,12 +1616,10 @@ describe("an item shows the entry and inserts the path", () => {
       // THE THREE FIELDS IN ONE ARM, because a client reads whichever its own
       // class names and a drift between any two of them breaks one class
       // silently.
-      expect(items.map((item) => item.insertText)).toEqual(["a/b/deep.txt"]);
-      expect(items.map((item) => item.filterText)).toEqual(["a/b/deep.txt"]);
+      expect(items.map((item) => item.insertText)).toEqual(["deep.txt"]);
+      expect(items.map((item) => item.filterText ?? item.label)).toEqual(["deep.txt"]);
       const edit = items[0]?.textEdit;
-      expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe(
-        "a/b/deep.txt",
-      );
+      expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe("deep.txt");
     } finally {
       fixture.dispose();
     }
@@ -1615,7 +1636,7 @@ describe("an item shows the entry and inserts the path", () => {
       expect(items).toHaveLength(1);
       expect(items.map((item) => item.label)).toEqual(["deep.txt"]);
       expect(inserted(items)).toEqual(["deep.txt"]);
-      expect(items.map((item) => item.filterText)).toEqual(["deep.txt"]);
+      expect(items.map((item) => item.filterText ?? item.label)).toEqual(["deep.txt"]);
       const edit = items[0]?.textEdit;
       expect(edit !== undefined && !("range" in edit) ? edit.newText : undefined).toBe("deep.txt");
     } finally {
@@ -1627,7 +1648,7 @@ describe("an item shows the entry and inserts the path", () => {
 describe("applying the item yields the path it names", () => {
   // MULTI-SEGMENT, AND IT MUST BE: for a fragment with one segment the two client
   // classes cannot be told apart, so a test written with one proves nothing.
-  test("a multi-segment fragment is replaced whole", async () => {
+  test("a multi-segment fragment preserves its directory", async () => {
     const fixture = tree(["src/foo.ts"]);
     try {
       const line = "see src/fo";
@@ -1635,8 +1656,7 @@ describe("applying the item yields the path it names", () => {
 
       expect(items).toHaveLength(1);
       const item = items[0] as CompletionItem;
-      // BOTH preferences: at the end of a line the two ranges coincide, and what
-      // this claims is that each of them is WHOLE.
+      // Both preferences preserve the existing directory.
       expect(applyAsClient(line, line.length, item, "insert")).toBe("see src/foo.ts");
       expect(applyAsClient(line, line.length, item, "replace")).toBe("see src/foo.ts");
 
@@ -1683,7 +1703,7 @@ describe("applying the item yields the path it names", () => {
       for (const range of ranges) {
         expect(range.start.line).toBe(0);
         expect(range.end.line).toBe(0);
-        expect(range.start.character).toBe(0);
+        expect(range.start.character).toBe(4);
         expect(range.end.character).toBe("src/fo".length);
       }
       expect(items[0]?.label).not.toBe("");

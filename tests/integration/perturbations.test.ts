@@ -985,7 +985,7 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
-    // THE FIELD PUT BACK: the label carrying what the item INSERTS.
+    // Putting the directory back into the label repeats the existing prefix.
     //
     // THE CONTROL IS THE ARM THIS RECORD DOES NOT NAME. The single-segment arm
     // stays GREEN under this weakening, and its green is enforced -- by absence
@@ -994,35 +994,34 @@ const records: readonly PerturbationRecord[] = [
     // HELD with the discrimination gone.
     arm: {
       file: "tests/integration/tsudoi-completion-path/completion.test.ts",
-      name: "the label is the entry's own name, where what is inserted carries the directory typed",
+      name: "the label, filter and replacement contain only the basename",
     },
     weakening: {
       file: composer,
       from: "        label: entry.name,",
-      to: "        label: insertText,",
+      to: "        label: candidate,",
     },
     redAt: 'expect(items.map((item) => item.label)).toEqual(["deep.txt"]);',
     alsoReddens: [
-      "what an item inserts is the directory typed and the label it shows, raw on both sides",
+      "nested paths with spaces preserve the prefix and replace the existing suffix",
+      "a trailing separator anchors completion at the basename",
+      "the label, filter and replacement preserve the raw entry name",
       "each item names the file it resolves to and the source that produced it",
       "each item's mark names the source that produced it, for every source there is",
     ],
   },
   {
-    // THE EDIT THE RECORD ABOVE MAKES LOOK FREE: with `filterText` doing the
-    // filtering, nothing in this package stops the label being flattened like
-    // the `detail` beside it. What stops it is the client, and an arm asserting
-    // a relation nothing weakens is a green about nobody's edit.
+    // Flattening the label corrupts both display and default filtering.
     arm: {
       file: "tests/integration/tsudoi-completion-path/completion.test.ts",
-      name: "what an item inserts is the directory typed and the label it shows, raw on both sides",
+      name: "the label, filter and replacement preserve the raw entry name",
     },
     weakening: {
       file: composer,
       from: "        label: entry.name,",
       to: "        label: flattened(entry.name),",
     },
-    redAt: "expect(item.insertText).toBe(`a/b/${item.label}`);",
+    redAt: "expect(item.insertText).toBe(item.label);",
     // MEASURED, AND THE REASON IS NOT `NO OTHER FIXTURE HOLDS A CONTROL
     // CHARACTER`, WHICH IS FALSE AT THE ARM DIRECTLY ABOVE THIS ONE'S: the
     // forgery arm builds the SAME name, and this weakening moves its label too.
@@ -1031,28 +1030,21 @@ const records: readonly PerturbationRecord[] = [
     alsoReddens: [],
   },
   {
-    // THE THIRD FIELD, AND THE RECORD ITS REQUIREMENT ASKED FOR: with the
-    // directory part gone from the label, `filterText` is the only thing left
-    // carrying it to a client that filters on the text its edit range covers.
-    //
-    // NARROWED RATHER THAN DROPPED, AND THE REQUIREMENT SAID DROPPED -- both were
-    // measured and this is the one that discriminates. Dropping the field
-    // reddens the single-segment control too, since an absent field is absent
-    // for every fragment shape; narrowing it to the entry name leaves that arm
-    // GREEN, which is what makes the red about the DIRECTORY PART.
+    // Putting the directory back into filterText disagrees with the basename edit range.
     arm: {
       file: "tests/integration/tsudoi-completion-path/completion.test.ts",
-      name: "the label is the entry's own name, where what is inserted carries the directory typed",
+      name: "the label, filter and replacement contain only the basename",
     },
     weakening: {
       file: composer,
-      from: "        filterText: insertText,",
-      to: "        filterText: entry.name,",
+      from: "        label: entry.name,",
+      to: "        label: entry.name,\n        filterText: candidate,",
     },
-    redAt: 'expect(items.map((item) => item.filterText)).toEqual(["a/b/deep.txt"]);',
+    redAt: 'expect(items.map((item) => item.filterText ?? item.label)).toEqual(["deep.txt"]);',
     alsoReddens: [
       "nested paths with spaces preserve the prefix and replace the existing suffix",
-      "what an item inserts is the directory typed and the label it shows, raw on both sides",
+      "a trailing separator anchors completion at the basename",
+      "the label, filter and replacement preserve the raw entry name",
       "each item names the file it resolves to and the source that produced it",
       "each item's mark names the source that produced it, for every source there is",
     ],

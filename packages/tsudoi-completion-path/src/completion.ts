@@ -43,7 +43,7 @@ export interface PathFragment {
   readonly text: string;
   /** Where `text` begins on the line, in UTF-16 code units, as LSP counts. */
   readonly start: number;
-  /** Up to the last separator; a bare `~` uses `~/` to insert home-relative children. */
+  /** Up to the last separator; a bare `~` completes to `~/`. */
   readonly directory: string;
   /** The filter, and possibly empty -- e.g. `fo`. */
   readonly name: string;
@@ -326,12 +326,16 @@ export function editFor(
   newText: string,
   insertReplaceSupport: boolean,
 ): TextEdit | InsertReplaceEdit {
-  const start = { line: position.line, character: fragment.start };
+  // A bare tilde still needs its missing separator inserted. Otherwise keep
+  // the directory in place so clients anchor their popup at the basename.
+  const prefixLength = fragment.text === "~" ? 0 : fragment.directory.length;
+  const start = { line: position.line, character: fragment.start + prefixLength };
+  const replacement = newText.slice(prefixLength);
   if (!insertReplaceSupport) {
-    return { newText, range: { start, end: position } };
+    return { newText: replacement, range: { start, end: position } };
   }
   return {
-    newText,
+    newText: replacement,
     insert: { start, end: position },
     replace: {
       start,
@@ -378,6 +382,23 @@ export async function* itemsFrom(
   flavour: PathFlavour = nodePath,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = listingDirectory(source, fragment, flavour);
+  if (fragment.text === "~") {
+    yield [
+      {
+        label: "~/",
+        insertText: "~/",
+        kind: CompletionItemKind.Folder,
+        detail: flattened(directory),
+        documentation: documentationFor(source.name, documentationFormat),
+        data: {
+          tsudoiCompletionPath: { path: directory, source: source.name },
+        } satisfies PathItemData,
+        textEdit: editFor(fragment, position, line, "~/", insertReplaceSupport),
+      },
+    ];
+    return;
+  }
+
   let items: CompletionItem[] = [];
   try {
     const listing = await opendir(directory);
@@ -389,28 +410,12 @@ export async function* itemsFrom(
         yield items;
         items = [];
       }
-      const insertText = fragment.directory + entry.name;
+      const candidate = fragment.directory + entry.name;
+      const textEdit = editFor(fragment, position, line, candidate, insertReplaceSupport);
+      const insertText = textEdit.newText;
       const absolutePath = flavour.join(directory, entry.name);
       items.push({
-        // WHAT THE POPUP RENDERS ON THE ONE CLIENT THIS WAS READ FROM --
-        // ddc-source-lsp's source, and no editor is spawned anywhere here --
-        // AND IT IS THE ENTRY ALONE: the inserted text here puts the fragment's
-        // directory in front of every row of a listing.
-        //
-        // AND NOT BY NARROWING THE EDIT RANGE TO THE LAST SEPARATOR, which would
-        // make this name the whole item and need no `filterText` at all:
-        // refused, it moves what is written into the buffer, and the widening
-        // candidates that reach a filename holding a space are built on the
-        // range beginning where the FRAGMENT begins.
         label: entry.name,
-        // WHAT A CLIENT FILTERS ON, WHICH THE LABEL STOPPED BEING -- FOR THE
-        // CLIENTS THAT READ IT AND DERIVE THE TYPED TEXT FROM THE EDIT RANGE,
-        // WHICH IS NOT ALL OF THEM AND IS NOT A RULE THE SPECIFICATION STATES.
-        // Those clients match against text beginning where the fragment does,
-        // so an item whose filter text held the entry name alone would be
-        // filtered away by the separator the user just typed. The client this
-        // package's other readings come from ignores the field entirely.
-        filterText: insertText,
         // WHICH FILE, IN THE FIELD A CLIENT RENDERS WITHOUT OPENING A WINDOW.
         // NOT `two same-named candidates from different roots are told apart`,
         // which this function's own caller forecloses: the `seen` filter keys on
@@ -437,7 +442,7 @@ export async function* itemsFrom(
         data: {
           tsudoiCompletionPath: { path: absolutePath, source: source.name },
         } satisfies PathItemData,
-        textEdit: editFor(fragment, position, line, insertText, insertReplaceSupport),
+        textEdit,
       });
     }
   } catch (error) {

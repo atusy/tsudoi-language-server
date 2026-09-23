@@ -948,7 +948,7 @@ for (const runtime of runtimes) {
 
         // NOT VACUOUS, and this is what makes the emptiness below evidence:
         // cwd answered, so the source really did run for this fragment.
-        expect(inserted(items)).toEqual(["notes/cwd-only.txt"]);
+        expect(inserted(items)).toEqual(["cwd-only.txt"]);
         expect(workspaceItems(items)).toEqual([]);
       } finally {
         session.dispose();
@@ -979,7 +979,7 @@ for (const runtime of runtimes) {
         const items = await completeAt(session, "notes/");
 
         expect(workspaceItems(items)).toEqual([]);
-        expect(inserted(items)).toEqual(["notes/cwd-only.txt"]);
+        expect(inserted(items)).toEqual(["cwd-only.txt"]);
       } finally {
         session.dispose();
         cwd.dispose();
@@ -1018,16 +1018,12 @@ for (const runtime of runtimes) {
         // ALL THREE ROOTS ANSWER. The cwd entry is not decoration: if the
         // workspace sources had REPLACED the relative ones rather than joining
         // them, every workspace assertion below would still pass.
-        expect(inserted(items)).toEqual([
-          "notes/cwd-only.txt",
-          "notes/first-only.txt",
-          "notes/second-only.txt",
-        ]);
+        expect(inserted(items)).toEqual(["cwd-only.txt", "first-only.txt", "second-only.txt"]);
         expect(
           workspaceItems(items)
             .map((item) => item.insertText)
             .sort(),
-        ).toEqual(["notes/first-only.txt", "notes/second-only.txt"]);
+        ).toEqual(["first-only.txt", "second-only.txt"]);
         // EACH ITEM NAMES ITS OWN ROOT, which is what makes two workspace
         // folders legible rather than one indistinguishable pile -- AND `detail`
         // IS WHERE THAT NOW LIVES. The block says which CLASS of root offered
