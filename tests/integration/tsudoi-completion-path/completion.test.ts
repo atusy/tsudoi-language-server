@@ -183,34 +183,27 @@ test("~/ completes from home while preserving the tilde in the buffer", async ()
 });
 
 describe("home-relative paths", () => {
-  test.each([true, false])(
-    "bare ~ completes only the home directory (insertReplaceSupport=%s)",
-    async (supported) => {
-      for (const entries of [[], ["notes/file.txt", "other.txt"]]) {
-        const home = tree(entries);
-        try {
-          const line = "open ~";
-          const items = await complete(
-            { ...elsewhere, line },
-            home.root,
-            undefined,
-            supported,
-            ["markdown"],
-            { home: home.root },
-          );
-          expect(items).toHaveLength(1);
-          expect(items[0]?.label).toBe("~/");
-          expect(items[0]?.filterText).toBeUndefined();
-          expect(items[0]?.kind).toBe(CompletionItemKind.Folder);
-          expect(completedPath(items[0]!)).toBe(home.root);
-          expect(completedSource(items[0]!)).toBe("home");
-          expect(applyAsClient(line, line.length, items[0]!)).toBe("open ~/");
-        } finally {
-          home.dispose();
-        }
-      }
-    },
-  );
+  test("bare ~ stays literal instead of offering home completion", async () => {
+    const home = tree(["notes/file.txt"]);
+    const cwd = tree(["~local.txt"]);
+    try {
+      const line = "open ~";
+      const items = await complete(
+        { ...elsewhere, line },
+        cwd.root,
+        undefined,
+        true,
+        ["markdown"],
+        { home: home.root },
+      );
+      expect(items.map((item) => item.label)).toEqual(["~local.txt"]);
+      expect(completedSource(items[0]!)).toBe("cwd");
+      expect(applyAsClient(line, line.length, items[0]!)).toBe("open ~local.txt");
+    } finally {
+      home.dispose();
+      cwd.dispose();
+    }
+  });
 
   test.each(["~/", "~//", "~/notes/../"])("%s lists home", async (line) => {
     const home = tree(["notes/file.txt"]);

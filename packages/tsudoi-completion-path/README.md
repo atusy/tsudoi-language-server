@@ -53,7 +53,7 @@ parts of an editor. The **label** is the entry's own name — `deep.txt`, never 
 so a listing does not repeat the directory you have already typed. The edit starts after the
 last directory separator, and `textEdit.newText` and `insertText` carry only the entry name.
 `filterText` is omitted so clients filter on the label. This also anchors completion menus at the filename being completed. The directory
-prefix stays in the buffer, including spaces, `~/`, and Windows separators. A bare `~` offers only `~/`, even for an empty home directory.
+prefix stays in the buffer, including spaces, `~/`, and Windows separators.
 Home entries are listed after the separator has been entered.
 Labels and replacement text preserve the raw filename.
 `detail` carries the **absolute path** the item
@@ -91,9 +91,9 @@ Nothing recurses here either: one listing, one level, no walk.
 
 ## Completion options
 
-Use `~` to complete `~/`, then list the server user's home directory with `~/`. Use `~/notes/` to
+Use `~/` to list the server user's home directory, and `~/notes/` to
 browse beneath it. Inserted paths keep the `~` prefix; previews resolve the actual file.
-Windows also accepts `~\`. `~username` is not expanded, and a `~` elsewhere in a path
+Windows also accepts `~\`. A bare `~` and `~username` are not expanded, and a `~` elsewhere in a path
 remains a literal directory name.
 
 | option           | default            | effect                                                       |

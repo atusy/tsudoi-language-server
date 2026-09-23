@@ -43,7 +43,7 @@ export interface PathFragment {
   readonly text: string;
   /** Where `text` begins on the line, in UTF-16 code units, as LSP counts. */
   readonly start: number;
-  /** Up to the last separator; a bare `~` completes to `~/`. */
+  /** Up to the last separator. */
   readonly directory: string;
   /** The filter, and possibly empty -- e.g. `fo`. */
   readonly name: string;
@@ -112,8 +112,8 @@ function fragmentAt(
     text,
     start,
     end,
-    directory: text === "~" ? "~/" : text.slice(0, cut),
-    name: text === "~" ? "" : text.slice(cut),
+    directory: text.slice(0, cut),
+    name: text.slice(cut),
   };
 }
 
@@ -243,10 +243,7 @@ export function sourcesFor(
   flavour: PathFlavour = nodePath,
   home?: string,
 ): PathSource[] {
-  if (
-    fragment.text === "~" ||
-    separatorsOf(flavour).some((sep) => fragment.text.startsWith(`~${sep}`))
-  ) {
+  if (separatorsOf(flavour).some((sep) => fragment.text.startsWith(`~${sep}`))) {
     return [{ name: "home", root: home ?? homedir() }];
   }
   const root = flavour.parse(fragment.text).root;
@@ -326,9 +323,8 @@ export function editFor(
   newText: string,
   insertReplaceSupport: boolean,
 ): TextEdit | InsertReplaceEdit {
-  // A bare tilde still needs its missing separator inserted. Otherwise keep
-  // the directory in place so clients anchor their popup at the basename.
-  const prefixLength = fragment.text === "~" ? 0 : fragment.directory.length;
+  // Keep the directory in place so clients anchor their popup at the basename.
+  const prefixLength = fragment.directory.length;
   const start = { line: position.line, character: fragment.start + prefixLength };
   const replacement = newText.slice(prefixLength);
   if (!insertReplaceSupport) {
@@ -382,23 +378,6 @@ export async function* itemsFrom(
   flavour: PathFlavour = nodePath,
 ): AsyncGenerator<CompletionItem[], void, void> {
   const directory = listingDirectory(source, fragment, flavour);
-  if (fragment.text === "~") {
-    yield [
-      {
-        label: "~/",
-        insertText: "~/",
-        kind: CompletionItemKind.Folder,
-        detail: flattened(directory),
-        documentation: documentationFor(source.name, documentationFormat),
-        data: {
-          tsudoiCompletionPath: { path: directory, source: source.name },
-        } satisfies PathItemData,
-        textEdit: editFor(fragment, position, line, "~/", insertReplaceSupport),
-      },
-    ];
-    return;
-  }
-
   let items: CompletionItem[] = [];
   try {
     const listing = await opendir(directory);
