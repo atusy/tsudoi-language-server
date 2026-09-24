@@ -402,7 +402,8 @@ for (const runtime of runtimes) {
         });
 
         expect(result.items.map((item) => item.insertText)).toEqual(["aggregated.txt"]);
-        expect(result.isIncomplete).toBe(true);
+        // One file and no folder: narrowing this answer is the whole future of the query.
+        expect(result.isIncomplete).toBe(false);
         expect(session.progressCount).toBe(0);
 
         // Empty queries also need recomputation when further typing becomes eligible.

@@ -124,10 +124,12 @@ Two more limits worth knowing before you turn it on:
 - **Nothing recurses.** One fragment is answered by ONE directory listing filtered by the
   fragment's trailing name. Unbounded walks, recursion depth and symlink cycles are not
   unhandled here but unrepresentable.
-- **The answer requests recomputation.** For an available document and line, the final
-  `CompletionList` has `isIncomplete: true`, even when no candidates match or the query is too
-  short. Typing a separator can change the directory instead of narrowing the previous list.
-  A missing document or line produces no result. Use `return yield*` when delegating so the
+- **The answer requests recomputation when typing can reach an unlisted directory.** Typing a
+  separator can change the directory instead of narrowing the previous list, so the final
+  `CompletionList` has `isIncomplete: true` when the query is too short, a candidate is a folder,
+  the name may still become `.` or `..`, the fragment is a bare `~`, the flavour is Windows', or a
+  longer reading of the line went unlisted. Otherwise it is `isIncomplete: false`, including when
+  nothing matches. A missing document or line produces no result. Use `return yield*` when delegating so the
   final metadata reaches tsudoi. With a partial-result token, batches travel as progress and
   applying the final response's metadata to those batches depends on the client.
 

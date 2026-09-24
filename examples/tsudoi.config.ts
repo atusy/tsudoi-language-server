@@ -8,7 +8,8 @@ import { removeTrailingWhitespace } from "./formatting-trailing-whitespace.ts";
 const config: TsudoiConfigFactory = () => {
   return Promise.resolve({
     methods: {
-      // The final CompletionList requests a fresh listing after further typing.
+      // The final CompletionList requests a fresh listing when further typing can
+      // reach a directory the answer did not list.
       // A missing document yields nothing, so the response is null rather than [].
       "textDocument/completion": async function* (context, params) {
         const document = context.tsudoi.documents.get(params.textDocument.uri);

@@ -3,9 +3,9 @@ import { applySuiteDeadline } from "../helpers/deadline.ts";
 applySuiteDeadline();
 
 import { expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { CompletionItem, CompletionList } from "@atusy/tsudoi-language-server/deps/protocol";
 import { completeAround } from "../../packages/tsudoi-completion-document/src/around.ts";
@@ -170,42 +170,66 @@ test("dictionary: gated empty answer requests another query", async () => {
   ).toEqual({ isIncomplete: false, items: [] });
 });
 
-test("path: directory transitions and empty queries retain incomplete metadata", async () => {
+test.each([
+  // A listed directory, or a symlink to one, opens a listing the answer never held.
+  ["s", {}, true, ["src"]],
+  ["l", {}, true, ["link"]],
+  // `./` and `../` are directories no listing names.
+  ["src/", {}, true, ["index.ts"]],
+  [".", {}, true, []],
+  ["..", {}, true, []],
+  // `~/` moves the query to another root.
+  ["~", {}, true, []],
+  ["", { minQueryLength: 0 }, true, ["README.md", "link", "src"]],
+  ["READ", { minQueryLength: 5 }, true, []],
+  // A longer reading of the line was never listed.
+  ["see READ", {}, true, ["README.md"]],
+  // Drive and UNC roots are spelled over several keystrokes.
+  ["missing", { flavour: win32 }, true, []],
+  // Every reading is listed, and nothing it answers can hold more.
+  ["missing", {}, false, []],
+  ["hello missing", {}, false, []],
+  ["READ", {}, false, ["README.md"]],
+  ["src/i", {}, false, ["index.ts"]],
+] as const)("path: %p with %p is incomplete: %p", async (text, options, isIncomplete, labels) => {
   const root = mkdtempSync(join(tmpdir(), "tsudoi-incomplete-"));
   try {
     mkdirSync(join(root, "src"));
     writeFileSync(join(root, "src", "index.ts"), "");
+    writeFileSync(join(root, "README.md"), "");
+    symlinkSync(join(root, "src"), join(root, "link"));
     const documentUri = pathToFileURL(join(root, "buffer.txt")).href;
     const documents = fakeDocuments();
-    for (const text of ["s", "src/", "missing", ""]) {
-      documents.open(documentUri, text);
-      const answer = await collect(
-        completePath(
-          documents.context,
-          {
-            textDocument: { uri: documentUri },
-            position: { line: 0, character: text.length },
-          },
-          { cwd: root },
-        ),
-      );
-      expect(answer.result).toEqual({ isIncomplete: true, items: [] });
-      if (text === "src/") expect(answer.items.map(({ label }) => label)).toContain("index.ts");
-    }
-    documents.close(documentUri);
-    expect(
-      (
-        await collect(
-          completePath(documents.context, {
-            textDocument: { uri: documentUri },
-            position: { line: 0, character: 0 },
-          }),
-        )
-      ).result,
-    ).toBeUndefined();
+    documents.open(documentUri, text);
+    const answer = await collect(
+      completePath(
+        documents.context,
+        {
+          textDocument: { uri: documentUri },
+          position: { line: 0, character: text.length },
+        },
+        { cwd: root, home: root, ...options },
+      ),
+    );
+    expect(answer.items.map(({ label }) => label).sort()).toEqual([...labels]);
+    expect(answer.result).toEqual({ isIncomplete, items: [] });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("path: a missing document produces no result", async () => {
+  const documents = fakeDocuments();
+  expect(
+    (
+      await collect(
+        completePath(documents.context, {
+          textDocument: { uri: pathToFileURL("/nowhere/buffer.txt").href },
+          position: { line: 0, character: 0 },
+        }),
+      )
+    ).result,
+  ).toBeUndefined();
 });
 
 test.each([[], ["alpha"]].map((candidates) => ({ candidates })))(

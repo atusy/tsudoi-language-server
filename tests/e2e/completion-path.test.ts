@@ -119,8 +119,9 @@ for (const runtime of runtimes) {
         expect(session.progress.map((progress) => progress.token)).toEqual(
           batches.map(() => partialResultToken),
         );
-        // Metadata remains in the response without duplicating streamed candidates.
-        expect(result).toEqual({ isIncomplete: true, items: [] });
+        // Metadata remains in the response without duplicating streamed candidates,
+        // and a listing of files alone is complete: no longer query reaches more.
+        expect(result).toEqual({ isIncomplete: false, items: [] });
       } finally {
         session.dispose();
         fixture.dispose();

@@ -33,8 +33,18 @@ further typing, while path and native shell completion can change the candidate 
 both their bounds and the transformations applied to candidates. The framework cannot infer those
 facts from the resulting arrays.
 
-Path and shell return `isIncomplete: true` for applicable requests, including empty and query-gated
-answers. Further input can change the directory or shell context instead of narrowing candidates.
+Shell returns `isIncomplete: true` for applicable requests, including empty and query-gated
+answers. Further input can change the shell context instead of narrowing candidates.
+
+Path returns `isIncomplete: true` wherever further input can reach a directory the answer did not
+list: a query-gated fragment, a listed folder (or symlink to one), a name that may still become `.`
+or `..`, `~` before its separator, a flavour with a backslash separator (drive and UNC roots are
+spelled over several keystrokes), or a longer reading of the line left unlisted because a shorter
+one answered. Otherwise every directory a longer query can list is a folder this answer would have
+named, so the answer is complete, including an empty one. This refines the decision as first
+accepted, which marked every applicable path answer incomplete: an ordinary word in prose reads as
+a path fragment matching nothing, so any response combining path with other sources could never
+finish a session.
 Missing documents (and missing path lines) still produce no result. Cancellation remains governed
 by the framework's cancellation response.
 
@@ -66,7 +76,8 @@ A source with no result does not make other sources incomplete.
 
 **Negative:**
 
-- Path, shell and custom callbacks can cause a request on every further keystroke.
+- Shell and custom callbacks can cause a request on every further keystroke; path can while a
+  folder or an unsettled fragment is in play.
 - Detecting truncation needs an additional filtered candidate; callbacks may do extra work.
 - Callers expecting an array or null on the wire must now handle CompletionList.
 - As in ADR 0009, metadata returned after progress is client-dependent, not portable LSP partial

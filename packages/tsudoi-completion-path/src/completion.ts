@@ -665,10 +665,32 @@ async function entryKind(absolutePath: string, entry: Dirent): Promise<Completio
 }
 
 /**
+ * Whether every directory a longer query could list is one this fragment's own
+ * listing names -- so a candidate absent now stays absent, and a listed folder
+ * is the only way in.
+ *
+ * WHAT READDIR NEVER NAMES IS WHAT BREAKS THAT: `.` and `..` (a name that may
+ * still become either), and a root reached by spelling rather than by entry --
+ * `~` before its separator, and every drive and UNC root, which a flavour with
+ * a backslash separator spells over several keystrokes (`C` `C:` `C:\`). The
+ * last is refused per flavour and not per spelling, because proving no prefix of
+ * a Windows root reads as a relative name is a parser nobody here has written.
+ */
+function isSettled(fragment: PathFragment, flavour: PathFlavour): boolean {
+  return (
+    !separatorsOf(flavour).includes("\\") &&
+    fragment.text !== "~" &&
+    !"..".startsWith(fragment.name)
+  );
+}
+
+/**
  * A `textDocument/completion` handler that completes paths.
  *
- * Directory separators can reveal candidates absent from the previous listing.
- * Even an empty or query-gated result therefore requests recomputation.
+ * Directory separators can reveal candidates absent from the previous listing,
+ * so an answer is complete only where no keystroke can reach such a directory
+ * (`isSettled`), no candidate is one, and every reading of the line was listed.
+ * A query-gated result requests recomputation.
  * The final list carries metadata; yielded batches keep their existing delivery.
  */
 export async function* completePath(
@@ -716,11 +738,14 @@ export async function* completePath(
       name: "",
     });
   }
+  let complete = fragments.length > 0;
   try {
-    for (const fragment of fragments) {
+    for (const [index, fragment] of fragments.entries()) {
       if (fragment.text.length < minQueryLength) {
+        complete = false;
         continue;
       }
+      complete &&= isSettled(fragment, flavour);
       let named = false;
       for (const source of sourcesFor(
         fragment,
@@ -739,6 +764,9 @@ export async function* completePath(
           documentationFormat,
           flavour,
         )) {
+          // THE WHOLE BATCH AND NOT ONLY WHAT SURVIVES `seen`: a dropped duplicate
+          // may be a directory under another root, and `name/` lists it there.
+          complete &&= batch.every((item) => item.kind !== CompletionItemKind.Folder);
           const fresh = batch.filter((item) => {
             const text = item.insertText ?? "";
             if (seen.has(text)) {
@@ -754,10 +782,11 @@ export async function* completePath(
         }
       }
       if (named) {
-        return { isIncomplete: true, items: [] };
+        // The longer readings left unlisted may still answer a longer query.
+        return { isIncomplete: !complete || index < fragments.length - 1, items: [] };
       }
     }
-    return { isIncomplete: true, items: [] };
+    return { isIncomplete: !complete, items: [] };
   } finally {
     // WHERE A HANDLER RELEASES WHAT IT HELD: an index reader, a child process, a
     // temporary file. There is nothing to release here, and the block is kept
