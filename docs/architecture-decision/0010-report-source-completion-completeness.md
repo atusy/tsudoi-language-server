@@ -51,8 +51,12 @@ by the framework's cancellation response.
 Document and dictionary handlers return incomplete results when a query is gated, a candidate is
 omitted by `maxItems`, or a custom callback prevents establishing that further typing only narrows
 candidates. Only the default document scanner and pipelines containing solely the built-in prefix
-filter (or no filters) establish completeness. Non-default scanners, including `segmentScanner`,
-are conservative: segmentation can change as input grows. An exact fit at the bound is complete;
+filter (or no filters) establish completeness. Custom scanners are conservative. `segmentScanner`
+is conservative except for a non-empty ASCII query: in text written without spaces segmentation
+can move where the typed word starts as input grows (`都庁` then `舎` reads `庁舎`), but an ASCII
+query grows and ends exactly as under the default scanner. This refines the decision as first
+accepted, which ruled every `segmentScanner` answer incomplete, so a config segmenting Japanese
+could never finish a session even while typing English. An exact fit at the bound is complete;
 probe for one extra distinct filtered candidate, including in the dictionary's indexed query.
 
 An exhausted known prefix search can be complete and empty. `maxItems: 0` disables these bounded
@@ -77,7 +81,8 @@ A source with no result does not make other sources incomplete.
 **Negative:**
 
 - Shell and custom callbacks can cause a request on every further keystroke; path can while a
-  folder or an unsettled fragment is in play.
+  folder or an unsettled fragment is in play, and `segmentScanner` can while a non-ASCII word is
+  typed or none has started.
 - Detecting truncation needs an additional filtered candidate; callbacks may do extra work.
 - Callers expecting an array or null on the wire must now handle CompletionList.
 - As in ADR 0009, metadata returned after progress is client-dependent, not portable LSP partial

@@ -167,13 +167,43 @@ const wordRuns = /[\p{L}\p{N}\p{M}_]+/gu;
  */
 export function segmentScanner(locales?: Intl.LocalesArgument): Scanner {
   const segmenter = new Intl.Segmenter(locales, { granularity: "word" });
-  return function* (line: string): Iterable<string> {
+  const scanner = function* (line: string): Iterable<string> {
     for (const { segment } of segmenter.segment(line)) {
       for (const run of segment.matchAll(wordRuns)) {
         yield run[0];
       }
     }
   };
+  segmentScanners.add(scanner);
+  return scanner;
+}
+
+/** Scanners `segmentScanner` built, known by identity like `defaultScanner`. */
+const segmentScanners = new WeakSet<Scanner>();
+
+/**
+ * A query `segmentScanner` reads exactly as `defaultScanner` does.
+ *
+ * ASCII AND NOT EVERY SPACED SCRIPT, because ASCII is what was MEASURED: growing
+ * such a query by a word character only extended it, and ending it with anything
+ * else reset it at the same place under both scanners. Other scripts may well
+ * agree, but a claim of completeness nobody measured is how a popup goes stale.
+ */
+const asciiQuery = /^[A-Za-z0-9_]+$/;
+
+/**
+ * Whether the query `scanner` read can only grow by what the user types next,
+ * which is what lets a prefix-filtered answer call itself complete.
+ *
+ * SEGMENTATION IS RULED IN ONLY FOR AN ASCII QUERY. In a language written without
+ * spaces a keystroke can move where the word starts -- MEASURED at locale `ja`,
+ * `都庁` then `舎` reads `庁舎`, and `今日` then `は` reads `は` -- so the client,
+ * narrowing the old answer by its own notion of the word, would keep what a fresh
+ * request drops. An EMPTY query stays out too: its next character may start such
+ * a run. Any other custom scanner is unknown and stays out.
+ */
+export function narrowsAsTyped(scanner: Scanner, typed: string): boolean {
+  return scanner === defaultScanner || (segmentScanners.has(scanner) && asciiQuery.test(typed));
 }
 
 /**

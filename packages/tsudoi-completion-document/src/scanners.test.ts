@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { defaultScanner, defaultWordPattern, regexScanner, segmentScanner } from "./scanners.ts";
+import {
+  defaultScanner,
+  defaultWordPattern,
+  narrowsAsTyped,
+  regexScanner,
+  segmentScanner,
+} from "./scanners.ts";
+import { typedWord } from "./words.ts";
 
 /** What a scanner offers for one line, as an array. */
 function words(scanner: (line: string) => Iterable<string>, line: string): string[] {
@@ -218,5 +225,24 @@ describe("the segmenting scanner", () => {
 
     expect(words(scanner, "こんにちは世界")).toEqual(["こんにちは", "世界"]);
     expect(words(scanner, "こんにちは世界")).toEqual(["こんにちは", "世界"]);
+  });
+});
+
+describe("whether a query only narrows as it is typed", () => {
+  test("segmentation moves where a Japanese word starts, so it cannot narrow", () => {
+    const scanner = segmentScanner("ja");
+    expect([typedWord(scanner, "都庁"), typedWord(scanner, "都庁舎")]).toEqual(["都庁", "庁舎"]);
+    expect(narrowsAsTyped(scanner, "都庁")).toBe(false);
+  });
+
+  test("segmentation narrows an ASCII query as the default scanner does", () => {
+    const scanner = segmentScanner("ja");
+    expect(narrowsAsTyped(scanner, "foo_1")).toBe(true);
+    expect(narrowsAsTyped(scanner, "")).toBe(false);
+  });
+
+  test("the default scanner narrows any query and an unknown one none", () => {
+    expect(narrowsAsTyped(defaultScanner, "")).toBe(true);
+    expect(narrowsAsTyped(regexScanner(defaultWordPattern), "foo")).toBe(false);
   });
 });

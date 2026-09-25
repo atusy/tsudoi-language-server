@@ -12,7 +12,7 @@ import {
   nonNegativeSafeInteger,
   validateMaxItems,
 } from "./filters.ts";
-import { defaultScanner } from "./scanners.ts";
+import { defaultScanner, narrowsAsTyped } from "./scanners.ts";
 import { type WordOptions, typedWord, scanWords, wordsExceptInput } from "./words.ts";
 
 /**
@@ -132,7 +132,7 @@ export async function* completeAround(
   // Unknown callbacks may reveal or rewrite candidates as the query grows.
   const isIncomplete =
     (options.maxItems !== undefined && words.length > options.maxItems) ||
-    scanner !== defaultScanner ||
+    !narrowsAsTyped(scanner, typed) ||
     filters.some((filter) => filter !== prefixFilter);
   if (options.maxItems !== undefined && words.length > options.maxItems) {
     words.length = options.maxItems;

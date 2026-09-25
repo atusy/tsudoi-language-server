@@ -74,7 +74,7 @@ for (const complete of [completeAround, completeCorpus]) {
     }
     for (const options of [
       { filters: [(words: Iterable<string>) => words] },
-      { scanner: segmentScanner("ja") },
+      { scanner: (line: string) => line.split(" ") },
     ]) {
       expect((await collect(complete(documents.context, params, options))).result).toEqual({
         isIncomplete: true,
@@ -82,6 +82,22 @@ for (const complete of [completeAround, completeCorpus]) {
       });
     }
   });
+
+  test.each([
+    ["an ASCII query", "alpha\nal", false],
+    ["a Japanese query, which may re-segment", "今日\n今日", true],
+    ["no query yet, which may start a Japanese one", "alpha\n  ", true],
+  ] as const)(
+    `${complete.name}: segmentation completeness with %s`,
+    async (_, text, isIncomplete) => {
+      const documents = fakeDocuments();
+      documents.open(uri, text);
+      expect(
+        (await collect(complete(documents.context, params, { scanner: segmentScanner("ja") })))
+          .result,
+      ).toEqual({ isIncomplete, items: [] });
+    },
+  );
 }
 
 test.each([0, 1, 2, 3])(

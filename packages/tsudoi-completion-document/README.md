@@ -237,10 +237,12 @@ function, which is why you build it once.
 
 **Completeness is explicit.** Each handler yields its candidate batch and returns a final
 `CompletionList`. `isIncomplete` is `true` when `maxItems` omitted a distinct filtered candidate,
-when the query is shorter than `minQueryLength`, or when a non-default scanner or a filter other
-than `prefixFilter` makes future query behavior unknown. An exact fit at the limit is complete.
-With the default scanner and only prefix filters (or no filters), an exhausted search is complete,
-including an empty result. `maxItems: 0` is a complete empty result. The chosen scan bounds define
+when the query is shorter than `minQueryLength`, or when a custom scanner or a filter other than
+`prefixFilter` makes future query behavior unknown. `segmentScanner` counts as known only for a
+non-empty ASCII query, where it reads the word being typed as the default scanner does; in text
+written without spaces a keystroke can move where the word starts. An exact fit at the limit is
+complete. With a known scanner and only prefix filters (or no filters), an exhausted search is
+complete, including an empty result. `maxItems: 0` is a complete empty result. The chosen scan bounds define
 this source's scope; they do not themselves mark the answer incomplete.
 
 A wrapper must forward the generator's return, or merge `isIncomplete` with logical OR when
