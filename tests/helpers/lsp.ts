@@ -91,6 +91,30 @@ export type Arrival =
   | {
       readonly kind: "notification";
       readonly method: string;
+    }
+  | {
+      readonly kind: "request";
+      readonly id: number;
+      readonly method: string;
+    };
+
+/**
+ * One request the SERVER sent, as framed: `params` is ABSENT when the frame
+ * carried no `params` member, and `Object.hasOwn` is how a claim about that
+ * absence reads it -- JSON-RPC tells an omitted member from a `null` one, and
+ * a copy that normalised the two would hide exactly that difference.
+ */
+export interface ServerRequest {
+  readonly id: number;
+  readonly method: string;
+  readonly params?: unknown;
+}
+
+/** What this client answers a server request with: one branch, as JSON-RPC has it. */
+export type ServerAnswer =
+  | { readonly result: unknown }
+  | {
+      readonly error: { readonly code: number; readonly message: string; readonly data?: unknown };
     };
 
 /** One `window/logMessage` as it arrived: the level, and the sentence. */
@@ -179,6 +203,22 @@ export class LspSession {
    * narrow.
    */
   readonly notifications: { readonly method: string; readonly params: unknown }[] = [];
+  /**
+   * Every request the server sent, in order, answered or not.
+   *
+   * A LIST OF ITS OWN AND NOT ROWS OF `notifications`, because a server request
+   * is owed an answer: a reader that met one among the notifications could
+   * count it and never learn that the server is still waiting on it.
+   */
+  readonly serverRequests: ServerRequest[] = [];
+  /**
+   * How this client answers a server request THE MOMENT IT ARRIVES, or
+   * `undefined` to leave it unanswered for `respond` -- which is also what an
+   * unset answerer does, so a session that never expected a server request
+   * leaves one parked rather than inventing a reply the server then acts on.
+   */
+  answerServerRequest: ((request: ServerRequest) => ServerAnswer | undefined) | undefined =
+    undefined;
   /**
    * Every failure the child's stdin reported, in order. Empty for the whole
    * life of a healthy session, which is what makes a non-empty one evidence.
@@ -302,6 +342,28 @@ export class LspSession {
 
   notify(method: string, params: unknown): void {
     this.#send({ jsonrpc: "2.0", method, params });
+  }
+
+  /** Answers the server request `id`, whenever the test decides to. */
+  respond(id: number, answer: ServerAnswer): void {
+    this.#write(this.#frame({ jsonrpc: "2.0", id, ...answer }), `response #${id}`);
+  }
+
+  /**
+   * Resolves once `count` server requests have arrived, and REJECTS on timeout
+   * naming how many did -- a handler that never asked must fail here by name
+   * rather than as an outer request that parks.
+   */
+  async waitForServerRequests(count: number, timeoutMs = 2000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (this.serverRequests.length < count) {
+      if (Date.now() > deadline) {
+        throw new Error(
+          `timed out after ${timeoutMs}ms waiting for ${count} server requests; saw ${this.serverRequests.length}`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
   }
 
   /**
@@ -627,6 +689,22 @@ export class LspSession {
 
   #deliver(message: ResponseMessage): void {
     this.messagesReceived++;
+    // A SERVER REQUEST CARRIES AN ID TOO, so it is told apart by its `method`
+    // BEFORE the id is read as a response's: the two id spaces overlap, and a
+    // server request taken for a response would settle whichever of this
+    // client's own requests shares its number.
+    if (message.method !== undefined && message.id !== undefined) {
+      const request: ServerRequest = Object.hasOwn(message, "params")
+        ? { id: message.id, method: message.method, params: message.params }
+        : { id: message.id, method: message.method };
+      this.serverRequests.push(request);
+      this.arrivals.push({ kind: "request", id: request.id, method: request.method });
+      const answer = this.answerServerRequest?.(request);
+      if (answer !== undefined) {
+        this.respond(request.id, answer);
+      }
+      return;
+    }
     if (message.id === undefined) {
       if (message.method === "$/progress") {
         const { token, value } = message.params as ProgressNotification;
