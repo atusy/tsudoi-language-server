@@ -254,8 +254,8 @@ export interface Tsudoi {
   readonly clientCapabilities: DeepReadonly<ClientCapabilities>;
   /**
    * SENDS A NOTIFICATION TO THE CLIENT -- `tsudoi.notify("window/showMessage",
-   * { type: 1, message: "..." })` -- and it is the ONE MEMBER HERE THAT WRITES
-   * RATHER THAN READS.
+   * { type: 1, message: "..." })` -- and with `request` below it is what WRITES
+   * here rather than reads.
    *
    * WHY THAT DOES NOT BREACH THE RULE THE OTHERS ARE UNDER, since a reader who
    * knows the runtime keeps its write ends away from this object will look for
@@ -292,6 +292,41 @@ export interface Tsudoi {
     method: M,
     ...params: M extends ServerNotification ? [params: ServerNotifications[M]] : [params?: unknown]
   ) => Promise<void>;
+  /**
+   * SENDS A REQUEST TO THE CLIENT AND RESOLVES WITH ITS ANSWER --
+   * `await tsudoi.request("workspace/configuration", { items: [...] })` -- a
+   * member that writes, under the same ruling as `notify`: it speaks to
+   * the client and rewrites nothing tsudoi mirrors from it.
+   *
+   * THE ANSWER IS `unknown` AND NOT A TYPE PARAMETER, which is a ruling and not
+   * a gap: tsudoi validates nothing a client answers, so a `request<T>` would
+   * be a cast written at the call site and read as a check. Narrow what comes
+   * back the way a custom method's params are narrowed.
+   *
+   * THE PARAMS ARE SENT BY NAME, AND AN ARRAY OR `null` IS REFUSED rather than
+   * sent: upstream's connection would wrap either in a second array, so the
+   * client would receive a message nobody wrote. Every request the protocol
+   * defines takes an object, and omitting the params omits the member.
+   *
+   * IT REJECTS WITH WHAT THE CLIENT ANSWERED when that is an error -- upstream's
+   * `ResponseError`, which `@atusy/tsudoi-language-server/deps/error` publishes,
+   * so `.code` and `.data` are there to branch on.
+   *
+   * `signal` CANCELS THE REQUEST AND REJECTS AT ONCE WITH ITS REASON, as an
+   * aborted `fetch` does, and does not wait for the client to confirm: the
+   * handler's own `signal` is the one to pass, and a handler parked on an answer
+   * after its own request was cancelled leaves that request unanswered too. An
+   * already-aborted signal sends nothing.
+   *
+   * THE LIFECYCLE IS THE PROTOCOL'S, as it is for `notify`: a server may not
+   * send a request before it has answered `initialize`, and tsudoi enforces none
+   * of it.
+   */
+  readonly request: (
+    method: string,
+    params?: object,
+    options?: { readonly signal?: AbortSignal },
+  ) => Promise<unknown>;
 }
 
 /**

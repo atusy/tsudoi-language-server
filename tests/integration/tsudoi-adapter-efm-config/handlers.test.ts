@@ -63,10 +63,11 @@ function contextFor(uri: string, text: string, languageId: string): RequestConte
       rootUri: null,
       rootPath: null,
       clientCapabilities: {},
-      // PRESENT AND REFUSING, which is what a hand-built context owes a member
-      // it does not exercise: no handler in this package notifies, and a stub
-      // that RESOLVED would let one start silently.
+      // PRESENT AND REFUSING, which is what a hand-built context owes the members
+      // it does not exercise: no handler in this package notifies or requests,
+      // and a stub that RESOLVED would let one start silently.
       notify: () => Promise.reject(new Error("this context sends no notifications")),
+      request: () => Promise.reject(new Error("this context sends no requests")),
     },
   };
 }

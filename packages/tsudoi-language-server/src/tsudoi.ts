@@ -12,6 +12,19 @@ import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace
  */
 export interface ClientConnection {
   readonly notify: (method: string, params?: unknown) => Promise<void>;
+  /**
+   * Sends one request, and hands back its answer beside the way to withdraw
+   * it.
+   *
+   * `cancel` AND NOT A SIGNAL, because what withdrawing means on the wire --
+   * telling the client, keeping the answer from being read -- is the
+   * connection's to know, and what an abort means to the CALLER -- reject now,
+   * with its reason -- is the session's. Each side keeps its own half.
+   */
+  readonly request: (
+    method: string,
+    params: object | undefined,
+  ) => { readonly response: Promise<unknown>; readonly cancel: () => void };
 }
 
 export interface TsudoiRuntime {
@@ -193,6 +206,52 @@ export function createTsudoi(): TsudoiRuntime {
         );
       }
       return client.notify(method, params);
+    },
+    /**
+     * EVERY REFUSAL IS A REJECTION AND NOT A THROW, so an author who awaits the
+     * call meets every failure in one place -- a synchronous throw would escape
+     * a `.catch()` written on the result.
+     */
+    request(method: string, params?: object, options?: { readonly signal?: AbortSignal }) {
+      if (client === undefined) {
+        return Promise.reject(
+          new Error(
+            `tsudoi.request("${method}") was called before this server had a connection to send on`,
+          ),
+        );
+      }
+      if (
+        params !== undefined &&
+        (typeof params !== "object" || params === null || Array.isArray(params))
+      ) {
+        return Promise.reject(
+          new TypeError(
+            `tsudoi.request("${method}") sends params by name, so they must be an object`,
+          ),
+        );
+      }
+      const signal = options?.signal;
+      if (signal?.aborted === true) {
+        return Promise.reject(signal.reason);
+      }
+      let sent: ReturnType<ClientConnection["request"]>;
+      try {
+        sent = client.request(method, params);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+      if (signal === undefined) {
+        return sent.response;
+      }
+      const { promise: aborted, reject } = Promise.withResolvers<never>();
+      const abort = (): void => {
+        sent.cancel();
+        reject(signal.reason);
+      };
+      signal.addEventListener("abort", abort, { once: true });
+      return Promise.race([sent.response, aborted]).finally(() => {
+        signal.removeEventListener("abort", abort);
+      });
     },
   });
   return {
