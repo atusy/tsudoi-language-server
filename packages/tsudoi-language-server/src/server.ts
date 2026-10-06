@@ -97,7 +97,7 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   );
 
   // Connect before registering handlers so their tsudoi.notify calls can send.
-  connect((method, params) => connection.sendNotification(method, params));
+  connect({ notify: (method, params) => connection.sendNotification(method, params) });
 
   // Validate wire data before treating it as InitializeParams.
   connection.onRequest(
