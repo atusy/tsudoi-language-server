@@ -3,6 +3,30 @@ import { createDocumentStore, type DocumentStoreHandle } from "./documents.ts";
 import type { DeepReadonly, Tsudoi } from "./types.ts";
 import { createWorkspaceFolders, type WorkspaceFoldersHandle } from "./workspace.ts";
 
+/**
+ * The connection's write ends a `Tsudoi` speaks through, and nothing else of it.
+ *
+ * NAMED MEMBERS AND NOT THE CONNECTION, for the reason `connect` gives: each
+ * member is one write the session object exposes, so holding the whole
+ * connection would leave every other member of it callable from there.
+ */
+export interface ClientConnection {
+  readonly notify: (method: string, params?: unknown) => Promise<void>;
+  /**
+   * Sends one request, and hands back its answer beside the way to withdraw
+   * it.
+   *
+   * `cancel` AND NOT A SIGNAL, because what withdrawing means on the wire --
+   * telling the client, keeping the answer from being read -- is the
+   * connection's to know, and what an abort means to the CALLER -- reject now,
+   * with its reason -- is the session's. Each side keeps its own half.
+   */
+  readonly request: (
+    method: string,
+    params: object | undefined,
+  ) => { readonly response: Promise<unknown>; readonly cancel: () => void };
+}
+
 export interface TsudoiRuntime {
   /** What every `RequestContext` carries as its `tsudoi`, and the only route a
    * config has to the session. */
@@ -15,13 +39,13 @@ export interface TsudoiRuntime {
    * connection is created inside `startServer` -- so there is no moment at which
    * both are in hand except this one.
    *
-   * NARROWED TO `sendNotification`, for the reason the folder handle above is
+   * NARROWED TO `ClientConnection`, for the reason the folder handle above is
    * narrowed to `change`: a runtime holding the whole connection would leave
-   * every request-side member callable from the object whose job is to expose
-   * one write, which is an argument for the seam and an open route around it in
-   * the same value.
+   * every member callable from the object whose job is to expose the writes it
+   * names, which is an argument for the seam and an open route around it in the
+   * same value.
    */
-  readonly connect: (send: (method: string, params?: unknown) => Promise<void>) => void;
+  readonly connect: (connection: ClientConnection) => void;
   /** The server's end of the document store. Never reachable from `tsudoi`. */
   readonly documents: DocumentStoreHandle;
   /**
@@ -148,7 +172,7 @@ export function createTsudoi(): TsudoiRuntime {
   const documents = createDocumentStore();
   const workspaceFolders = createWorkspaceFolders();
   let clientCapabilities: ClientCapabilities = {};
-  let send: ((method: string, params?: unknown) => Promise<void>) | undefined;
+  let client: ClientConnection | undefined;
   const tsudoi: Tsudoi = Object.freeze({
     documents: documents.documents,
     workspaceFolders: workspaceFolders.folders,
@@ -164,7 +188,7 @@ export function createTsudoi(): TsudoiRuntime {
     /**
      * READ AT CALL TIME AND NOT CAPTURED, which is the same requirement every
      * getter above is under: this object is built before the connection exists,
-     * so a `send` bound here would be the `undefined` of that moment for the life
+     * so a connection bound here would be the `undefined` of that moment for the life
      * of the session.
      *
      * THE REFUSAL NAMES THE STATE RATHER THAN THE SYMPTOM, and it is UNREACHABLE
@@ -174,14 +198,60 @@ export function createTsudoi(): TsudoiRuntime {
      * a reader looking at their own handler.
      */
     notify(method: string, params?: unknown): Promise<void> {
-      if (send === undefined) {
+      if (client === undefined) {
         return Promise.reject(
           new Error(
             `tsudoi.notify("${method}") was called before this server had a connection to send on`,
           ),
         );
       }
-      return send(method, params);
+      return client.notify(method, params);
+    },
+    /**
+     * EVERY REFUSAL IS A REJECTION AND NOT A THROW, so an author who awaits the
+     * call meets every failure in one place -- a synchronous throw would escape
+     * a `.catch()` written on the result.
+     */
+    request(method: string, params?: object, options?: { readonly signal?: AbortSignal }) {
+      if (client === undefined) {
+        return Promise.reject(
+          new Error(
+            `tsudoi.request("${method}") was called before this server had a connection to send on`,
+          ),
+        );
+      }
+      if (
+        params !== undefined &&
+        (typeof params !== "object" || params === null || Array.isArray(params))
+      ) {
+        return Promise.reject(
+          new TypeError(
+            `tsudoi.request("${method}") sends params by name, so they must be an object`,
+          ),
+        );
+      }
+      const signal = options?.signal;
+      if (signal?.aborted === true) {
+        return Promise.reject(signal.reason);
+      }
+      let sent: ReturnType<ClientConnection["request"]>;
+      try {
+        sent = client.request(method, params);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+      if (signal === undefined) {
+        return sent.response;
+      }
+      const { promise: aborted, reject } = Promise.withResolvers<never>();
+      const abort = (): void => {
+        sent.cancel();
+        reject(signal.reason);
+      };
+      signal.addEventListener("abort", abort, { once: true });
+      return Promise.race([sent.response, aborted]).finally(() => {
+        signal.removeEventListener("abort", abort);
+      });
     },
   });
   return {
@@ -189,7 +259,7 @@ export function createTsudoi(): TsudoiRuntime {
     documents,
     workspaceFolders,
     connect(connected): void {
-      send = connected;
+      client = connected;
     },
     handshake(params): void {
       workspaceFolders.initialize(params);

@@ -68,10 +68,11 @@ export function fakeDocuments(): FakeDocuments {
         rootUri: null,
         rootPath: null,
         clientCapabilities: {},
-        // PRESENT AND REFUSING, which is what a hand-built context owes a member
-        // this package never exercises: nothing here notifies, and a stub that
-        // RESOLVED would let it start doing so silently.
+        // PRESENT AND REFUSING, which is what a hand-built context owes the members
+        // this package never exercises: nothing here notifies or requests, and a
+        // stub that RESOLVED would let it start doing so silently.
         notify: () => Promise.reject(new Error("this context sends no notifications")),
+        request: () => Promise.reject(new Error("this context sends no requests")),
       },
     },
 

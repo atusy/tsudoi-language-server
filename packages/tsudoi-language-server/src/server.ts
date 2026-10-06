@@ -1,6 +1,7 @@
 import process from "node:process";
 import {
   type CancellationToken,
+  CancellationTokenSource,
   DidChangeTextDocumentNotification,
   DidChangeWorkspaceFoldersNotification,
   DidCloseTextDocumentNotification,
@@ -97,7 +98,21 @@ export function startServer(config: TsudoiConfig, runtime: TsudoiRuntime): void 
   );
 
   // Connect before registering handlers so their tsudoi.notify calls can send.
-  connect((method, params) => connection.sendNotification(method, params));
+  connect({
+    notify: (method, params) => connection.sendNotification(method, params),
+    request: (method, params) => {
+      const cancellation = new CancellationTokenSource();
+      // THE PARAMS-LESS CALL PASSES NO PARAMS ARGUMENT AT ALL: upstream
+      // sends an `undefined` passed as the argument as `[null]`. An object
+      // goes out by name, the only shape `tsudoi.request` lets through.
+      const response = (
+        params === undefined
+          ? connection.sendRequest(method, cancellation.token)
+          : connection.sendRequest(method, params, cancellation.token)
+      ).finally(() => cancellation.dispose());
+      return { response, cancel: () => cancellation.cancel() };
+    },
+  });
 
   // Validate wire data before treating it as InitializeParams.
   connection.onRequest(

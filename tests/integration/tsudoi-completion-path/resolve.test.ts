@@ -47,10 +47,11 @@ function contextDeclaring(
       workspaceFolders: { get: () => [], values: () => [] },
       rootUri: null,
       rootPath: null,
-      // PRESENT AND REFUSING, which is what a hand-built context owes a member
-      // this package never exercises: no handler here notifies, and a stub that
-      // RESOLVED would let one start doing so silently.
+      // PRESENT AND REFUSING, which is what a hand-built context owes the members
+      // this package never exercises: no handler here notifies or requests, and a
+      // stub that RESOLVED would let one start doing so silently.
       notify: () => Promise.reject(new Error("this context sends no notifications")),
+      request: () => Promise.reject(new Error("this context sends no requests")),
       // THE WHOLE OPTIONAL CHAIN, as a client spells it, so a rename anywhere
       // along it reddens here rather than silently reading `undefined` and
       // measuring the client that declared nothing.

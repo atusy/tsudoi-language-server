@@ -318,7 +318,8 @@ the request:
 | `workspaceFolders`    | the folders the client holds, as a store like `documents`            |
 | `rootUri`, `rootPath` | the deprecated roots, as the client spelled them, or `null`          |
 | `clientCapabilities`  | what the client declared it can do, or `{}` when it declared nothing |
-| `notify`              | sends a notification to the client -- the one member that WRITES     |
+| `notify`              | sends a notification to the client -- a member that WRITES           |
+| `request`             | sends a request to the client and resolves with its answer           |
 
 `workspaceFolders` answers two questions. `values()` yields every folder the client holds, in the
 order it sent them; `get(uri)` answers with the folders at the INNERMOST location covering that
@@ -355,7 +356,7 @@ compiler names the one you forgot. `clientCapabilities` is `{}` and never `null`
 exactly that chain to decide whether it may send an `InsertReplaceEdit`, which LSP permits only to
 a client that declared `insertReplaceSupport`.
 
-**`notify` is the one member that speaks rather than answers.**
+**`notify` and `request` are the members that speak rather than answer.**
 `await context.tsudoi.notify("window/showMessage", { type: 1, message: "..." })` puts a
 notification on the wire, which is the only way a handler can tell the user something its own
 answer has no room for -- a request result cannot say _I declined, and here is why_. The method is
@@ -370,6 +371,18 @@ notifications before it has answered `initialize` -- `window/showMessage`, `wind
 here would go stale with the specification and would refuse the one call an author most wants from
 inside a handshake handler. Await the promise when order matters: it resolves once the bytes are
 handed to the connection, and dropping it lets your own answer overtake the notification.
+
+**`request` asks the client and waits for its answer.**
+`await context.tsudoi.request(method, params, { signal: context.signal })` resolves with whatever
+the client answered, typed `unknown` because tsudoi checks none of it -- narrow it yourself. A
+client that answers with an error rejects the promise with upstream's `ResponseError`, published
+from `@atusy/tsudoi-language-server/deps/error`, so its `code` and `data` are there to branch on.
+The params go out by name: pass an object or nothing, since an array or `null` is refused rather
+than reshaped into a message you did not write. **Pass your handler's own `signal`.** When it
+aborts, tsudoi withdraws the request from the client and rejects at once with the signal's reason,
+without waiting for the client to confirm -- a handler parked on that answer would leave its own,
+already cancelled request unanswered too. The lifecycle rule above applies here as well: a server
+may not send a request before it has answered `initialize`, and tsudoi does not stop you.
 
 ## What your server advertises
 
