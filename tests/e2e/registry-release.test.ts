@@ -139,7 +139,7 @@ test("the registry verifier accepts matching and reordered release metadata", ()
     env,
   });
   expect(`${String(verified.status)} ${verified.stderr}`).toBe("0 ");
-  expect(verified.stdout).toContain("verified 7 public registry packages at 0.1.0-alpha.2");
+  expect(verified.stdout).toContain("verified 8 public registry packages at 0.1.0-alpha.2");
 
   const reorderedRepository = spawnSync("node", ["scripts/verify-registry-release.ts", release], {
     cwd: repoRoot,
@@ -251,7 +251,7 @@ test("the verifier installs exact packages and audits signatures", () => {
     .map((line) => JSON.parse(line) as string[]);
   const install = calls.find((args) => args[0] === "install");
   expect(install?.slice(0, 3)).toEqual(["install", "--ignore-scripts", "--save-exact"]);
-  expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.2"))).toHaveLength(7);
+  expect(install?.filter((arg) => arg.endsWith("@0.1.0-alpha.2"))).toHaveLength(8);
   expect(calls.some((args) => args[0] === "audit" && args[1] === "signatures")).toBeTrue();
 
   const failedAudit = spawnSync(

@@ -126,6 +126,17 @@ const publishedFiles: Record<string, readonly string[]> = {
     "dist/index.js",
     "package.json",
   ],
+  "@atusy/tsudoi-kakehashi-prepare-virtual-document": [
+    "LICENSE",
+    "README.md",
+    "dist/handler.d.ts",
+    "dist/handler.js",
+    "dist/index.d.ts",
+    "dist/index.js",
+    "dist/prepare.d.ts",
+    "dist/prepare.js",
+    "package.json",
+  ],
   "@atusy/tsudoi-completion-document": [
     "LICENSE",
     "README.md",
@@ -242,6 +253,18 @@ const readmeTokens: Record<string, readonly RegExp[]> = {
     /required/i,
     /0\.1\.0-alpha\.2/,
     /Whitespace is its word rule/i,
+  ],
+  // WHAT THIS MEMBER MUST SAY BESIDE THE USUAL: that the handler alone is not
+  // enough. kakehashi asks only a server that advertised the request, and a
+  // custom method advertises nothing, so a reader who registers the handler and
+  // skips the handshake half gets a peer that is never asked and no error.
+  "@atusy/tsudoi-kakehashi-prepare-virtual-document": [
+    /kakehashi\/virtualDocument\/prepare/,
+    /peer/i,
+    /required/i,
+    /0\.1\.0-alpha\.2/,
+    /Both halves are needed/i,
+    /a function of the request and the options alone/i,
   ],
   // THE THIRD THING THIS MEMBER MUST SAY IS THAT ITS ANSWER IS BOUNDED BY A
   // WINDOW, which is the whole reason to prefer it over reading the buffer: a
