@@ -1,0 +1,31 @@
+{
+  "name": "@atusy/tsudoi-kakehashi-prepare-virtual-document",
+  "version": "0.1.0-alpha.2",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atusy/tsudoi-language-server.git",
+    "directory": "packages/tsudoi-kakehashi-prepare-virtual-document"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "alpha"
+  },
+  "scripts": {
+    "prepack": "rm -rf dist && tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "@atusy/tsudoi-language-server": "0.1.0-alpha.2"
+  }
+}

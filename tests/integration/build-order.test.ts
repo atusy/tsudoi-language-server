@@ -42,6 +42,7 @@ test("the derived order is the order this repository must be built in", () => {
     join(repoRoot, "packages", "tsudoi-completion-path"),
     join(repoRoot, "packages", "tsudoi-completion-shell"),
     join(repoRoot, "packages", "tsudoi-hover-wordnet"),
+    join(repoRoot, "packages", "tsudoi-kakehashi-prepare-virtual-document"),
   ]);
   // AND THE ALPHABET NOW GETS THIS REPOSITORY WRONG, asserted here because it
   // stopped being true of the throwaway trees alone. The arms below were built

@@ -676,14 +676,15 @@ already answered `RequestCancelled` by then, and nothing there can be watched su
   however its manifest reads, what bounds it, and the route for getting it — and that document,
   rather than this one, is what a registry page would show:
 
-  | package                                                                                     | answers                                               |
-  | ------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-  | [`@atusy/tsudoi-hover-wordnet`](../packages/tsudoi-hover-wordnet/README.md)                 | `textDocument/hover`                                  |
-  | [`@atusy/tsudoi-completion-path`](../packages/tsudoi-completion-path/README.md)             | `textDocument/completion`, `completionItem/resolve`   |
-  | [`@atusy/tsudoi-adapter-efm-config`](../packages/tsudoi-adapter-efm-config/README.md)       | whatever an efm `config.yaml` describes               |
-  | [`@atusy/tsudoi-completion-dictionary`](../packages/tsudoi-completion-dictionary/README.md) | `textDocument/completion`, from dictionary files      |
-  | [`@atusy/tsudoi-completion-document`](../packages/tsudoi-completion-document/README.md)     | `textDocument/completion`, from open documents' words |
-  | [`@atusy/tsudoi-completion-shell`](../packages/tsudoi-completion-shell/README.md)           | `textDocument/completion`, from a native shell        |
+  | package                                                                                                               | answers                                               |
+  | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+  | [`@atusy/tsudoi-hover-wordnet`](../packages/tsudoi-hover-wordnet/README.md)                                           | `textDocument/hover`                                  |
+  | [`@atusy/tsudoi-completion-path`](../packages/tsudoi-completion-path/README.md)                                       | `textDocument/completion`, `completionItem/resolve`   |
+  | [`@atusy/tsudoi-adapter-efm-config`](../packages/tsudoi-adapter-efm-config/README.md)                                 | whatever an efm `config.yaml` describes               |
+  | [`@atusy/tsudoi-completion-dictionary`](../packages/tsudoi-completion-dictionary/README.md)                           | `textDocument/completion`, from dictionary files      |
+  | [`@atusy/tsudoi-completion-document`](../packages/tsudoi-completion-document/README.md)                               | `textDocument/completion`, from open documents' words |
+  | [`@atusy/tsudoi-completion-shell`](../packages/tsudoi-completion-shell/README.md)                                     | `textDocument/completion`, from a native shell        |
+  | [`@atusy/tsudoi-kakehashi-prepare-virtual-document`](../packages/tsudoi-kakehashi-prepare-virtual-document/README.md) | `kakehashi/virtualDocument/prepare`, a custom request |
 
   **Neither bundles its own tsudoi.** Both declare `@atusy/tsudoi-language-server` as a required,
   exact **peer** at `0.1.0-alpha.2` — the framework version is a host-level choice, not a handler's,

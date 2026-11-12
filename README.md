@@ -48,14 +48,15 @@ The starter pins tsudoi to a specific Git commit.
 
 Pick the features your workflow needs:
 
-| Package                                                                  | What it adds                                      |
-| ------------------------------------------------------------------------ | ------------------------------------------------- |
-| [completion-path](packages/tsudoi-completion-path/README.md)             | filesystem and workspace-path completion          |
-| [completion-document](packages/tsudoi-completion-document/README.md)     | words from the current buffer or open documents   |
-| [completion-dictionary](packages/tsudoi-completion-dictionary/README.md) | indexed completion from your own dictionary files |
-| [completion-shell](packages/tsudoi-completion-shell/README.md)           | native Fish, Zsh, or Xonsh completion             |
-| [hover-wordnet](packages/tsudoi-hover-wordnet/README.md)                 | English definitions on hover                      |
-| [adapter-efm-config](packages/tsudoi-adapter-efm-config/README.md)       | handlers derived from an efm config               |
+| Package                                                                                            | What it adds                                      |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [completion-path](packages/tsudoi-completion-path/README.md)                                       | filesystem and workspace-path completion          |
+| [completion-document](packages/tsudoi-completion-document/README.md)                               | words from the current buffer or open documents   |
+| [completion-dictionary](packages/tsudoi-completion-dictionary/README.md)                           | indexed completion from your own dictionary files |
+| [completion-shell](packages/tsudoi-completion-shell/README.md)                                     | native Fish, Zsh, or Xonsh completion             |
+| [hover-wordnet](packages/tsudoi-hover-wordnet/README.md)                                           | English definitions on hover                      |
+| [adapter-efm-config](packages/tsudoi-adapter-efm-config/README.md)                                 | handlers derived from an efm config               |
+| [kakehashi-prepare-virtual-document](packages/tsudoi-kakehashi-prepare-virtual-document/README.md) | embedded code presented to kakehashi's servers    |
 
 Need something custom? Add your own handlers alongside these packages.
 The [full example](examples/tsudoi.config.ts) shows how to combine them with diagnostics and formatting.

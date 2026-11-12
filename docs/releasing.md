@@ -1,7 +1,7 @@
 # Releasing npm Alpha Packages
 
 This runbook separates repository work from npm and GitHub authority. The repository produces one
-ordered, checksummed set of seven tarballs. A maintainer owns the irreversible publication,
+ordered, checksummed set of eight tarballs. A maintainer owns the irreversible publication,
 two-factor authentication, and external trusted-publisher settings.
 
 ## Release prerequisites
@@ -30,6 +30,14 @@ version is `0.1.0-alpha.1`. That bootstrap has been completed for all seven pack
 maintainer's interactive, 2FA-protected npm session. This section records the resulting policy; it
 is not a procedure to run again. Use **Later alpha releases** below for every subsequent alpha and
 do not manually publish the current workspace artifacts.
+
+`@atusy/tsudoi-kakehashi-prepare-virtual-document` joined the workspace after that bootstrap and
+has **never been published**. The release set now holds it, and the publisher refuses any package
+whose registry `latest` is not `0.1.0-alpha.1` — which a name that does not exist yet cannot
+satisfy, and a first publication at a later version never will. Before the first release that
+includes it, a maintainer has to decide how this name enters the registry (its first publication,
+its `latest` tag, its trusted-publisher setting) and adjust the `latest` policy to match. Until
+then the publisher refuses the whole release in its preflight, before it writes anything.
 
 The bootstrap publisher checked every local SHA-256 before contacting npm. It also checked the SHA-512
 integrity of any version already in the registry. A retry skips an already-published package only

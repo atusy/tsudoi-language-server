@@ -171,8 +171,8 @@ test("a published GitHub prerelease drives an approved OIDC job for one exact al
   const validationCommands = commandLinesOf(
     validationStep === undefined ? [] : [validationStep],
   ).filter((command) => !command.startsWith("#"));
-  const uses = [...qualitySteps, ...prepareSteps, ...publishSteps, ...verifySteps].flatMap(
-    (step) => (typeof step.uses === "string" ? [step.uses] : []),
+  const uses = [...qualitySteps, ...prepareSteps, ...publishSteps, ...verifySteps].flatMap((step) =>
+    typeof step.uses === "string" ? [step.uses] : [],
   );
 
   expect(workflow.on).toEqual({ release: { types: ["published"] } });
