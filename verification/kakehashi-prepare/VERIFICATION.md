@@ -96,7 +96,13 @@ completion item's edit, the code a formatting or a rename leaves.
   first document waits [`inherit`].
 - **`contract`**: generated Nix strings and Markdown HTML blocks (seeded, so a failure can be
   generated again) opened one by one. Each must reach the downstream server as the request's
-  segments with the package's answer applied; a document kakehashi refuses never arrives.
+  segments with the package's answer applied; a document kakehashi refuses never arrives. Where
+  the package kept a gap, the text must also be, to the letter, the one the segments spell by the
+  rule kakehashi's protocol document states — written out in the harness apart from the package,
+  since a peer has nothing else to tell where the virtual document's lines start. Three Nix
+  strings then show which interpolations are gaps: one after text on its line, one after the
+  line's indentation, and one opening a host line, which kakehashi strips as it strips a line
+  prefix (the protocol document records that one).
 
 The recording proxy is what makes "no unprepared text reaches a server" checkable: the texts each
 server was sent are read from its log, not inferred from answers.

@@ -1,7 +1,7 @@
 // Deviations already examined, each with its class, so a re-run reports what
 // is new and what went away rather than the same list again.
 //
-// Recorded against kakehashi 4ed05a9efc (feat/prepare-8-completion-resolve-edits).
+// Recorded against kakehashi 97121adfbc (feat/prepare-8-completion-resolve-edits).
 
 export type DeviationClass =
   /** kakehashi does something its own protocol document says it does not. */
@@ -9,7 +9,7 @@ export type DeviationClass =
   /** kakehashi behaves the same with experimental features off: not the peer's doing. */
   | "kakehashi limitation"
   | "package defect"
-  /** The protocol cannot express, or does not tell the peer, what the case needs. */
+  /** The protocol does not tell the peer what the case needs. */
   | "protocol gap"
   /** The protocol document says so. Listed because a user will still meet it. */
   | "by design"
@@ -29,7 +29,6 @@ export interface Known {
 
 const any = /^/;
 const prepared = /^(?!.*\(flag off\))/;
-const flagOff = /\(flag off\)$/;
 /** Embeddings whose line prefix kakehashi strips itself: lists and quotes. */
 const prefixed = /^md-(list|nested-list|blockquote|quoted-list)/;
 const gapped = /^nix-string(-multiline)?-gap$|^nix, .*gap/;
@@ -50,8 +49,8 @@ export const knownDeviations: readonly Known[] = [
   {
     id: "prefixed-region-multiline-completion",
     class: "kakehashi limitation",
-    note: "The same rule for completion items that break a line (`for .. in pairs`, `if .. fi`): dropped in a list or a blockquote, with experimental features off as well.",
-    group: flagOff,
+    note: "The same rule for completion items that break a line (`for .. in pairs`, `if .. fi`): dropped in a list or a blockquote, with experimental features off as well as on a document the peer left as it is.",
+    group: any,
     scenario: /^completion \((fo|if)\)$/,
     variant: prefixed,
   },
@@ -67,7 +66,7 @@ export const knownDeviations: readonly Known[] = [
   {
     id: "multiline-snippets-refused",
     class: "by design",
-    note: "A snippet completion that breaks a line is refused on every prepared document (protocol document, Negative consequences) -- including a plain fence where the peer answered `null`, since a declined document is still a prepared one. Naming a peer for a language costs its multi-line snippets everywhere.",
+    note: "A snippet completion that breaks a line is refused on a document the peer changed (protocol document, Negative consequences): one it dedented, or whose edge lines it dropped. A document it left as it is -- a plain fence answered `null` -- keeps them.",
     group: prepared,
     scenario: /^completion \((fo|if)\)$/,
     variant: any,
@@ -75,7 +74,7 @@ export const knownDeviations: readonly Known[] = [
   {
     id: "resolve-without-main-edit",
     class: "by design",
-    note: "deno lsp's completion items carry no edit of their own, and the edits a resolve adds are placed only beside a main edit (protocol document, Edits): its auto-import is dropped on every prepared document, a plain fence included.",
+    note: "deno lsp's completion items carry no edit of their own, and on a document the peer changed the edits a resolve adds are placed only beside a main edit (protocol document, Edits): its auto-import is dropped there. A document the peer left as it is takes it.",
     group: /^typescript \(deno\)$/,
     scenario: /^completion resolve \(auto-import\), item highlighted$/,
     variant: any,
@@ -117,10 +116,10 @@ export const knownDeviations: readonly Known[] = [
   },
   {
     id: "gap-opening-a-host-line",
-    class: "protocol gap",
-    note: "An interpolation with nothing injected before it on its host line (`${pkgs.hello}/bin/hello` at column 0) is stripped from the virtual document and never presented as a gap, so no rule can give it a placeholder: the server sees `/bin/hello`. The protocol document says stripped host text is not presented; for a Nix string written at column 0 that is the motivating case itself.",
+    class: "by design",
+    note: "An interpolation with nothing injected before it on its host line (`${pkgs.hello}/bin/hello` at column 0) is stripped from the virtual document as a line prefix is and never presented as a gap, so no rule can give it a placeholder: the server sees `/bin/hello`, with a peer as without one. The protocol document records it (The Request, and Considered Options: presenting stripped host text as gaps); after the line's indentation the same interpolation is a gap.",
     group: /^contract$/,
-    scenario: /^every interpolation is presented as a gap$/,
-    variant: any,
+    scenario: /^an interpolation is presented as a gap$/,
+    variant: /^opening a host line$/,
   },
 ];

@@ -5,6 +5,11 @@
 // one by one. For each, the text the downstream server is sent must be the
 // request's segments with the package's answer applied. A refused answer
 // shows as a document that is never sent.
+//
+// A document with a gap the package kept is also held to the letter: the text
+// sent must be the one the segments spell by the rule kakehashi's protocol
+// document states (The Request), written out here apart from the package. A
+// peer has nothing else to tell where the virtual document's lines start.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
@@ -85,16 +90,50 @@ function markdownDocument(seed: number): string {
   return `${parts.join("\n")}\n`;
 }
 
-/** The text an answer leaves, as a pattern: a kept gap is whitespace kakehashi chose. */
-function expectedPattern(entry: PeerEntry): RegExp {
+interface AnsweredSegment {
+  readonly changes?: unknown[];
+  readonly content?: string;
+}
+
+const answered = (entry: PeerEntry): readonly AnsweredSegment[] | undefined =>
+  (entry.result as { segments?: AnsweredSegment[] } | null)?.segments;
+
+/**
+ * What a gap stands as in the virtual document, by the protocol document: a
+ * space for each UTF-16 code unit up to its first line break when the gap
+ * continues a line of content, nothing for that text when it opens a line,
+ * then each of its line breaks and nothing for the text after one.
+ */
+function gapAsSpelled(segments: readonly { type: string; content: string }[], index: number) {
+  const host = segments[index]?.content ?? "";
+  const before = segments[index - 1];
+  const continuesALine =
+    before !== undefined && before.type === "content" && !/[\r\n]$/.test(before.content);
+  const firstBreak = host.search(/[\r\n]/);
+  const opening = firstBreak < 0 ? host : host.slice(0, firstBreak);
+  const breaks = (firstBreak < 0 ? "" : host.slice(firstBreak)).replace(/[^\r\n]/g, "");
+  return (continuesALine ? " ".repeat(opening.length) : "") + breaks;
+}
+
+/** Whether the package kept a gap of this request, so its spelling is on show. */
+const keepsAGap = (entry: PeerEntry): boolean =>
+  (entry.params?.segments ?? []).some(
+    (segment, index) => segment.type === "gap" && answered(entry)?.[index]?.content === undefined,
+  );
+
+/**
+ * The text an answer leaves. As a pattern, a kept gap is whatever whitespace
+ * kakehashi chose; `spelled`, it is the whitespace the protocol document says.
+ */
+function expectedPattern(entry: PeerEntry, spelled = false): RegExp {
   const segments = entry.params?.segments ?? [];
-  const answer = (entry.result as { segments?: { changes?: unknown[]; content?: string }[] } | null)
-    ?.segments;
+  const answer = answered(entry);
   const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const parts = segments.map((segment, index) => {
     const own = answer?.[index];
     if (segment.type === "gap") {
-      return own?.content === undefined ? "[ \\t\\r\\n]*" : escape(own.content);
+      if (own?.content !== undefined) return escape(own.content);
+      return spelled ? escape(gapAsSpelled(segments, index)) : "[ \\t\\r\\n]*";
     }
     const starts = lineStarts(segment.content);
     const offset = (position: { line: number; character: number }): number =>
@@ -179,6 +218,21 @@ export async function runContract(report: Report, options: ContractOptions): Pro
         report.skip(GROUP, "the package's answer is accepted and applied", variant, "no region");
       } else if (settled === true) {
         report.pass(GROUP, "the package's answer is accepted and applied", variant);
+        // The same documents to the letter, where a kept gap shows how the
+        // segments spell the virtual document.
+        for (const entry of requests.filter(keepsAGap)) {
+          report.check(
+            GROUP,
+            "a kept gap reaches the server as the protocol document spells it",
+            `${variant} (${String(entry.params?.segments.length ?? 0)} segments)`,
+            JSON.stringify(expectedPattern(entry, true).source),
+            JSON.stringify(
+              expectedPattern(entry, true).test(sent(entry.params?.textDocument.uri ?? "") ?? "")
+                ? expectedPattern(entry, true).source
+                : (sent(entry.params?.textDocument.uri ?? "") ?? null),
+            ),
+          );
+        }
       } else {
         const entry = requests.find((candidate) => {
           const text = sent(candidate.params?.textDocument.uri ?? "");
@@ -200,31 +254,42 @@ export async function runContract(report: Report, options: ContractOptions): Pro
       }
       session.closeDocument(document);
     }
-    // An interpolation with nothing injected before it on its line: is it a
-    // gap the peer can fill, like one after some indentation?
-    const scenario = "every interpolation is presented as a gap";
-    const text = `{ pkgs }:\n{\n  s = /* bash */ ''\n\${pkgs.hello}/bin/hello\necho \${pkgs.hello}\n  '';\n}\n`;
-    const document = session.open("gap-opening-a-line.nix", "nix", text);
-    const request = await session.client.waitFor(
-      () =>
-        session
-          .prepareRequests()
-          .find(
-            (entry) =>
-              entry.params?.hostTextDocument.uri === document.uri &&
-              entry.params.textDocument.languageId === "bash",
-          ),
-      options.patienceMs,
-    );
-    const gaps = (request?.params?.segments ?? []).filter((segment) => segment.type === "gap");
-    report.check(
-      GROUP,
-      scenario,
-      "one opening a host line, one after text",
-      JSON.stringify(["${pkgs.hello}", "${pkgs.hello}"]),
-      JSON.stringify(gaps.map((gap) => gap.content)),
-    );
-    session.closeDocument(document);
+    // Which interpolations are gaps the peer can fill? One after text on its
+    // line is, and so is one after the line's indentation, which a Nix
+    // string injects. One with nothing injected before it on its host line
+    // is stripped as a line prefix is: the protocol document records it as
+    // the one gap with nothing left to present.
+    const scenario = "an interpolation is presented as a gap";
+    const interpolations: readonly (readonly [string, string])[] = [
+      ["after text on its line", "echo ${pkgs.hello}"],
+      ["after the line's indentation", "    ${pkgs.hello}/bin/hello"],
+      ["opening a host line", "${pkgs.hello}/bin/hello"],
+    ];
+    for (const [variant, line] of interpolations) {
+      const text = `{ pkgs }:\n{\n  s = /* bash */ ''\n    echo first\n${line}\n  '';\n}\n`;
+      const name = `interpolation-${variant.replaceAll(/[^a-z]+/g, "-")}.nix`;
+      const document = session.open(name, "nix", text);
+      const request = await session.client.waitFor(
+        () =>
+          session
+            .prepareRequests()
+            .find(
+              (entry) =>
+                entry.params?.hostTextDocument.uri === document.uri &&
+                entry.params.textDocument.languageId === "bash",
+            ),
+        options.patienceMs,
+      );
+      const gaps = (request?.params?.segments ?? []).filter((segment) => segment.type === "gap");
+      report.check(
+        GROUP,
+        scenario,
+        variant,
+        JSON.stringify(["${pkgs.hello}"]),
+        JSON.stringify(gaps.map((gap) => gap.content)),
+      );
+      session.closeDocument(document);
+    }
   } finally {
     await session.close();
   }
