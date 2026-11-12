@@ -12,6 +12,10 @@
  *   an indentation-only last line as a change of its own;
  * - replace a gap with any text.
  *
+ * Which whitespace leads a line, and which lines are whole, is told by the
+ * virtual document, and the request spells that document without showing it:
+ * `standsFor` is the protocol's rule for what a gap is there.
+ *
  * Everything else is refused by kakehashi, and a refused answer leaves the
  * document unsent. So this module never emits a change it is not sure of: where
  * a rule cannot be applied within the contract, the text is left as it is.
@@ -119,17 +123,37 @@ const holdsLineBreak = (text: string): boolean => text.includes("\n") || text.in
 const isBlank = (text: string): boolean => /^[ \t\r\n]*$/.test(text);
 
 /**
- * A gap as downstream servers see it when no rule fills it: whitespace as
- * wide as the host text up to its first line break, then only its line
- * breaks. What follows the last one opens the line the next content is on,
- * and kakehashi strips the host text that opens a line of content.
+ * What a gap's host text stands as in the virtual document, which is also
+ * what a server is sent for a gap no rule fills. The request does not carry
+ * it; kakehashi's protocol document states how the segments spell it (The
+ * Request):
+ *
+ * - a space for each UTF-16 code unit of the text up to the gap's first line
+ *   break when the gap continues a line of content, and nothing for that
+ *   text when the gap opens a line;
+ * - then each of its line breaks, and nothing for the text after one: host
+ *   text before the first injected character of its line is stripped.
  */
-function kept(hostText: string): string {
+export function standsFor(hostText: string, continuesALine: boolean): string {
   const firstBreak = hostText.search(/[\r\n]/);
-  if (firstBreak < 0) return hostText.replace(/[^]/g, " ");
+  const opening = firstBreak < 0 ? hostText : hostText.slice(0, firstBreak);
+  const rest = firstBreak < 0 ? "" : hostText.slice(firstBreak);
+  // No `u` flag: one space per UTF-16 code unit, as the rule counts.
+  return (continuesALine ? opening.replace(/[^]/g, " ") : "") + rest.replace(/[^\r\n]/g, "");
+}
+
+/**
+ * Whether the gap at `index` continues a line of content: the segment before
+ * it is content that does not end in a line break. Otherwise it opens a line
+ * (it is the first segment, or follows content ending in a line break).
+ */
+export function continuesALine(
+  segments: readonly VirtualDocumentSegment[],
+  index: number,
+): boolean {
+  const previous = segments[index - 1];
   return (
-    hostText.slice(0, firstBreak).replace(/[^]/g, " ") +
-    hostText.slice(firstBreak).replace(/[^\r\n]/g, "")
+    previous !== undefined && previous.type === "content" && !endsWithLineBreak(previous.content)
   );
 }
 
@@ -181,7 +205,8 @@ function fillsFor(
   const shown = (index: number): string => {
     const segment = segments[index];
     if (segment === undefined) return "";
-    return segment.type === "gap" ? (fills[index] ?? kept(segment.content)) : segment.content;
+    if (segment.type !== "gap") return segment.content;
+    return fills[index] ?? standsFor(segment.content, continuesALine(segments, index));
   };
   for (const [index, filled] of fills.entries()) {
     if (filled === undefined) continue;
@@ -201,8 +226,11 @@ function fillsFor(
 
 /**
  * One request as downstream servers will read it -- content as it is, each
- * gap as its fill or as the whitespace kakehashi keeps for it -- because that
- * is where a line is blank or not, and where an indentation is shared.
+ * gap as its fill or as what stands for it in the virtual document -- because
+ * that is where a line is blank or not, and where an indentation is shared.
+ * Beside it, where each segment starts a line of the virtual document itself
+ * (every gap as it stands there, filled or not): that is the text kakehashi
+ * checks an answer against.
  */
 class Presentation {
   readonly segments: readonly VirtualDocumentSegment[];
@@ -216,13 +244,25 @@ class Presentation {
   readonly changes: TextEdit[][];
   /** Lines a whole-line deletion or the closing indentation already took. */
   readonly #taken: readonly Set<number>[];
+  /** Whether each segment starts a line of the virtual document. */
+  readonly #startsVirtualLine: readonly boolean[];
 
   constructor(segments: readonly VirtualDocumentSegment[], fills: readonly (string | undefined)[]) {
     this.segments = segments;
     this.fills = fills;
-    const shown = segments.map((segment, index) =>
-      segment.type === "gap" ? (fills[index] ?? kept(segment.content)) : segment.content,
+    const virtual = segments.map((segment, index) =>
+      segment.type === "gap"
+        ? standsFor(segment.content, continuesALine(segments, index))
+        : segment.content,
     );
+    const startsVirtualLine: boolean[] = [];
+    let atLineStart = true;
+    for (const piece of virtual) {
+      startsVirtualLine.push(atLineStart);
+      if (piece !== "") atLineStart = endsWithLineBreak(piece);
+    }
+    this.#startsVirtualLine = startsVirtualLine;
+    const shown = virtual.map((piece, index) => fills[index] ?? piece);
     this.text = shown.join("");
     const offsets: number[] = [];
     let length = 0;
@@ -247,14 +287,13 @@ class Presentation {
    * Whether a content segment's first line starts a line of the virtual
    * document, which is where kakehashi checks that a deletion is of LEADING
    * whitespace or of WHOLE lines, and whether blank lines reach back to a gap.
-   * The request carries a gap's host text, not its virtual text, so this is
-   * read off how kakehashi builds one: a gap holding a line break ends a line
-   * there whatever follows its last line break (see `kept`), and a gap on one
-   * line never does.
+   * Read off the document as the segments spell it (see `standsFor`): content
+   * after a gap that holds a line break starts a line, whatever follows the
+   * gap's last line break, and content after a gap continuing a line goes on
+   * with that line.
    */
   startsVirtualLine(index: number): boolean {
-    const previous = this.segments[index - 1];
-    return index === 0 || (previous !== undefined && holdsLineBreak(previous.content));
+    return this.#startsVirtualLine[index] === true;
   }
 
   /**

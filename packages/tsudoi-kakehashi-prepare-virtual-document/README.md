@@ -73,9 +73,11 @@ this server that peer for the injections of one host language, Nix here:
 kakehashi's own documentation, under _Preparing Virtual Documents_, has the configuration in full.
 
 **Name the peer only where it is needed.** kakehashi treats every document of a pair that has a
-peer as prepared, one this package answers `null` for included, and a prepared document has
-limits a plain one has not: completion snippets that break a line are refused, and a document
-with gaps takes no edit at all (see _What bounds it_).
+peer as prepared, one this package answers `null` for included: each waits for the answer before
+its servers see it. A document this package changes also has limits a plain one has not:
+completion snippets that break a line are refused there, and a document with gaps takes no edit
+at all (see _What bounds it_). One it leaves as it is keeps its completion items, snippets
+included, as a document never prepared has them.
 
 ## Options
 
@@ -107,7 +109,7 @@ lines are where you are about to type.
 `{ content, languageId, hostLanguageId }` — the host text of the gap, on as many lines as it has,
 and both languages — and returns the replacement, of any length and on as many lines as you like,
 or `undefined` to keep the gap. A kept gap is what kakehashi presents without a peer: whitespace as
-wide as the host text, with its line breaks.
+wide as its first line where content precedes it on that line, then only its line breaks.
 
 Not every gap is an interpolation. When one query combines several host strings into one
 document, the host code between two strings is a gap too, and it holds a line break. Fill only
@@ -134,12 +136,19 @@ the document unsent, never sent unprepared. This package therefore emits nothing
 - **A request it cannot read is refused** with an error rather than answered: an error tells
   kakehashi the peer failed, where `null` would say "send it as it is".
 
-Two limits come from the protocol rather than from this package. The request carries a gap's host
-text but not what the virtual document holds for it, and what may be deleted depends on where that
-document's lines start. This package reads it off how kakehashi builds one: content after a gap
-starts a line exactly when the gap's host text holds a line break. And kakehashi closes
-edit-producing methods (completion, formatting, rename, code actions) on a prepared document that
-has gaps.
+What may be deleted depends on where the virtual document's lines start, and the request carries a
+gap's host text, not what the virtual document holds for it. kakehashi's protocol document states
+how the segments spell that document, and this package follows it: a gap that continues a line of
+content stands as spaces up to its first line break, a gap that opens a line as nothing there, and
+after a line break only the gap's line breaks remain. So content after a gap that holds a line
+break starts a line.
+
+Two limits come from the protocol rather than from this package. An interpolation with nothing
+injected before it on its host line (`${pkgs.hello}/bin/hello` written at column 0) is not a gap:
+kakehashi strips it as it strips a line prefix, with or without a peer, so no `gap` rule sees it.
+Where the host injects the line's indentation too, as an indented Nix string does, the
+interpolation is a gap like any other. And kakehashi closes edit-producing methods (completion,
+formatting, rename, code actions) on a prepared document that has gaps.
 
 ## It needs tsudoi at run time
 

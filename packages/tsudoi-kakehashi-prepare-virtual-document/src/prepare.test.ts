@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
+  continuesALine,
   type PrepareOptions,
   prepareSegments,
+  standsFor,
   type VirtualDocumentPrepareParams,
   type VirtualDocumentPrepareResult,
 } from "./prepare.ts";
@@ -42,18 +44,20 @@ function prepare(pieces: readonly Piece[], options?: PrepareOptions): VirtualDoc
 }
 
 /**
- * A gap no rule fills, as kakehashi presents it: spaces as wide as the host
- * text up to its first line break, then nothing but its line breaks. The host
- * text after the last one opens the line the next content is on, and kakehashi
- * strips what opens a line of content.
+ * A gap no rule fills, as the protocol spells it in the virtual document,
+ * written out here apart from the package's own `standsFor`: spaces as wide
+ * as the host text up to its first line break when content precedes the gap
+ * on its line, nothing for that text otherwise, then nothing but its line
+ * breaks.
  */
-function kept(hostText: string): string {
-  const firstBreak = hostText.search(/[\r\n]/);
-  if (firstBreak < 0) return hostText.replace(/[^]/g, " ");
-  return (
-    hostText.slice(0, firstBreak).replace(/[^]/g, " ") +
-    hostText.slice(firstBreak).replace(/[^\r\n]/g, "")
-  );
+function kept(pieces: readonly Piece[], index: number): string {
+  const piece = pieces[index];
+  if (piece === undefined || typeof piece === "string") return "";
+  const before = pieces[index - 1];
+  const continues = typeof before === "string" && !/[\r\n]$/.test(before);
+  const [opening = "", ...lines] = piece.gap.split(/(\r\n|\r|\n)/);
+  const breaks = lines.filter((_, at) => at % 2 === 0).join("");
+  return (continues ? " ".repeat(opening.length) : "") + breaks;
 }
 
 /**
@@ -68,7 +72,7 @@ function prepared(pieces: readonly Piece[], options?: PrepareOptions): string {
       const segment = answer?.segments[index];
       if (typeof piece !== "string") {
         const filled = segment?.type === "gap" ? segment.content : undefined;
-        return filled ?? kept(piece.gap);
+        return filled ?? kept(pieces, index);
       }
       const changes = segment?.type === "content" ? (segment.changes ?? []) : [];
       const starts = [0];
@@ -165,7 +169,7 @@ describe("dedent", () => {
       prepared(["\n  x = 1\n", { gap: "'';\n  nested.b = ''" }, "\n      y = 2\n    "], {
         trimEdges: false,
       }),
-    ).toBe("\nx = 1\n   \n\ny = 2\n");
+    ).toBe("\nx = 1\n\n\ny = 2\n");
   });
 
   test("content joined by a filled gap is dedented as one text", () => {
@@ -181,8 +185,9 @@ describe("dedent", () => {
     expect(
       prepared(["<div>\n", { gap: "text\n" }, "  </div>\n"], { trimEdges: false, gap: "" }),
     ).toBe("<div>\n  </div>\n");
+    // The gap opens its line: its text is stripped, its line break stays.
     expect(prepared(["<div>\n", { gap: "text\n" }, "  </div>\n"], { trimEdges: false })).toBe(
-      "<div>\n    \n</div>\n",
+      "<div>\n\n</div>\n",
     );
   });
 
@@ -306,6 +311,36 @@ describe("trimEdges", () => {
 
   test("can be turned off", () => {
     expect(prepared(["\n  a\n\n  "], { trimEdges: false })).toBe("\na\n\n");
+  });
+});
+
+describe("the virtual document, as the segments spell it", () => {
+  const segments = (pieces: readonly Piece[]) => request(pieces).segments;
+
+  test("a gap continuing a line of content stands as spaces up to its first line break", () => {
+    expect(standsFor("${x}", true)).toBe("    ");
+    expect(standsFor("${\n  x\n}", true)).toBe("  \n\n");
+  });
+
+  test("a space stands for each UTF-16 code unit, so a character outside the BMP takes two", () => {
+    expect(standsFor("é𝒳", true)).toBe("   ");
+  });
+
+  test("a gap opening a line stands as its line breaks alone", () => {
+    expect(standsFor("text\n", false)).toBe("\n");
+    expect(standsFor("'';\r\n  b = \"", false)).toBe("\r\n");
+    expect(standsFor("${x}", false)).toBe("");
+  });
+
+  test("line breaks stay as the host has them", () => {
+    expect(standsFor("a\rb\r\nc\nd", true)).toBe(" \r\r\n\n");
+  });
+
+  test("a gap continues a line after content that does not end in a line break", () => {
+    expect(continuesALine(segments(["a = ", { gap: "${x}" }, "\n"]), 1)).toBe(true);
+    expect(continuesALine(segments(["a\n", { gap: "${x}" }, "b\n"]), 1)).toBe(false);
+    expect(continuesALine(segments(["a\r", { gap: "${x}" }, "b\n"]), 1)).toBe(false);
+    expect(continuesALine(segments([{ gap: "${x}" }, "b\n"]), 0)).toBe(false);
   });
 });
 
